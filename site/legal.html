@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Terms &amp; Privacy — Agent Notch</title>
+<meta name="description" content="Terms of use and privacy policy for Agent Notch. Short version: it runs on your machine and sends nothing anywhere.">
+<link rel="icon" href="assets/agent-notch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#050505;--bone:#efeadd;--mute:#8e8e93;--line:#2a2a2d;--amber:#ff9f0a}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth;scroll-padding-top:90px}
+body{background:var(--ink);color:#cfcbc0;font:400 17px/1.7 "Bricolage Grotesque",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--bone);text-underline-offset:4px}
+a:hover{color:var(--amber)}
+nav{position:sticky;top:0;z-index:5;background:#050505d9;backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+nav div{max-width:760px;margin:0 auto;padding:14px 24px;display:flex;gap:22px;align-items:center;font:500 13px "JetBrains Mono",monospace}
+nav .home{font:800 18px "Bricolage Grotesque",sans-serif;letter-spacing:-.03em;text-decoration:none;margin-right:auto;display:flex;align-items:center;gap:10px}
+nav .home img{width:24px;height:24px}
+main{max-width:760px;margin:0 auto;padding:70px 24px 100px}
+h1{font-size:clamp(44px,8vw,84px);line-height:.92;letter-spacing:-.045em;font-weight:800;color:var(--bone)}
+h2{font-size:clamp(30px,5vw,44px);letter-spacing:-.035em;line-height:1;color:var(--bone);margin:90px 0 10px;padding-top:30px;border-top:1px solid var(--line)}
+h3{font-size:19px;color:var(--bone);margin:30px 0 4px;letter-spacing:-.01em}
+p,ul{margin-top:10px}
+ul{padding-left:22px}li{margin-top:6px}
+code{font:400 .85em "JetBrains Mono",monospace;background:#1a1a1d;padding:2px 6px;border-radius:6px}
+.tl{margin-top:26px;padding:20px 24px;border-radius:20px;background:#111113;border:1px solid var(--line);color:var(--bone)}
+.tl b{color:var(--amber)}
+.d{font:400 13px "JetBrains Mono",monospace;color:var(--mute);margin-top:14px}
+footer{max-width:760px;margin:0 auto;padding:0 24px 50px;font:400 13px "JetBrains Mono",monospace;color:var(--mute)}
+</style>
+</head>
+<body>
+<nav><div>
+  <a class="home" href="./"><img src="assets/agent-notch-icon.png" alt="">Agent Notch</a>
+  <a href="#terms">Terms</a><a href="#privacy">Privacy</a>
+</div></nav>
+
+<main>
+  <h1>Terms &amp;<br>privacy.</h1>
+  <div class="tl"><b>The short version:</b> Agent Notch runs on your PC, talks only to itself on <code>127.0.0.1</code>, and has no accounts, analytics or telemetry. It's free, it's provided as-is, and it edits your agents' config files only when you flip a switch.</div>
+  <p class="d">Last updated 30 September 2026</p>
+
+  <h2 id="terms">Terms of use</h2>
+  <p>By downloading, installing or using Agent Notch ("the app") or this website, you agree to these terms. If you don't, please don't use them.</p>
+
+  <h3>1. What it is</h3>
+  <p>Agent Notch is a Windows desktop app that displays the status of coding agents you run (Claude Code, Antigravity, OpenCode, Kilo, GitHub Copilot) and lets you respond to their requests from one place. It is an independent project, not made by, affiliated with or endorsed by Anthropic, Google, GitHub, Microsoft or the makers of OpenCode or Kilo. Those names and logos belong to their owners and appear only to say which tools work with the app.</p>
+
+  <h3>2. Your permission to use it</h3>
+  <p>You may download, install and use the app for personal or commercial work, free of charge. Don't sell it as your own, and don't use it to do anything unlawful. The source is on <a href="https://github.com/KurianJose7586/notch">GitHub</a>; any license stated in that repository governs the code itself.</p>
+
+  <h3>3. What you're authorising</h3>
+  <ul>
+    <li>When you switch on an agent in Setup, the app adds one hook to that agent's own config file (listed on the <a href="./#touch">receipt</a>) and keeps a <code>.bak</code> copy the first time. Switching it off removes the hook.</li>
+    <li>When you answer a request with <b>Y</b> or <b>N</b>, or turn <b>AUTO</b> on, you are approving or denying what the agent asked to do. <b>AUTO presses Enter on Antigravity's prompts for you.</b> You are responsible for what you allow, and for the agents you run.</li>
+    <li>The app can focus, arrange and tile your terminal windows, launch agents (optionally in git worktrees), and show notifications and sounds.</li>
+  </ul>
+
+  <h3>4. No warranty</h3>
+  <p>The app is provided <b>"as is" and "as available"</b>, without warranties of any kind, express or implied, including fitness for a particular purpose and non-infringement. Status, progress and usage-limit figures are read from the agents and may be late, wrong or missing. Don't rely on the app alone for anything where a missed or mistaken approval would be costly.</p>
+
+  <h3>5. Limit of liability</h3>
+  <p>To the fullest extent the law allows, the author is not liable for any indirect, incidental or consequential damages, or for loss of data, code, money or time, arising from use of the app or this site, including actions an agent takes after you (or AUTO) approved them. Nothing here limits liability that cannot be limited by law.</p>
+
+  <h3>6. Unsigned installer</h3>
+  <p>The installer is not yet code-signed, so Windows SmartScreen may warn you. Download only from the official <a href="https://github.com/KurianJose7586/notch/releases/latest">GitHub releases</a> page, and choose for yourself whether to run it.</p>
+
+  <h3>7. Changes and ending</h3>
+  <p>I may change or stop the app, the site, or these terms at any time; the date above shows the latest version. You can stop using the app whenever you like by uninstalling it.</p>
+
+  <h2 id="privacy">Privacy policy</h2>
+  <h3>The app</h3>
+  <ul>
+    <li><b>No data leaves your computer.</b> The app has no accounts, no analytics, no crash reporting, no ads and no auto-updater. I receive nothing from you.</li>
+    <li><b>Local-only communication.</b> Agent hooks report to the app over <code>http://127.0.0.1:47800</code>, a loopback address that other machines can't reach.</li>
+    <li><b>What it reads.</b> Events from your agents: project name, session, task, tool being used, permission requests, progress, and (for Claude Code, via its status line) usage-limit percentages. It also reads your agents' config files to add or remove its hooks.</li>
+    <li><b>What it stores.</b> Small files in the app's own data folder on your PC: recently used projects, session names you chose, and a flag that setup finished. Uninstalling removes the app; delete its data folder to remove these.</li>
+    <li><b>Nothing is shared</b> with anyone, because nothing is collected.</li>
+  </ul>
+  <p>Your agents themselves (Claude Code, Antigravity, etc.) send data to their own providers under their own policies. Agent Notch doesn't change that and isn't part of it.</p>
+
+  <h3>This website</h3>
+  <ul>
+    <li>It is a static page with no cookies, no analytics and no forms.</li>
+    <li>Fonts load from Google Fonts, so Google receives your IP address and browser details when the page loads, under <a href="https://policies.google.com/privacy">Google's privacy policy</a>.</li>
+    <li>Links to GitHub take you to a site with its own policy. Downloads are served by GitHub.</li>
+    <li>If you open an issue or contact me on GitHub, that is handled under GitHub's terms and I see what you choose to post.</li>
+  </ul>
+
+  <h3>Your rights</h3>
+  <p>Since I hold no personal data about you, there's nothing to access, correct or delete on my side. Questions or concerns? <a href="https://github.com/KurianJose7586/notch/issues">Open an issue</a>.</p>
+</main>
+
+<footer>© 2026 Kurian Jose · <a href="./">Back to the notch</a></footer>
+</body>
+</html>

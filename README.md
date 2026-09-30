@@ -27,6 +27,7 @@ A Dynamic-Island-style notch for Windows that shows what every coding agent is d
 - **One glance**: every agent grouped by project, with its state (working, needs you, done, stopped), current task, last action and progress.
 - **Needs you?** The notch glows and peeks the request. Press **Y** to allow or **N** to deny, or jump straight to that terminal.
 - **AUTO for Antigravity**: presses Enter on `agy`'s permission prompts for you, only when the prompt is actually on screen.
+- **Approve from your phone**: switch it on in Setup, scan the QR code, and your phone shows the same request with big **Allow** / **Deny** buttons, buzzing when an agent needs you.
 - **Grid**: one click (or **Ctrl+Alt+G**) tiles every agent window.
 - **Usage limits**: Claude's 5-hour and weekly limits as bars, with a heads-up at 80% and 95%. An agent that hits a limit or an error shows **Stopped**, not "Working".
 - **Launch agents** from the notch, several at once, optionally each in its own git worktree.
@@ -64,6 +65,16 @@ Requirements: Windows 10 or 11. Terminal agents are found in Windows Terminal or
 | **G / C** | Tile windows / clear finished |
 | **S / ,** | Sound on or off / Setup |
 | **I** | All shortcuts |
+
+## Approve from your phone
+
+Off by default. Turn it on in **Setup → Approve from your phone** and scan the QR code with your phone's camera. It opens a small web page from your PC, so there is no app to install and nothing goes through the internet.
+
+- Works on the same Wi-Fi as your PC. Windows may ask to let Agent Notch through the firewall the first time: choose **Private networks**.
+- The link contains a secret token. Anyone on your network who has it can approve requests, so don't share it. **New link** in Setup replaces the token and cuts off every phone paired before.
+- The phone can only allow or deny requests that are waiting right now, and can't do anything else. Requests wait up to 55 seconds for an answer while this is on (30 otherwise); after that the agent asks in its own terminal as usual.
+- Buzzing works on Android. iPhones show the request but can't vibrate a web page.
+- It listens on port 47801. The hook server agents talk to stays on `127.0.0.1` only.
 
 ## What connecting an agent changes
 
@@ -115,6 +126,7 @@ git push origin v0.2.0
 | `index.html`, `preload.js` | The notch UI |
 | `state.js` | Turns each agent's hook events into one session model |
 | `hook.js`, `plugin.js` | What agents run: the hook script, and the OpenCode/Kilo plugin |
+| `phone.js`, `phone.html` | Approve from your phone: the Wi-Fi server, pairing token, and the phone page |
 | `setup.js` | Connects and disconnects agents' configs |
 | `launch.js` | Launches agents (and git worktrees) in Windows Terminal |
 | `win.ps1` | Win32 helpers: find, focus, tile, read and press Enter in terminal windows |
