@@ -1,0 +1,60 @@
+{
+  "name": "agent-notch",
+  "version": "0.1.0",
+  "private": true,
+  "main": "boot.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node state.js && node launch.js",
+    "setup": "npm install && node setup.js && electron .",
+    "install-hooks": "node setup.js",
+    "remove-hooks": "node setup.js --remove",
+    "dist": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3"
+  },
+  "description": "A Dynamic-Island-style notch that tracks and manages your coding agents",
+  "build": {
+    "appId": "dev.agentnotch.app",
+    "productName": "Agent Notch",
+    "executableName": "agent-notch",
+    "asar": false,
+    "files": [
+      "boot.js",
+      "main.js",
+      "hook.js",
+      "state.js",
+      "launch.js",
+      "setup.js",
+      "plugin.js",
+      "preload.js",
+      "index.html",
+      "win.ps1"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "include": "build/installer.nsh",
+      "shortcutName": "Agent Notch",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "extraFiles": [
+      {
+        "from": "build/notch-hook.cmd",
+        "to": "notch-hook.cmd"
+      }
+    ]
+  },
+  "author": "Kurian Jose"
+}
