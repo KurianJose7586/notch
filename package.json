@@ -5,7 +5,7 @@
   "main": "boot.js",
   "scripts": {
     "start": "electron .",
-    "test": "node state.js && node launch.js",
+    "test": "node state.js && node launch.js && node phone.js",
     "setup": "npm install && node setup.js && electron .",
     "install-hooks": "node setup.js",
     "remove-hooks": "node setup.js --remove",
@@ -31,7 +31,9 @@
       "plugin.js",
       "preload.js",
       "index.html",
-      "win.ps1"
+      "win.ps1",
+      "phone.js",
+      "phone.html"
     ],
     "directories": {
       "output": "dist",
@@ -61,5 +63,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/KurianJose7586/notch.git"
+  },
+  "dependencies": {
+    "qrcode-generator": "^2.0.4"
   }
 }
