@@ -1,0 +1,250 @@
+{
+  "bgm": {
+    "path": "assets/bgm/mix.mp3",
+    "volume": 0.8,
+    "query": "chaos (0-15s) + silence at the freeze + calm (15.7-46s)",
+    "duration_s": 46
+  },
+  "bgm_pending": false,
+  "voices": [],
+  "sfx": [
+    {
+      "frame": 1,
+      "file": "assets/sfx/impact-hit-on-each-word.mp3",
+      "offset_s": 0,
+      "duration_s": 0.6,
+      "volume": 0.5
+    },
+    {
+      "frame": 1,
+      "file": "assets/sfx/impact-hit-on-each-word.mp3",
+      "offset_s": 0.8,
+      "duration_s": 0.6,
+      "volume": 0.5
+    },
+    {
+      "frame": 1,
+      "file": "assets/sfx/impact-hit-on-each-word.mp3",
+      "offset_s": 1.4,
+      "duration_s": 0.6,
+      "volume": 0.5
+    },
+    {
+      "frame": 1,
+      "file": "assets/sfx/impact-hit-on-each-word.mp3",
+      "offset_s": 2,
+      "duration_s": 0.6,
+      "volume": 0.5
+    },
+    {
+      "frame": 1,
+      "file": "assets/sfx/impact-hit-on-each-word.mp3",
+      "offset_s": 2.6,
+      "duration_s": 0.6,
+      "volume": 0.5
+    },
+    {
+      "frame": 1,
+      "file": "assets/sfx/impact-hit-on-each-word.mp3",
+      "offset_s": 3.2,
+      "duration_s": 0.6,
+      "volume": 0.5
+    },
+    {
+      "frame": 1,
+      "file": "assets/sfx/impact-hit-on-each-word.mp3",
+      "offset_s": 3.6,
+      "duration_s": 0.6,
+      "volume": 0.3
+    },
+    {
+      "frame": 1,
+      "file": "assets/sfx/impact-hit-on-each-word.mp3",
+      "offset_s": 3.94,
+      "duration_s": 0.6,
+      "volume": 0.3
+    },
+    {
+      "frame": 1,
+      "file": "assets/sfx/impact-hit-on-each-word.mp3",
+      "offset_s": 4.22,
+      "duration_s": 0.6,
+      "volume": 0.3
+    },
+    {
+      "frame": 1,
+      "file": "assets/sfx/keyboard-clatter-bed.mp3",
+      "offset_s": 0,
+      "duration_s": 11,
+      "volume": 0.22
+    },
+    {
+      "frame": 2,
+      "file": "assets/sfx/notification-pings-stacking.mp3",
+      "offset_s": 0.1,
+      "duration_s": 5.4,
+      "volume": 0.4
+    },
+    {
+      "frame": 2,
+      "file": "assets/sfx/error-beep.mp3",
+      "offset_s": 1.9,
+      "duration_s": 1.2,
+      "volume": 0.3
+    },
+    {
+      "frame": 2,
+      "file": "assets/sfx/error-beep.mp3",
+      "offset_s": 3.3,
+      "duration_s": 1.2,
+      "volume": 0.3
+    },
+    {
+      "frame": 3,
+      "file": "assets/sfx/record-scratch-at-the-reveal.mp3",
+      "offset_s": 1.15,
+      "duration_s": 1.5,
+      "volume": 0.5
+    },
+    {
+      "frame": 3,
+      "file": "assets/sfx/clock-ticking-fast.mp3",
+      "offset_s": 1.2,
+      "duration_s": 2.2,
+      "volume": 0.35
+    },
+    {
+      "frame": 3,
+      "file": "assets/sfx/glitch-riser-into-the-freeze.mp3",
+      "offset_s": 2.03,
+      "duration_s": 1.97,
+      "volume": 0.55
+    },
+    {
+      "frame": 4,
+      "file": "assets/sfx/then-a-soft-whoosh-down-and-a-glass-chim.mp3",
+      "offset_s": 0.7,
+      "duration_s": 1.52,
+      "volume": 0.55
+    },
+    {
+      "frame": 4,
+      "file": "assets/sfx/whoosh.mp3",
+      "offset_s": 1.8,
+      "duration_s": 1.5,
+      "volume": 0.35
+    },
+    {
+      "frame": 5,
+      "file": "assets/sfx/soft-expand-whoosh.mp3",
+      "offset_s": 0.6,
+      "duration_s": 1.5,
+      "volume": 0.4
+    },
+    {
+      "frame": 5,
+      "file": "assets/sfx/light-ticks-as-rows-land.mp3",
+      "offset_s": 0.9,
+      "duration_s": 2.2,
+      "volume": 0.22
+    },
+    {
+      "frame": 6,
+      "file": "assets/sfx/soft-alert-chime.mp3",
+      "offset_s": 0.05,
+      "duration_s": 0.72,
+      "volume": 0.4
+    },
+    {
+      "frame": 6,
+      "file": "assets/sfx/keycap-clack.mp3",
+      "offset_s": 2.4,
+      "duration_s": 0.35,
+      "volume": 0.6
+    },
+    {
+      "frame": 6,
+      "file": "assets/sfx/success-tick.mp3",
+      "offset_s": 2.75,
+      "duration_s": 0.6,
+      "volume": 0.4
+    },
+    {
+      "frame": 7,
+      "file": "assets/sfx/switch-click.mp3",
+      "offset_s": 0.6,
+      "duration_s": 0.26,
+      "volume": 0.55
+    },
+    {
+      "frame": 7,
+      "file": "assets/sfx/three-quick-enter-clicks.mp3",
+      "offset_s": 0.9,
+      "duration_s": 0.3,
+      "volume": 0.45
+    },
+    {
+      "frame": 7,
+      "file": "assets/sfx/three-quick-enter-clicks.mp3",
+      "offset_s": 1.6,
+      "duration_s": 0.3,
+      "volume": 0.45
+    },
+    {
+      "frame": 7,
+      "file": "assets/sfx/three-quick-enter-clicks.mp3",
+      "offset_s": 2.25,
+      "duration_s": 0.3,
+      "volume": 0.45
+    },
+    {
+      "frame": 7,
+      "file": "assets/sfx/counter-ticks.mp3",
+      "offset_s": 0.9,
+      "duration_s": 2,
+      "volume": 0.25
+    },
+    {
+      "frame": 8,
+      "file": "assets/sfx/keycap-clack.mp3",
+      "offset_s": 1.05,
+      "duration_s": 0.35,
+      "volume": 0.55
+    },
+    {
+      "frame": 8,
+      "file": "assets/sfx/staggered-soft-snaps.mp3",
+      "offset_s": 1.3,
+      "duration_s": 0.67,
+      "volume": 0.5
+    },
+    {
+      "frame": 9,
+      "file": "assets/sfx/soft-rising-tone-during-the-count-up.mp3",
+      "offset_s": 0.3,
+      "duration_s": 1.33,
+      "volume": 0.3
+    },
+    {
+      "frame": 9,
+      "file": "assets/sfx/alert-chime-at-the-toast.mp3",
+      "offset_s": 1.8,
+      "duration_s": 0.74,
+      "volume": 0.45
+    },
+    {
+      "frame": 10,
+      "file": "assets/sfx/the-notch-goodbye-whoosh-up.mp3",
+      "offset_s": 0.4,
+      "duration_s": 1.6,
+      "volume": 0.45
+    },
+    {
+      "frame": 10,
+      "file": "assets/sfx/then-a-clean-final-chord-hit-on-the-lock.mp3",
+      "offset_s": 1,
+      "duration_s": 4,
+      "volume": 0.5
+    }
+  ]
+}
