@@ -27,7 +27,7 @@ const done = out => { process.stdout.write(out || fallback); process.exit(0) }
 
 // ponytail: if the notch can't start at all, every hook call waits the full ~4s retry window
 function send(body, tries = 0) {
-  const req = http.request({ host: '127.0.0.1', port: 47800, method: 'POST', path: `/${agent}/${event}?pid=${process.pid}`, timeout: gate ? 45000 : 5000 }, res => {
+  const req = http.request({ host: '127.0.0.1', port: 47800, method: 'POST', path: `/${agent}/${event}?pid=${process.pid}`, timeout: gate ? 58000 : 5000 }, res => {
     let out = ''; res.on('data', c => (out += c)).on('end', () => done(out))
   })
   req.on('timeout', () => { req.destroy(); done() })

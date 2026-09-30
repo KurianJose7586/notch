@@ -6,6 +6,7 @@ const { spawn } = require('child_process')
 const { apply, tick, set } = require('./state')
 const { AGENTS, launchAgent, makeWorktree, samePath } = require('./launch')
 const setup = require('./setup')
+const createPhone = require('./phone')
 
 if (!app.requestSingleInstanceLock()) app.exit(0)
 
@@ -23,10 +24,19 @@ function goodbye(kind, then) {
 const quit = () => { fs.writeFileSync(QUIT_MARK, ''); goodbye('quit', () => app.quit()) }
 const reload = () => goodbye('reload', () => { app.relaunch(); app.exit(0) }) // full restart: picks up code changes and replays the welcome
 
-const HOLD_MS = 30000 // how long a permission waits in the notch before falling back to the agent's own prompt
+// How long a permission waits in the notch before falling back to the agent's own prompt. Longer with a phone paired,
+// since you may have walked away; the hooks give up at 58s (hook.js, plugin.js), Claude and agy at 60s (setup.js).
+const holdMs = () => phone.enabled ? 55000 : 30000
 const sessions = {}
 const held = {} // session key -> { res, agent, timer }: permission requests waiting on your click
 let win, foreground = null, keyboard = false
+
+// What a paired phone may see: each agent's state, and the request only while it is really waiting on an answer.
+const phone = createPhone({
+  file: path.join(app.getPath('userData'), 'phone.json'),
+  list: () => Object.values(sessions).map(s => ({ key: s.key, agent: s.agent, project: s.project, label: s.label, state: s.state, action: s.action, task: s.task, ask: held[s.key] ? s.request : null })),
+  decide: (key, choice) => decide(key, choice),
+})
 
 // Win32 helper (window lookup, focus, grid), one line in, one line out.
 const helper = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(__dirname, 'win.ps1')], { windowsHide: true })
@@ -41,7 +51,7 @@ const win32 = cmd => new Promise(r => { waiting.push(r); helper.stdin.write(cmd 
 // Usage limits the agents report. Claude's come from its status line: rate_limits.five_hour / seven_day, each
 // { used_percentage, resets_at (epoch s) }, only for Pro/Max plans and after the session's first reply.
 const limits = {}
-const push = () => win?.webContents.send('sessions', Object.values(sessions), limits)
+const push = () => { win?.webContents.send('sessions', Object.values(sessions), limits); phone.broadcast() }
 const clock = epochS => new Date(epochS * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 
 // What Claude shows in its status line: context use, then the 5-hour and weekly limits, coloured as they fill up.
@@ -194,7 +204,7 @@ async function handleEvent(agent, event, body, url, res) {
   s.request = describeRequest(agent, p)
   s.action = s.request.title
   set(s, 'waiting', Date.now())
-  held[s.key] = { res, agent, timer: setTimeout(() => decide(s.key, 'ask'), HOLD_MS) }
+  held[s.key] = { res, agent, timer: setTimeout(() => decide(s.key, 'ask'), holdMs()) }
   res.on('close', () => { // agent gave up on the hook (Ctrl+C, timeout): drop the request
     if (held[s.key]?.res === res && !res.writableEnded) { clearTimeout(held[s.key].timer); delete held[s.key]; s.request = null; push() }
   })
@@ -326,6 +336,9 @@ ipcMain.handle('setup-limits', (_, on) => {
 })
 ipcMain.handle('setup-login', (_, on) => { app.setLoginItemSettings({ openAtLogin: !!on, ...loginOpts() }); return app.getLoginItemSettings(loginOpts()).openAtLogin })
 ipcMain.handle('setup-done', () => { fs.writeFileSync(SETUP_DONE, ''); return true })
+ipcMain.handle('phone-info', () => phone.info())
+ipcMain.handle('phone-set', (_, on) => { phone.set(!!on); return phone.info() })
+ipcMain.handle('phone-renew', () => { phone.renew(); return phone.info() })
 ipcMain.on('quit', quit)
 ipcMain.on('reload', reload)
 ipcMain.on('goodbye-done', () => leaving?.())
@@ -341,6 +354,7 @@ function size(full) {
 ipcMain.on('size', (_, full) => size(!!full))
 
 app.whenReady().then(() => {
+  phone.start()
   // Bring connected agents' hooks up to date with this version and point them at this copy
   try { setup.refresh(hookRunner()) } catch (e) { console.error('hook refresh failed:', e.message) }
   const { bounds } = screen.getPrimaryDisplay(), { width: W, height: H } = SIZES.compact

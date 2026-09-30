@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Notch</title>
+<style>
+  :root { --blue: #0A84FF; --green: #30D158; --orange: #FF9F0A; --red: #FF453A; --sec: rgba(235,235,245,.6); --ter: rgba(235,235,245,.3); }
+  * { box-sizing: border-box; margin: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: #000; color: #fff; font: 15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; padding: max(18px, env(safe-area-inset-top)) 16px 40px; min-height: 100vh; }
+  body.alert { animation: flash 1s ease-out; }
+  @keyframes flash { from { background: #3a2500; } to { background: #000; } }
+  header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -.02em; flex: 1; }
+  #link { font-size: 12px; color: var(--sec); display: flex; align-items: center; gap: 6px; }
+  #link i { width: 8px; height: 8px; border-radius: 50%; background: var(--red); }
+  #link.on i { background: var(--green); }
+  h2 { font-size: 12px; font-weight: 600; color: var(--sec); letter-spacing: .04em; text-transform: uppercase; margin: 22px 4px 8px; }
+  .card { background: #1c1c1e; border-radius: 18px; overflow: hidden; margin-bottom: 12px; }
+  .ask { border: 1.5px solid rgba(255,159,10,.55); box-shadow: 0 0 28px rgba(255,159,10,.18); padding: 16px; animation: pop .35s cubic-bezier(.2,1.3,.4,1); }
+  @keyframes pop { from { opacity: 0; transform: scale(.94); } }
+  .ask .who { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 17px; }
+  .ask .proj { color: var(--sec); font-weight: 500; font-size: 13px; margin-left: auto; }
+  .ask .what { margin-top: 10px; font-weight: 600; color: var(--orange); }
+  .ask code { display: block; margin-top: 6px; padding: 10px 12px; border-radius: 10px; background: #000; color: rgba(255,255,255,.85); font: 13px/1.45 ui-monospace, "Cascadia Mono", Consolas, monospace; word-break: break-all; max-height: 9em; overflow: auto; }
+  .btns { display: grid; grid-template-columns: 1fr 1.6fr; gap: 10px; margin-top: 14px; }
+  button { font: inherit; font-weight: 700; font-size: 18px; height: 56px; border: 0; border-radius: 16px; color: #fff; }
+  button:active { transform: scale(.96); }
+  .deny { background: rgba(255,255,255,.14); } .allow { background: var(--blue); box-shadow: 0 6px 22px rgba(10,132,255,.4); }
+  button:disabled { opacity: .5; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+  .row + .row { border-top: .5px solid rgba(84,84,88,.45); }
+  .dot { width: 30px; height: 30px; border-radius: 9px; flex: none; display: grid; place-items: center; font-weight: 700; font-size: 14px; color: #000; }
+  .row .body { flex: 1; min-width: 0; }
+  .row b { font-size: 15px; } .row .act { color: var(--sec); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .st { font-size: 12px; font-weight: 600; } .working { color: var(--blue); } .waiting { color: var(--orange); } .done { color: var(--green); } .error { color: #FF6961; } .idle { color: var(--ter); }
+  .empty { text-align: center; color: var(--ter); padding: 40px 0; }
+</style>
+</head>
+<body>
+<header><h1>Notch</h1><span id="link"><i></i><span>Connecting…</span></span></header>
+<div id="asks"></div>
+<h2 id="h-all" hidden>Agents</h2>
+<div id="all" class="card" hidden></div>
+<div id="empty" class="empty">No agents running</div>
+<script>
+const NAMES = { claude: 'Claude', agy: 'Antigravity', opencode: 'OpenCode', kilo: 'Kilo', copilot: 'Copilot' }
+const COLOR = { claude: '#D97757', agy: '#3DBE6A', opencode: '#EDE8E6', kilo: '#F8F675', copilot: '#8B5CF6' }
+const STATE = { working: 'Working', waiting: 'Needs you', error: 'Stopped', done: 'Done', idle: 'Idle' }
+const token = new URLSearchParams(location.search).get('t')
+const $ = id => document.getElementById(id)
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e }
+let pending = 0
+
+function render(list) {
+  const asks = list.filter(s => s.ask)
+  if (asks.length > pending) { navigator.vibrate?.([220, 90, 220]); document.body.classList.remove('alert'); void document.body.offsetWidth; document.body.classList.add('alert') }
+  pending = asks.length
+  document.title = pending ? `(${pending}) Notch needs you` : 'Notch'
+
+  $('asks').replaceChildren(...asks.map(s => {
+    const c = el('div', 'card ask'), who = el('div', 'who')
+    const d = el('span', 'dot', (NAMES[s.agent] || '?')[0]); d.style.background = COLOR[s.agent] || '#888'
+    who.append(d, el('span', '', s.label || NAMES[s.agent] || s.agent), el('span', 'proj', s.project))
+    const btns = el('div', 'btns'), no = el('button', 'deny', 'Deny'), yes = el('button', 'allow', 'Allow')
+    for (const [b, choice] of [[no, 'deny'], [yes, 'allow']]) b.onclick = async () => {
+      btns.querySelectorAll('button').forEach(x => x.disabled = true)
+      navigator.vibrate?.(30)
+      await fetch('/decide?t=' + encodeURIComponent(token), { method: 'POST', body: JSON.stringify({ key: s.key, choice }) }).catch(() => {})
+    }
+    btns.append(no, yes)
+    c.append(who, el('div', 'what', s.ask.title))
+    if (s.ask.detail) c.append(el('code', '', s.ask.detail))
+    c.append(btns)
+    return c
+  }))
+
+  $('all').replaceChildren(...list.map(s => {
+    const r = el('div', 'row'), d = el('span', 'dot', (NAMES[s.agent] || '?')[0]), b = el('div', 'body')
+    d.style.background = COLOR[s.agent] || '#888'
+    b.append(el('b', '', (s.label || NAMES[s.agent] || s.agent) + ' · ' + s.project), el('div', 'act', s.task || s.action || ''))
+    r.append(d, b, el('span', 'st ' + s.state, STATE[s.state] || s.state))
+    return r
+  }))
+  for (const id of ['all', 'h-all']) $(id).hidden = !list.length
+  $('empty').hidden = !!list.length
+}
+
+function connect() {
+  const es = new EventSource('/events?t=' + encodeURIComponent(token))
+  const link = (on, text) => { $('link').classList.toggle('on', on); $('link').lastChild.textContent = text }
+  es.onopen = () => link(true, 'Live')
+  es.onmessage = e => render(JSON.parse(e.data))
+  es.onerror = () => link(false, 'Reconnecting…') // EventSource retries by itself
+}
+connect()
+</script>
+</body>
+</html>
