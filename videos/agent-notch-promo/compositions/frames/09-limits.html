@@ -1,0 +1,133 @@
+<template>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+@font-face { font-family: "Notch Sans"; src: url("assets/fonts/SegUIVar.ttf"); font-weight: 100 900; }
+@font-face { font-family: "Notch Mono"; src: url("assets/fonts/CascadiaMono.ttf"); }
+#root { position: absolute; inset: 0; overflow: hidden; }
+
+[data-composition-id="09-limits"] { font-family: "Notch Sans", sans-serif; color: #fff; }
+[data-composition-id="09-limits"] .bg { position: absolute; inset: 0; background: #000; }
+[data-composition-id="09-limits"] .cam, [data-composition-id="09-limits"] .cam2 { position: absolute; inset: 0; }
+[data-composition-id="09-limits"] .wall { position: absolute; inset: 0; background: radial-gradient(120% 90% at 30% 20%, #34405e, #1a1f2e 60%, #0d0f16); }
+[data-composition-id="09-limits"] .h { position: absolute; font-weight: 700; font-variation-settings: "opsz" 36; letter-spacing: -.045em; line-height: 1.04; text-transform: lowercase; color: #fff; }
+[data-composition-id="09-limits"] .h div { display: block; }
+[data-composition-id="09-limits"] .o { color: #FF9F0A; } [data-composition-id="09-limits"] .b { color: #0A84FF; } [data-composition-id="09-limits"] .r { color: #FF453A; } [data-composition-id="09-limits"] .g { color: #30D158; }
+[data-composition-id="09-limits"] .term { position: absolute; width: 500px; height: 300px; background: #0c0c0c; border: 2px solid #3a3a3a; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,.6); overflow: hidden; }
+[data-composition-id="09-limits"] .term .bar { height: 40px; background: #202020; display: flex; align-items: center; gap: 12px; padding: 0 16px; font-size: 19px; color: #ddd; }
+[data-composition-id="09-limits"] .term .bar img { width: 22px; height: 22px; }
+[data-composition-id="09-limits"] .term .tx { padding: 14px 18px; font: 19px/1.5 "Notch Mono", monospace; color: #c8c8c8; white-space: pre; }
+[data-composition-id="09-limits"] .pill { position: absolute; left: 0; right: 0; margin: 0 auto; top: 36px; width: max-content; height: 72px; border-radius: 36px; background: #000;
+          display: flex; align-items: center; gap: 18px; padding: 0 30px 0 26px; font-size: 27px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap;
+          box-shadow: 0 0 0 1px rgba(255,255,255,.1) inset, 0 24px 64px rgba(0,0,0,.55), 0 4px 12px rgba(0,0,0,.4); }
+[data-composition-id="09-limits"] .rim { position: absolute; inset: 0; border-radius: inherit; padding: 3px; --spin: 0deg;
+         background: conic-gradient(from var(--spin), transparent 0deg 240deg, rgba(10,132,255,.9) 315deg, rgba(191,90,242,.95) 342deg, transparent 360deg);
+         -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+[data-composition-id="09-limits"] .dots { position: relative; display: flex; }
+[data-composition-id="09-limits"] .dots i { display: block; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #000; margin-left: -9px; }
+[data-composition-id="09-limits"] .dots i:first-child { margin-left: 0; }
+[data-composition-id="09-limits"] .tile { display: grid; place-items: center; border-radius: 22%; box-shadow: 0 0 0 1px rgba(255,255,255,.12) inset, 0 2px 4px rgba(0,0,0,.4); flex: none; }
+[data-composition-id="09-limits"] .tile img { width: 62%; height: 62%; }
+[data-composition-id="09-limits"] .tile.agy img, [data-composition-id="09-limits"] .tile.kilo img { width: 80%; height: 80%; }
+[data-composition-id="09-limits"] .claude { background: #F4EFE6; } [data-composition-id="09-limits"] .agy { background: linear-gradient(160deg, #24252B, #131418); }
+[data-composition-id="09-limits"] .opencode { background: linear-gradient(160deg, #262222, #121010); } [data-composition-id="09-limits"] .kilo { background: #0B0B0B; }
+[data-composition-id="09-limits"] .copilot { background: linear-gradient(160deg, #3B2A6B, #17112E); }
+[data-composition-id="09-limits"] .key { position: absolute; display: grid; place-items: center; background: linear-gradient(#2c2c2e, #1c1c1e); border: 3px solid #48484a; color: #fff; font-weight: 700;
+         box-shadow: 0 10px 0 #0a0a0a, 0 24px 48px rgba(0,0,0,.55); }
+[data-composition-id="09-limits"] .card { position: absolute; background: #1c1c1e; border-radius: 28px; }
+[data-composition-id="09-limits"] .spin { display: inline-block; border-radius: 50%; border: 3px solid rgba(10,132,255,.25); border-top-color: #0A84FF; }
+
+[data-composition-id="09-limits"] .panel { position: absolute; width: 460px; padding: 18px 16px 14px; background: #000; border-radius: 34px; box-shadow: 0 0 0 1px rgba(255,255,255,.09) inset, 0 30px 80px rgba(0,0,0,.6); font-size: 13px; line-height: 1.35; }
+[data-composition-id="09-limits"] .phead { display: flex; align-items: center; gap: 10px; padding: 0 6px 2px; }
+[data-composition-id="09-limits"] .phead h1 { font-size: 17px; font-weight: 600; letter-spacing: -.02em; margin: 0; }
+[data-composition-id="09-limits"] .phead .summary { flex: 1; text-align: right; color: rgba(235,235,245,.6); font-size: 12px; }
+[data-composition-id="09-limits"] .round { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,.1); display: grid; place-items: center; font-size: 15px; font-weight: 700; }
+[data-composition-id="09-limits"] .group { margin-top: 14px; }
+[data-composition-id="09-limits"] .gtitle { display: flex; justify-content: space-between; padding: 0 8px 6px; font-size: 12px; font-weight: 600; color: rgba(235,235,245,.6); }
+[data-composition-id="09-limits"] .gtitle span:last-child { color: rgba(235,235,245,.55); font-weight: 500; }
+[data-composition-id="09-limits"] .gcard { background: #1c1c1e; border-radius: 14px; overflow: hidden; }
+[data-composition-id="09-limits"] .row { position: relative; display: flex; gap: 12px; padding: 11px 12px; }
+[data-composition-id="09-limits"] .row + .row::before { content: ""; position: absolute; top: 0; left: 56px; right: 0; height: 1px; background: rgba(84,84,88,.45); }
+[data-composition-id="09-limits"] .row.waiting { background: rgba(255,159,10,.08); }
+[data-composition-id="09-limits"] .row.error { background: rgba(255,69,58,.1); }
+[data-composition-id="09-limits"] .row .tile { position: relative; }
+[data-composition-id="09-limits"] .unread { position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; border-radius: 50%; background: #0A84FF; box-shadow: 0 0 0 2.5px #1c1c1e; }
+[data-composition-id="09-limits"] .body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+[data-composition-id="09-limits"] .name { font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
+[data-composition-id="09-limits"] .tag { margin-left: 7px; padding: 1px 6px; border-radius: 5px; background: rgba(255,255,255,.1); color: rgba(235,235,245,.6); font-size: 10.5px; font-weight: 600; }
+[data-composition-id="09-limits"] .task { color: rgba(255,255,255,.86); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-composition-id="09-limits"] .action { color: rgba(235,235,245,.6); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-composition-id="09-limits"] .row.error .action { color: #FF8A80; }
+[data-composition-id="09-limits"] .progress { display: flex; align-items: center; gap: 8px; margin-top: 5px; color: rgba(235,235,245,.6); font-size: 11.5px; }
+[data-composition-id="09-limits"] .track { flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,.1); overflow: hidden; }
+[data-composition-id="09-limits"] .track i { display: block; height: 100%; width: 43%; border-radius: 2px; background: #0A84FF; }
+[data-composition-id="09-limits"] .side { flex: none; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; gap: 8px; }
+[data-composition-id="09-limits"] .status { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
+[data-composition-id="09-limits"] .status.working { color: #0A84FF; } [data-composition-id="09-limits"] .status.waiting { color: #FF9F0A; } [data-composition-id="09-limits"] .status.done { color: #30D158; } [data-composition-id="09-limits"] .status.error { color: #FF6961; }
+[data-composition-id="09-limits"] .ind { display: inline-block; border-radius: 50%; flex: none; }
+[data-composition-id="09-limits"] .ind.w { width: 11px; height: 11px; border: 1.8px solid rgba(10,132,255,.25); border-top-color: #0A84FF; }
+[data-composition-id="09-limits"] .ind.q { width: 7px; height: 7px; background: #FF9F0A; }
+[data-composition-id="09-limits"] .ind.e { width: 7px; height: 7px; background: #FF453A; box-shadow: 0 0 0 3px rgba(255,69,58,.22); }
+[data-composition-id="09-limits"] .ind.d { width: 11px; height: 11px; border-radius: 0; fill: none; stroke: #30D158; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+[data-composition-id="09-limits"] .auto { display: flex; align-items: center; gap: 10px; }
+[data-composition-id="09-limits"] .sw { display: flex; align-items: center; gap: 6px; color: rgba(235,235,245,.55); font-size: 11px; font-weight: 600; }
+[data-composition-id="09-limits"] .sw .knob { position: relative; width: 34px; height: 20px; border-radius: 10px; background: rgba(120,120,128,.36); }
+[data-composition-id="09-limits"] .sw .knob::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 8px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,.3); }
+[data-composition-id="09-limits"] .sw.on { color: #30D158; } [data-composition-id="09-limits"] .sw.on .knob { background: #30D158; } [data-composition-id="09-limits"] .sw.on .knob::after { left: 16px; }
+[data-composition-id="09-limits"] .timer { color: rgba(235,235,245,.55); font-size: 11.5px; min-width: 24px; text-align: right; }
+[data-composition-id="09-limits"] .row.waiting .timer { color: #FF9F0A; font-weight: 600; }
+
+[data-composition-id="09-limits"] .lcard { left: 150px; top: 250px; width: 820px; padding: 34px 38px; display: flex; gap: 34px; align-items: center; }
+[data-composition-id="09-limits"] .lim { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+[data-composition-id="09-limits"] .lim .top { display: flex; justify-content: space-between; font-size: 30px; color: rgba(235,235,245,.6); }
+[data-composition-id="09-limits"] .lim .top b { color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; }
+[data-composition-id="09-limits"] .lim .tr { height: 14px; border-radius: 7px; background: rgba(255,255,255,.1); overflow: hidden; }
+[data-composition-id="09-limits"] .lim .tr i { display: block; height: 100%; border-radius: 7px; background: #0A84FF; width: 0%; }
+[data-composition-id="09-limits"] .lim .when { font-size: 24px; color: rgba(235,235,245,.55); }
+[data-composition-id="09-limits"] .toast { position: absolute; left: 0; right: 0; margin: 0 auto; top: 36px; width: 900px; height: 116px; border-radius: 58px; background: #000; display: flex; align-items: center; gap: 22px; padding: 0 40px 0 26px;
+           box-shadow: 0 0 0 1.5px rgba(255,159,10,.55) inset, 0 16px 70px rgba(255,159,10,.3); transform-origin: 50% 0; }
+[data-composition-id="09-limits"] .toast b { display: block; font-size: 31px; font-weight: 600; color: #FF9F0A; }
+[data-composition-id="09-limits"] .toast span { font-size: 25px; color: rgba(235,235,245,.6); }
+[data-composition-id="09-limits"] .srow { position: absolute; left: 150px; top: 560px; width: 820px; }
+[data-composition-id="09-limits"] .srow .sc { transform: scale(1.78); transform-origin: 0 0; width: 460px; }
+[data-composition-id="09-limits"] .srow .gcard { border-radius: 16px; }
+[data-composition-id="09-limits"] .head { left: 1080px; top: 300px; font-size: 128px; }
+
+</style>
+<div id="root" data-composition-id="09-limits" data-width="1920" data-height="1080">
+  <div class="bg clip" id="f09-limits-bg" data-start="0" data-duration="4" data-track-index="0"></div>
+  <div class="clip" id="f09-limits-content" data-start="0" data-duration="4" data-track-index="1" style="position:absolute;inset:0">
+      <div class="pill" id="f09-pill"><div data-layout-allow-overlap class="rim" style="--spin:200deg"></div><span class="dots"><i style="background:#D97757"></i><i style="background:#3DBE6A"></i><i style="background:#EDE8E6"></i><i style="background:#F8F675"></i></span><span>4 working</span></div>
+      <div class="toast" id="f09-toast"><div class="tile claude" style="width:64px;height:64px"><img src="assets/logo-claude.svg" alt=""></div><div><b>Claude at 82% of your 5-hour limit</b><span>Resets Wed 11:06 PM</span></div></div>
+      <div class="card lcard" id="f09-card"><div class="tile claude" style="width:64px;height:64px"><img src="assets/logo-claude.svg" alt=""></div>
+        <div class="lim"><div class="top"><span>5-hour</span><b id="f09-p0">0%</b></div><div class="tr"><i id="f09-b0"></i></div><span class="when">resets 11:06 PM</span></div>
+        <div class="lim"><div class="top"><span>Weekly</span><b id="f09-p1">0%</b></div><div class="tr"><i id="f09-b1"></i></div><span class="when">resets Sun</span></div>
+      </div>
+      <div class="srow" id="f09-row"><div class="sc"><div data-layout-allow-overlap class="gcard"><div data-layout-allow-overlap class="row error">
+        <div class="tile claude" style="width:32px;height:32px;border-radius:9px"><img src="assets/logo-claude.svg" alt=""></div>
+        <div data-layout-allow-overlap class="body"><div class="name">Claude</div><div class="task">Refactor the API layer</div><div class="action">Usage limit reached · resets 10:16 PM</div></div>
+        <div class="side"><div class="status error"><span class="ind e"></span>Stopped</div><span class="timer">40s</span></div>
+      </div></div></div></div>
+      <div class="h head"><div data-layout-allow-overlap id="f09-l0">know before</div><div data-layout-allow-overlap id="f09-l1">you hit</div><div data-layout-allow-overlap id="f09-l2" class="b">the wall.</div></div>
+  </div>
+</div>
+<script>
+(function () {
+  const R = document.querySelector('[data-composition-id="09-limits"]')
+  const $ = s => R.querySelector(s), $$ = s => Array.from(R.querySelectorAll(s))
+  const tl = gsap.timeline({ paused: true })
+
+  tl.fromTo($('#f09-card'), { opacity: 0, x: -60 }, { opacity: 1, x: 0, duration: .5, ease: "power3.out" }, 0)
+  const p0 = $('#f09-p0'), p1 = $('#f09-p1'), v = { a: 0, b: 0 }
+  tl.fromTo(v, { a: 0, b: 0 }, { a: 82, b: 41, duration: 1.5, ease: "power2.out", onUpdate: () => { p0.textContent = Math.round(v.a) + '%'; p1.textContent = Math.round(v.b) + '%' } }, .3)
+  tl.fromTo($('#f09-b0'), { width: "0%" }, { width: "82%", duration: 1.5, ease: "power2.out" }, .3)
+  tl.fromTo($('#f09-b1'), { width: "0%" }, { width: "41%", duration: 1.5, ease: "power2.out" }, .3)
+  tl.to($('#f09-b0'), { backgroundColor: "#FF9F0A", duration: .3 }, .95)
+  tl.to($('#f09-pill'), { opacity: 0, scale: .9, duration: .2, ease: "power2.in" }, 1.75)
+  tl.fromTo($('#f09-toast'), { opacity: 0, scaleX: .55, scaleY: .6 }, { opacity: 1, scaleX: 1, scaleY: 1, duration: .6, ease: "back.out(1.4)" }, 1.8)
+  tl.fromTo($('#f09-row'), { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .5, ease: "power3.out" }, 2.6)
+  ;['#f09-l0', '#f09-l1', '#f09-l2'].forEach((s, i) => tl.fromTo($(s), { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: .6, ease: "power3.out" }, 2.8 + i * .2))
+
+  window.__timelines["09-limits"] = tl
+})()
+</script>
+</template>

@@ -1,0 +1,112 @@
+<template>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+@font-face { font-family: "Notch Sans"; src: url("assets/fonts/SegUIVar.ttf"); font-weight: 100 900; }
+@font-face { font-family: "Notch Mono"; src: url("assets/fonts/CascadiaMono.ttf"); }
+#root { position: absolute; inset: 0; overflow: hidden; }
+
+[data-composition-id="06-one-key"] { font-family: "Notch Sans", sans-serif; color: #fff; }
+[data-composition-id="06-one-key"] .bg { position: absolute; inset: 0; background: #000; }
+[data-composition-id="06-one-key"] .cam, [data-composition-id="06-one-key"] .cam2 { position: absolute; inset: 0; }
+[data-composition-id="06-one-key"] .wall { position: absolute; inset: 0; background: radial-gradient(120% 90% at 30% 20%, #34405e, #1a1f2e 60%, #0d0f16); }
+[data-composition-id="06-one-key"] .h { position: absolute; font-weight: 700; font-variation-settings: "opsz" 36; letter-spacing: -.045em; line-height: 1.04; text-transform: lowercase; color: #fff; }
+[data-composition-id="06-one-key"] .h div { display: block; }
+[data-composition-id="06-one-key"] .o { color: #FF9F0A; } [data-composition-id="06-one-key"] .b { color: #0A84FF; } [data-composition-id="06-one-key"] .r { color: #FF453A; } [data-composition-id="06-one-key"] .g { color: #30D158; }
+[data-composition-id="06-one-key"] .term { position: absolute; width: 500px; height: 300px; background: #0c0c0c; border: 2px solid #3a3a3a; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,.6); overflow: hidden; }
+[data-composition-id="06-one-key"] .term .bar { height: 40px; background: #202020; display: flex; align-items: center; gap: 12px; padding: 0 16px; font-size: 19px; color: #ddd; }
+[data-composition-id="06-one-key"] .term .bar img { width: 22px; height: 22px; }
+[data-composition-id="06-one-key"] .term .tx { padding: 14px 18px; font: 19px/1.5 "Notch Mono", monospace; color: #c8c8c8; white-space: pre; }
+[data-composition-id="06-one-key"] .pill { position: absolute; left: 0; right: 0; margin: 0 auto; top: 36px; width: max-content; height: 72px; border-radius: 36px; background: #000;
+          display: flex; align-items: center; gap: 18px; padding: 0 30px 0 26px; font-size: 27px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap;
+          box-shadow: 0 0 0 1px rgba(255,255,255,.1) inset, 0 24px 64px rgba(0,0,0,.55), 0 4px 12px rgba(0,0,0,.4); }
+[data-composition-id="06-one-key"] .rim { position: absolute; inset: 0; border-radius: inherit; padding: 3px; --spin: 0deg;
+         background: conic-gradient(from var(--spin), transparent 0deg 240deg, rgba(10,132,255,.9) 315deg, rgba(191,90,242,.95) 342deg, transparent 360deg);
+         -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+[data-composition-id="06-one-key"] .dots { position: relative; display: flex; }
+[data-composition-id="06-one-key"] .dots i { display: block; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #000; margin-left: -9px; }
+[data-composition-id="06-one-key"] .dots i:first-child { margin-left: 0; }
+[data-composition-id="06-one-key"] .tile { display: grid; place-items: center; border-radius: 22%; box-shadow: 0 0 0 1px rgba(255,255,255,.12) inset, 0 2px 4px rgba(0,0,0,.4); flex: none; }
+[data-composition-id="06-one-key"] .tile img { width: 62%; height: 62%; }
+[data-composition-id="06-one-key"] .tile.agy img, [data-composition-id="06-one-key"] .tile.kilo img { width: 80%; height: 80%; }
+[data-composition-id="06-one-key"] .claude { background: #F4EFE6; } [data-composition-id="06-one-key"] .agy { background: linear-gradient(160deg, #24252B, #131418); }
+[data-composition-id="06-one-key"] .opencode { background: linear-gradient(160deg, #262222, #121010); } [data-composition-id="06-one-key"] .kilo { background: #0B0B0B; }
+[data-composition-id="06-one-key"] .copilot { background: linear-gradient(160deg, #3B2A6B, #17112E); }
+[data-composition-id="06-one-key"] .key { position: absolute; display: grid; place-items: center; background: linear-gradient(#2c2c2e, #1c1c1e); border: 3px solid #48484a; color: #fff; font-weight: 700;
+         box-shadow: 0 10px 0 #0a0a0a, 0 24px 48px rgba(0,0,0,.55); }
+[data-composition-id="06-one-key"] .card { position: absolute; background: #1c1c1e; border-radius: 28px; }
+[data-composition-id="06-one-key"] .spin { display: inline-block; border-radius: 50%; border: 3px solid rgba(10,132,255,.25); border-top-color: #0A84FF; }
+
+[data-composition-id="06-one-key"] .pill.warn { box-shadow: 0 0 0 1.5px rgba(255,159,10,.55) inset, 0 16px 70px rgba(255,159,10,.3), 0 4px 12px rgba(0,0,0,.4); }
+[data-composition-id="06-one-key"] .lbl { position: relative; display: flex; align-items: center; gap: 14px; }
+[data-composition-id="06-one-key"] .lbl .sub { color: rgba(235,235,245,.6); font-weight: 500; font-size: 25px; }
+[data-composition-id="06-one-key"] .lbl2 { position: absolute; left: 0; top: 0; bottom: 0; display: flex; align-items: center; }
+[data-composition-id="06-one-key"] .peek { position: absolute; left: 0; right: 0; margin: 0 auto; top: 140px; width: 860px; padding: 26px 30px; background: #000; border-radius: 40px; display: flex; gap: 24px;
+          box-shadow: 0 0 0 1.5px rgba(255,159,10,.4) inset, 0 30px 80px rgba(0,0,0,.6); transform-origin: 50% 0; }
+[data-composition-id="06-one-key"] .pbody { flex: 1; display: flex; flex-direction: column; gap: 6px; position: relative; }
+[data-composition-id="06-one-key"] .ptitle { font-size: 31px; font-weight: 600; color: #FF9F0A; }
+[data-composition-id="06-one-key"] .pcmd { font: 25px "Notch Mono", monospace; color: rgba(235,235,245,.75); }
+[data-composition-id="06-one-key"] .acts { display: flex; gap: 16px; margin-top: 14px; }
+[data-composition-id="06-one-key"] .acts span { height: 56px; padding: 0 28px; border-radius: 28px; display: flex; align-items: center; gap: 10px; font-size: 25px; font-weight: 600; }
+[data-composition-id="06-one-key"] .acts kbd { font: 600 19px "Notch Mono", monospace; opacity: .6; }
+[data-composition-id="06-one-key"] .deny { background: rgba(255,255,255,.12); } [data-composition-id="06-one-key"] .allow { background: #0A84FF; box-shadow: 0 8px 28px rgba(10,132,255,.4); }
+[data-composition-id="06-one-key"] .done { position: absolute; left: 0; top: 0; display: flex; flex-direction: column; gap: 6px; }
+[data-composition-id="06-one-key"] .done .ptitle { color: #0A84FF; display: flex; align-items: center; gap: 12px; }
+[data-composition-id="06-one-key"] .done .spin { width: 24px; height: 24px; }
+[data-composition-id="06-one-key"] .ring { position: absolute; width: 120px; height: 120px; border-radius: 50%; border: 4px solid #0A84FF; }
+[data-composition-id="06-one-key"] .head { left: 150px; top: 520px; font-size: 140px; }
+[data-composition-id="06-one-key"] .cap { position: absolute; left: 154px; top: 820px; font: 30px "Notch Mono", monospace; color: rgba(235,235,245,.6); }
+[data-composition-id="06-one-key"] .cap b { color: #fff; }
+[data-composition-id="06-one-key"] .keyY { left: 1250px; top: 520px; width: 210px; height: 210px; border-radius: 40px; font-size: 110px; }
+
+</style>
+<div id="root" data-composition-id="06-one-key" data-width="1920" data-height="1080">
+  <div class="bg clip" id="f06-one-key-bg" data-start="0" data-duration="5" data-track-index="0"></div>
+  <div class="clip" id="f06-one-key-content" data-start="0" data-duration="5" data-track-index="1" style="position:absolute;inset:0">
+      <div class="pill warn" id="f06-pill"><div class="lbl" id="f06-warn"><span class="dots"><i style="background:#EDE8E6"></i><i style="background:#D97757"></i><i style="background:#3DBE6A"></i><i style="background:#F8F675"></i></span><span data-layout-allow-overlap class="o">OpenCode needs you</span><span class="sub">web-app</span></div><div class="lbl2" id="f06-ok" style="left:26px"><span class="dots"><i style="background:#EDE8E6"></i><i style="background:#D97757"></i><i style="background:#3DBE6A"></i><i style="background:#F8F675"></i></span><span style="margin-left:18px">5 working</span></div></div>
+      <div class="peek" id="f06-peek"><div class="tile opencode" style="width:76px;height:76px"><img src="assets/logo-opencode.svg" alt=""></div>
+        <div class="pbody">
+          <div id="f06-ask"><div class="ptitle">OpenCode needs you</div><div class="pcmd">Allow: npm install react-router@7</div>
+            <div class="acts"><span class="deny">Deny <kbd>N</kbd></span><span class="allow" id="f06-allow">Allow <kbd>Y</kbd></span></div></div>
+          <div class="done" id="f06-done"><div class="ptitle"><span class="spin" id="f06-spin"></span>Working</div><div class="pcmd">Edit router.tsx</div></div>
+        </div>
+      </div>
+      <div data-layout-allow-overlap class="ring" id="f06-ring" style="left:820px;top:222px"></div>
+      <div class="h head"><div data-layout-allow-overlap id="f06-l0">needs you?</div><div data-layout-allow-overlap id="f06-l1" class="b">one key.</div></div>
+      <div class="key keyY" id="f06-key">Y</div>
+      <div class="cap" id="f06-cap"><b>Y</b> allow · <b>N</b> deny · <b>Ctrl+Alt+J</b> jumps to it</div>
+  </div>
+</div>
+<script>
+(function () {
+  const R = document.querySelector('[data-composition-id="06-one-key"]')
+  const $ = s => R.querySelector(s), $$ = s => Array.from(R.querySelectorAll(s))
+  const tl = gsap.timeline({ paused: true })
+
+  tl.fromTo($('#f06-pill'), { scale: .9 }, { scale: 1, duration: .5, ease: "back.out(2)" }, 0)
+  tl.fromTo($('#f06-pill'), { boxShadow: "0 0 0 1.5px rgba(255,159,10,.3) inset, 0 12px 40px rgba(255,159,10,.12), 0 4px 12px rgba(0,0,0,.4)" },
+    { boxShadow: "0 0 0 1.5px rgba(255,159,10,.7) inset, 0 16px 80px rgba(255,159,10,.42), 0 4px 12px rgba(0,0,0,.4)", duration: .8, yoyo: true, repeat: 2, ease: "sine.inOut" }, 0)
+  tl.set($('#f06-ok'), { opacity: 0 }, 0)
+  tl.fromTo($('#f06-peek'), { opacity: 0, y: -60, scaleY: .5 }, { opacity: 1, y: 0, scaleY: 1, duration: .65, ease: "back.out(1.3)" }, .3)
+  tl.set($('#f06-done'), { opacity: 0 }, 0)
+  tl.fromTo($('#f06-l0'), { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: .6, ease: "power3.out" }, 1.2)
+  tl.fromTo($('#f06-key'), { opacity: 0, y: 80 }, { opacity: 1, y: 0, duration: .6, ease: "back.out(1.6)" }, 1.4)
+  // the press
+  tl.to($('#f06-key'), { y: 12, boxShadow: "0 2px 0 #0a0a0a, 0 10px 24px rgba(0,0,0,.55)", background: "linear-gradient(#3a3a3c, #2c2c2e)", duration: .08, ease: "power2.in" }, 2.4)
+  tl.to($('#f06-key'), { y: 0, boxShadow: "0 10px 0 #0a0a0a, 0 24px 48px rgba(0,0,0,.55)", background: "linear-gradient(#2c2c2e, #1c1c1e)", duration: .5, ease: "elastic.out(1, 0.5)" }, 2.5)
+  tl.fromTo($('#f06-allow'), { scale: 1 }, { scale: .9, duration: .08, yoyo: true, repeat: 1, ease: "power2.out" }, 2.45)
+  tl.set($('#f06-ring'), { opacity: 0 }, 0)
+  tl.fromTo($('#f06-ring'), { opacity: .9, scale: .2 }, { opacity: 0, scale: 2.2, duration: .6, ease: "power2.out", immediateRender: false }, 2.45)
+  tl.to($('#f06-ask'), { opacity: 0, y: -10, duration: .25, ease: "power2.in" }, 2.6)
+  tl.fromTo($('#f06-done'), { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: .4, ease: "power3.out" }, 2.8)
+  tl.to($('#f06-peek'), { boxShadow: "0 0 0 1.5px rgba(10,132,255,.35) inset, 0 30px 80px rgba(0,0,0,.6)", duration: .5 }, 2.7)
+  tl.to($('#f06-warn'), { opacity: 0, duration: .25 }, 2.7)
+  tl.to($('#f06-ok'), { opacity: 1, duration: .35 }, 2.85)
+  tl.to($('#f06-pill'), { boxShadow: "0 0 0 1px rgba(255,255,255,.1) inset, 0 24px 64px rgba(0,0,0,.55), 0 4px 12px rgba(0,0,0,.4)", duration: .6 }, 2.7)
+  tl.fromTo($('#f06-spin'), { rotation: 0 }, { rotation: 720, duration: 2.2, ease: "none" }, 2.8)
+  tl.fromTo($('#f06-l1'), { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: .6, ease: "power3.out" }, 2.75)
+  tl.fromTo($('#f06-cap'), { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: .5, ease: "power2.out" }, 3.6)
+
+  window.__timelines["06-one-key"] = tl
+})()
+</script>
+</template>

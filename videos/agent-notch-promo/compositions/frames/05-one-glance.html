@@ -1,0 +1,145 @@
+<template>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+@font-face { font-family: "Notch Sans"; src: url("assets/fonts/SegUIVar.ttf"); font-weight: 100 900; }
+@font-face { font-family: "Notch Mono"; src: url("assets/fonts/CascadiaMono.ttf"); }
+#root { position: absolute; inset: 0; overflow: hidden; }
+
+[data-composition-id="05-one-glance"] { font-family: "Notch Sans", sans-serif; color: #fff; }
+[data-composition-id="05-one-glance"] .bg { position: absolute; inset: 0; background: #000; }
+[data-composition-id="05-one-glance"] .cam, [data-composition-id="05-one-glance"] .cam2 { position: absolute; inset: 0; }
+[data-composition-id="05-one-glance"] .wall { position: absolute; inset: 0; background: radial-gradient(120% 90% at 30% 20%, #34405e, #1a1f2e 60%, #0d0f16); }
+[data-composition-id="05-one-glance"] .h { position: absolute; font-weight: 700; font-variation-settings: "opsz" 36; letter-spacing: -.045em; line-height: 1.04; text-transform: lowercase; color: #fff; }
+[data-composition-id="05-one-glance"] .h div { display: block; }
+[data-composition-id="05-one-glance"] .o { color: #FF9F0A; } [data-composition-id="05-one-glance"] .b { color: #0A84FF; } [data-composition-id="05-one-glance"] .r { color: #FF453A; } [data-composition-id="05-one-glance"] .g { color: #30D158; }
+[data-composition-id="05-one-glance"] .term { position: absolute; width: 500px; height: 300px; background: #0c0c0c; border: 2px solid #3a3a3a; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,.6); overflow: hidden; }
+[data-composition-id="05-one-glance"] .term .bar { height: 40px; background: #202020; display: flex; align-items: center; gap: 12px; padding: 0 16px; font-size: 19px; color: #ddd; }
+[data-composition-id="05-one-glance"] .term .bar img { width: 22px; height: 22px; }
+[data-composition-id="05-one-glance"] .term .tx { padding: 14px 18px; font: 19px/1.5 "Notch Mono", monospace; color: #c8c8c8; white-space: pre; }
+[data-composition-id="05-one-glance"] .pill { position: absolute; left: 0; right: 0; margin: 0 auto; top: 36px; width: max-content; height: 72px; border-radius: 36px; background: #000;
+          display: flex; align-items: center; gap: 18px; padding: 0 30px 0 26px; font-size: 27px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap;
+          box-shadow: 0 0 0 1px rgba(255,255,255,.1) inset, 0 24px 64px rgba(0,0,0,.55), 0 4px 12px rgba(0,0,0,.4); }
+[data-composition-id="05-one-glance"] .rim { position: absolute; inset: 0; border-radius: inherit; padding: 3px; --spin: 0deg;
+         background: conic-gradient(from var(--spin), transparent 0deg 240deg, rgba(10,132,255,.9) 315deg, rgba(191,90,242,.95) 342deg, transparent 360deg);
+         -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+[data-composition-id="05-one-glance"] .dots { position: relative; display: flex; }
+[data-composition-id="05-one-glance"] .dots i { display: block; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #000; margin-left: -9px; }
+[data-composition-id="05-one-glance"] .dots i:first-child { margin-left: 0; }
+[data-composition-id="05-one-glance"] .tile { display: grid; place-items: center; border-radius: 22%; box-shadow: 0 0 0 1px rgba(255,255,255,.12) inset, 0 2px 4px rgba(0,0,0,.4); flex: none; }
+[data-composition-id="05-one-glance"] .tile img { width: 62%; height: 62%; }
+[data-composition-id="05-one-glance"] .tile.agy img, [data-composition-id="05-one-glance"] .tile.kilo img { width: 80%; height: 80%; }
+[data-composition-id="05-one-glance"] .claude { background: #F4EFE6; } [data-composition-id="05-one-glance"] .agy { background: linear-gradient(160deg, #24252B, #131418); }
+[data-composition-id="05-one-glance"] .opencode { background: linear-gradient(160deg, #262222, #121010); } [data-composition-id="05-one-glance"] .kilo { background: #0B0B0B; }
+[data-composition-id="05-one-glance"] .copilot { background: linear-gradient(160deg, #3B2A6B, #17112E); }
+[data-composition-id="05-one-glance"] .key { position: absolute; display: grid; place-items: center; background: linear-gradient(#2c2c2e, #1c1c1e); border: 3px solid #48484a; color: #fff; font-weight: 700;
+         box-shadow: 0 10px 0 #0a0a0a, 0 24px 48px rgba(0,0,0,.55); }
+[data-composition-id="05-one-glance"] .card { position: absolute; background: #1c1c1e; border-radius: 28px; }
+[data-composition-id="05-one-glance"] .spin { display: inline-block; border-radius: 50%; border: 3px solid rgba(10,132,255,.25); border-top-color: #0A84FF; }
+
+[data-composition-id="05-one-glance"] .panel { position: absolute; width: 460px; padding: 18px 16px 14px; background: #000; border-radius: 34px; box-shadow: 0 0 0 1px rgba(255,255,255,.09) inset, 0 30px 80px rgba(0,0,0,.6); font-size: 13px; line-height: 1.35; }
+[data-composition-id="05-one-glance"] .phead { display: flex; align-items: center; gap: 10px; padding: 0 6px 2px; }
+[data-composition-id="05-one-glance"] .phead h1 { font-size: 17px; font-weight: 600; letter-spacing: -.02em; margin: 0; }
+[data-composition-id="05-one-glance"] .phead .summary { flex: 1; text-align: right; color: rgba(235,235,245,.6); font-size: 12px; }
+[data-composition-id="05-one-glance"] .round { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,.1); display: grid; place-items: center; font-size: 15px; font-weight: 700; }
+[data-composition-id="05-one-glance"] .group { margin-top: 14px; }
+[data-composition-id="05-one-glance"] .gtitle { display: flex; justify-content: space-between; padding: 0 8px 6px; font-size: 12px; font-weight: 600; color: rgba(235,235,245,.6); }
+[data-composition-id="05-one-glance"] .gtitle span:last-child { color: rgba(235,235,245,.55); font-weight: 500; }
+[data-composition-id="05-one-glance"] .gcard { background: #1c1c1e; border-radius: 14px; overflow: hidden; }
+[data-composition-id="05-one-glance"] .row { position: relative; display: flex; gap: 12px; padding: 11px 12px; }
+[data-composition-id="05-one-glance"] .row + .row::before { content: ""; position: absolute; top: 0; left: 56px; right: 0; height: 1px; background: rgba(84,84,88,.45); }
+[data-composition-id="05-one-glance"] .row.waiting { background: rgba(255,159,10,.08); }
+[data-composition-id="05-one-glance"] .row.error { background: rgba(255,69,58,.1); }
+[data-composition-id="05-one-glance"] .row .tile { position: relative; }
+[data-composition-id="05-one-glance"] .unread { position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; border-radius: 50%; background: #0A84FF; box-shadow: 0 0 0 2.5px #1c1c1e; }
+[data-composition-id="05-one-glance"] .body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+[data-composition-id="05-one-glance"] .name { font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
+[data-composition-id="05-one-glance"] .tag { margin-left: 7px; padding: 1px 6px; border-radius: 5px; background: rgba(255,255,255,.1); color: rgba(235,235,245,.6); font-size: 10.5px; font-weight: 600; }
+[data-composition-id="05-one-glance"] .task { color: rgba(255,255,255,.86); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-composition-id="05-one-glance"] .action { color: rgba(235,235,245,.6); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-composition-id="05-one-glance"] .row.error .action { color: #FF8A80; }
+[data-composition-id="05-one-glance"] .progress { display: flex; align-items: center; gap: 8px; margin-top: 5px; color: rgba(235,235,245,.6); font-size: 11.5px; }
+[data-composition-id="05-one-glance"] .track { flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,.1); overflow: hidden; }
+[data-composition-id="05-one-glance"] .track i { display: block; height: 100%; width: 43%; border-radius: 2px; background: #0A84FF; }
+[data-composition-id="05-one-glance"] .side { flex: none; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; gap: 8px; }
+[data-composition-id="05-one-glance"] .status { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
+[data-composition-id="05-one-glance"] .status.working { color: #0A84FF; } [data-composition-id="05-one-glance"] .status.waiting { color: #FF9F0A; } [data-composition-id="05-one-glance"] .status.done { color: #30D158; } [data-composition-id="05-one-glance"] .status.error { color: #FF6961; }
+[data-composition-id="05-one-glance"] .ind { display: inline-block; border-radius: 50%; flex: none; }
+[data-composition-id="05-one-glance"] .ind.w { width: 11px; height: 11px; border: 1.8px solid rgba(10,132,255,.25); border-top-color: #0A84FF; }
+[data-composition-id="05-one-glance"] .ind.q { width: 7px; height: 7px; background: #FF9F0A; }
+[data-composition-id="05-one-glance"] .ind.e { width: 7px; height: 7px; background: #FF453A; box-shadow: 0 0 0 3px rgba(255,69,58,.22); }
+[data-composition-id="05-one-glance"] .ind.d { width: 11px; height: 11px; border-radius: 0; fill: none; stroke: #30D158; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+[data-composition-id="05-one-glance"] .auto { display: flex; align-items: center; gap: 10px; }
+[data-composition-id="05-one-glance"] .sw { display: flex; align-items: center; gap: 6px; color: rgba(235,235,245,.55); font-size: 11px; font-weight: 600; }
+[data-composition-id="05-one-glance"] .sw .knob { position: relative; width: 34px; height: 20px; border-radius: 10px; background: rgba(120,120,128,.36); }
+[data-composition-id="05-one-glance"] .sw .knob::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 8px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,.3); }
+[data-composition-id="05-one-glance"] .sw.on { color: #30D158; } [data-composition-id="05-one-glance"] .sw.on .knob { background: #30D158; } [data-composition-id="05-one-glance"] .sw.on .knob::after { left: 16px; }
+[data-composition-id="05-one-glance"] .timer { color: rgba(235,235,245,.55); font-size: 11.5px; min-width: 24px; text-align: right; }
+[data-composition-id="05-one-glance"] .row.waiting .timer { color: #FF9F0A; font-weight: 600; }
+
+[data-composition-id="05-one-glance"] .pw { position: absolute; left: 1110px; top: 34px; width: 653.1999999999999px; transform-origin: 50% 0; }
+[data-composition-id="05-one-glance"] .sc { transform: scale(1.42); transform-origin: 0 0; }
+[data-composition-id="05-one-glance"] .sc .panel { position: relative; }
+[data-composition-id="05-one-glance"] .head { left: 130px; top: 250px; font-size: 128px; }
+
+</style>
+<div id="root" data-composition-id="05-one-glance" data-width="1920" data-height="1080">
+  <div class="bg clip" id="f05-one-glance-bg" data-start="0" data-duration="5" data-track-index="0"></div>
+  <div class="clip" id="f05-one-glance-content" data-start="0" data-duration="5" data-track-index="1" style="position:absolute;inset:0">
+      <div class="pill" id="f05-pill"><div data-layout-allow-overlap class="rim" style="--spin:260deg"></div><span class="dots"><i style="background:#D97757"></i><i style="background:#3DBE6A"></i><i style="background:#EDE8E6"></i><i style="background:#F8F675"></i><i style="background:#8B5CF6"></i></span><span>5 working</span></div>
+      <div class="pw" id="f05-pw"><div class="sc"><div class="panel">
+        <div class="phead" id="f05-hd"><h1>Agents</h1><span class="summary" id="f05-sum">1 need you · 3 working · 1 done</span><span data-layout-allow-overlap class="round">i</span><span data-layout-allow-overlap class="round">+</span><span data-layout-allow-overlap class="round">▦</span></div>
+        <div data-layout-allow-overlap class="group" id="f05-g0"><div data-layout-allow-overlap class="gtitle"><span>web-app</span><span>2 agents</span></div><div data-layout-allow-overlap class="gcard">
+          <div data-layout-allow-overlap class="row waiting" id="f05-r0">
+  <div class="tile opencode" style="width:32px;height:32px;border-radius:9px"><span class="unread"></span><img src="assets/logo-opencode.svg" alt=""></div>
+  <div data-layout-allow-overlap class="body"><div class="name">OpenCode</div><div class="task">Migrate to the new router</div><div class="action">Allow: npm install react-router@7</div></div>
+  <div class="side"><div class="status waiting"><span class="ind q"></span>Needs you</div><div class="auto"><span class="sw">AUTO<span class="knob"></span></span><span class="timer">19s</span></div></div>
+</div>
+          <div data-layout-allow-overlap class="row done" id="f05-r1">
+  <div class="tile kilo" style="width:32px;height:32px;border-radius:9px"><img src="assets/logo-kilo.svg" alt=""></div>
+  <div data-layout-allow-overlap class="body"><div class="name">Kilo</div><div class="task">Add dark mode</div><div class="action">Finished</div></div>
+  <div class="side"><div class="status done"><svg class="ind d" viewBox="0 0 12 12"><path d="M2 6.5 5 9l5-6"/></svg>Done</div><div class="auto"><span class="sw">AUTO<span class="knob"></span></span><span class="timer">1m</span></div></div>
+</div>
+        </div></div>
+        <div data-layout-allow-overlap class="group" id="f05-g1"><div data-layout-allow-overlap class="gtitle"><span>payments-api</span><span>2 agents</span></div><div data-layout-allow-overlap class="gcard">
+          <div data-layout-allow-overlap class="row working" id="f05-r2">
+  <div class="tile claude" style="width:32px;height:32px;border-radius:9px"><img src="assets/logo-claude.svg" alt=""></div>
+  <div data-layout-allow-overlap class="body"><div class="name">Claude</div><div class="task">Add rate limiting to the auth routes</div><div class="action">Edit auth.ts</div><div class="progress"><div class="track"><i id="f05-r2-bar"></i></div><span>3 of 7</span></div></div>
+  <div class="side"><div class="status working"><span class="ind w"></span>Working</div><div class="auto"><span class="sw">AUTO<span class="knob"></span></span><span class="timer">4m</span></div></div>
+</div>
+          <div data-layout-allow-overlap class="row working" id="f05-r3">
+  <div class="tile agy" style="width:32px;height:32px;border-radius:9px"><img src="assets/logo-agy.svg" alt=""></div>
+  <div data-layout-allow-overlap class="body"><div class="name">Antigravity</div><div class="task">Write the webhook tests</div><div class="action">Run tests</div></div>
+  <div class="side"><div class="status working"><span class="ind w"></span>Working</div><div class="auto"><span class="sw on">AUTO<span class="knob"></span></span><span class="timer">54s</span></div></div>
+</div>
+        </div></div>
+        <div data-layout-allow-overlap class="group" id="f05-g2"><div data-layout-allow-overlap class="gtitle"><span>docs</span><span>1 agent</span></div><div data-layout-allow-overlap class="gcard">
+          <div data-layout-allow-overlap class="row working" id="f05-r4">
+  <div class="tile copilot" style="width:32px;height:32px;border-radius:9px"><img src="assets/logo-copilot.svg" alt=""></div>
+  <div data-layout-allow-overlap class="body"><div class="name">Copilot<span class="tag">VS Code</span></div><div class="task">Rewrite the quickstart</div><div class="action">EditFiles quickstart.md</div></div>
+  <div class="side"><div class="status working"><span class="ind w"></span>Working</div><div class="auto"><span class="timer">37s</span></div></div>
+</div>
+        </div></div>
+      </div></div></div>
+      <div class="h head"><div data-layout-allow-overlap id="f05-l0">every agent.</div><div data-layout-allow-overlap id="f05-l1">every project.</div><div data-layout-allow-overlap id="f05-l2" class="b">one glance.</div></div>
+  </div>
+</div>
+<script>
+(function () {
+  const R = document.querySelector('[data-composition-id="05-one-glance"]')
+  const $ = s => R.querySelector(s), $$ = s => Array.from(R.querySelectorAll(s))
+  const tl = gsap.timeline({ paused: true })
+
+  tl.fromTo($('#f05-pill'), { opacity: 1, scale: 1.6 }, { opacity: 0, scale: 1.9, filter: "blur(8px)", duration: .35, ease: "power2.in" }, .55)
+  tl.fromTo($('#f05-pw'), { x: -477, scaleX: .24, scaleY: .08, opacity: 0 }, { scaleX: 1, scaleY: 1, opacity: 1, duration: .75, ease: "back.out(1.05)" }, .6)
+  tl.to($('#f05-pw'), { x: 0, duration: .7, ease: "power3.inOut" }, 1.25)
+  const parts = ['#f05-hd', '#f05-g0', '#f05-r0', '#f05-r1', '#f05-g1', '#f05-r2', '#f05-r3', '#f05-g2', '#f05-r4']
+  parts.forEach((s, i) => tl.fromTo($(s), { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: .45, ease: "power3.out" }, .9 + i * .24))
+  tl.fromTo($('#f05-r2-bar'), { width: "0%" }, { width: "43%", duration: .8, ease: "power2.out" }, 1.9)
+  $$('.ind.w').forEach(el => tl.fromTo(el, { rotation: 0 }, { rotation: 360 * 5, duration: 5, ease: "none" }, 0))
+  tl.fromTo($('.ind.q'), { boxShadow: "0 0 0 0 rgba(255,159,10,.6)" }, { boxShadow: "0 0 0 6px rgba(255,159,10,0)", duration: 1.2, repeat: 3, ease: "power1.out" }, .6)
+  ;['#f05-l0', '#f05-l1', '#f05-l2'].forEach((s, i) => tl.fromTo($(s), { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: .6, ease: "power3.out" }, 3.2 + i * .4))
+
+  window.__timelines["05-one-glance"] = tl
+})()
+</script>
+</template>

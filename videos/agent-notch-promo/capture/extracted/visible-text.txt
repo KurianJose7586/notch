@@ -1,0 +1,13 @@
+Agent Notch — All your coding agents. One notch.
+
+A Dynamic-Island-style notch that sits at the top of your Windows screen and watches every coding agent you run:
+Claude Code (terminal and desktop app), Antigravity (agy CLI and IDE), OpenCode, Kilo, and VS Code Copilot.
+
+- Everything in one place, grouped by project: which agent is working, which is done, which needs you.
+- "Needs you" peeks down from the notch; approve or deny with one key, without finding the terminal.
+- AUTO for Antigravity: the notch presses Enter on agy's permission prompts for you.
+- Grid: one button lays every agent window out in a tidy grid.
+- Usage limits: Claude's 5-hour and weekly limits as bars, heads-up at 80% and 95%; agents that hit a limit show "Stopped", not "Working".
+- Also: spawn several agents at once (optionally in git worktrees), rename sessions, full keyboard control (Ctrl+Alt+N), starts itself when an agent starts, uses ~0.4% CPU idle.
+
+Tagline: All your coding agents. One notch.

@@ -1,0 +1,119 @@
+<template>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+@font-face { font-family: "Notch Sans"; src: url("assets/fonts/SegUIVar.ttf"); font-weight: 100 900; }
+@font-face { font-family: "Notch Mono"; src: url("assets/fonts/CascadiaMono.ttf"); }
+#root { position: absolute; inset: 0; overflow: hidden; }
+
+[data-composition-id="02-everyone-needs-you"] { font-family: "Notch Sans", sans-serif; color: #fff; }
+[data-composition-id="02-everyone-needs-you"] .bg { position: absolute; inset: 0; background: #000; }
+[data-composition-id="02-everyone-needs-you"] .cam, [data-composition-id="02-everyone-needs-you"] .cam2 { position: absolute; inset: 0; }
+[data-composition-id="02-everyone-needs-you"] .wall { position: absolute; inset: 0; background: radial-gradient(120% 90% at 30% 20%, #34405e, #1a1f2e 60%, #0d0f16); }
+[data-composition-id="02-everyone-needs-you"] .h { position: absolute; font-weight: 700; font-variation-settings: "opsz" 36; letter-spacing: -.045em; line-height: 1.04; text-transform: lowercase; color: #fff; }
+[data-composition-id="02-everyone-needs-you"] .h div { display: block; }
+[data-composition-id="02-everyone-needs-you"] .o { color: #FF9F0A; } [data-composition-id="02-everyone-needs-you"] .b { color: #0A84FF; } [data-composition-id="02-everyone-needs-you"] .r { color: #FF453A; } [data-composition-id="02-everyone-needs-you"] .g { color: #30D158; }
+[data-composition-id="02-everyone-needs-you"] .term { position: absolute; width: 500px; height: 300px; background: #0c0c0c; border: 2px solid #3a3a3a; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,.6); overflow: hidden; }
+[data-composition-id="02-everyone-needs-you"] .term .bar { height: 40px; background: #202020; display: flex; align-items: center; gap: 12px; padding: 0 16px; font-size: 19px; color: #ddd; }
+[data-composition-id="02-everyone-needs-you"] .term .bar img { width: 22px; height: 22px; }
+[data-composition-id="02-everyone-needs-you"] .term .tx { padding: 14px 18px; font: 19px/1.5 "Notch Mono", monospace; color: #c8c8c8; white-space: pre; }
+[data-composition-id="02-everyone-needs-you"] .pill { position: absolute; left: 0; right: 0; margin: 0 auto; top: 36px; width: max-content; height: 72px; border-radius: 36px; background: #000;
+          display: flex; align-items: center; gap: 18px; padding: 0 30px 0 26px; font-size: 27px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap;
+          box-shadow: 0 0 0 1px rgba(255,255,255,.1) inset, 0 24px 64px rgba(0,0,0,.55), 0 4px 12px rgba(0,0,0,.4); }
+[data-composition-id="02-everyone-needs-you"] .rim { position: absolute; inset: 0; border-radius: inherit; padding: 3px; --spin: 0deg;
+         background: conic-gradient(from var(--spin), transparent 0deg 240deg, rgba(10,132,255,.9) 315deg, rgba(191,90,242,.95) 342deg, transparent 360deg);
+         -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+[data-composition-id="02-everyone-needs-you"] .dots { position: relative; display: flex; }
+[data-composition-id="02-everyone-needs-you"] .dots i { display: block; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #000; margin-left: -9px; }
+[data-composition-id="02-everyone-needs-you"] .dots i:first-child { margin-left: 0; }
+[data-composition-id="02-everyone-needs-you"] .tile { display: grid; place-items: center; border-radius: 22%; box-shadow: 0 0 0 1px rgba(255,255,255,.12) inset, 0 2px 4px rgba(0,0,0,.4); flex: none; }
+[data-composition-id="02-everyone-needs-you"] .tile img { width: 62%; height: 62%; }
+[data-composition-id="02-everyone-needs-you"] .tile.agy img, [data-composition-id="02-everyone-needs-you"] .tile.kilo img { width: 80%; height: 80%; }
+[data-composition-id="02-everyone-needs-you"] .claude { background: #F4EFE6; } [data-composition-id="02-everyone-needs-you"] .agy { background: linear-gradient(160deg, #24252B, #131418); }
+[data-composition-id="02-everyone-needs-you"] .opencode { background: linear-gradient(160deg, #262222, #121010); } [data-composition-id="02-everyone-needs-you"] .kilo { background: #0B0B0B; }
+[data-composition-id="02-everyone-needs-you"] .copilot { background: linear-gradient(160deg, #3B2A6B, #17112E); }
+[data-composition-id="02-everyone-needs-you"] .key { position: absolute; display: grid; place-items: center; background: linear-gradient(#2c2c2e, #1c1c1e); border: 3px solid #48484a; color: #fff; font-weight: 700;
+         box-shadow: 0 10px 0 #0a0a0a, 0 24px 48px rgba(0,0,0,.55); }
+[data-composition-id="02-everyone-needs-you"] .card { position: absolute; background: #1c1c1e; border-radius: 28px; }
+[data-composition-id="02-everyone-needs-you"] .spin { display: inline-block; border-radius: 50%; border: 3px solid rgba(10,132,255,.25); border-top-color: #0A84FF; }
+
+[data-composition-id="02-everyone-needs-you"] .dim { position: absolute; inset: 0; background: rgba(0,0,0,.4); }
+[data-composition-id="02-everyone-needs-you"] .ghost { filter: blur(5px); opacity: .55; }
+[data-composition-id="02-everyone-needs-you"] .prompt { position: absolute; background: #141414; border: 2px solid #FF9F0A; border-radius: 12px; padding: 18px 24px; font: 23px/1.45 "Notch Mono", monospace; color: #eee; white-space: pre; box-shadow: 0 14px 36px rgba(0,0,0,.6); }
+[data-composition-id="02-everyone-needs-you"] .badge { position: absolute; background: #FF9F0A; color: #000; font-weight: 700; font-size: 25px; border-radius: 99px; padding: 7px 20px; box-shadow: 0 8px 24px rgba(255,159,10,.35); }
+[data-composition-id="02-everyone-needs-you"] .cursor { position: absolute; left: 0; top: 0; width: 60px; height: 60px; filter: drop-shadow(0 6px 10px rgba(0,0,0,.7)); }
+[data-composition-id="02-everyone-needs-you"] .head { z-index: 10; left: 0; right: 0; top: 330px; text-align: center; font-size: 170px; text-shadow: 0 10px 80px #000, 0 0 30px rgba(0,0,0,.9); }
+
+</style>
+<div id="root" data-composition-id="02-everyone-needs-you" data-width="1920" data-height="1080">
+  <div class="bg clip" id="f02-everyone-needs-you-bg" data-start="0" data-duration="6" data-track-index="0"></div>
+  <div class="clip" id="f02-everyone-needs-you-content" data-start="0" data-duration="6" data-track-index="1" style="position:absolute;inset:0">
+    <div class="cam" data-layout-allow-overlap>
+      <div class="wall"></div>
+      <div data-layout-allow-overlap class="term ghost" id="f02-g0" style="left:70px;top:90px;transform:rotate(-4deg)"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-claude.svg" alt="">claude · payments-api</div><div class="tx" data-layout-allow-overlap>✻ Editing auth.ts…
+<span data-layout-allow-overlap class="o">? Allow edit to auth.ts</span></div></div>
+      <div data-layout-allow-overlap class="term ghost" id="f02-g1" style="left:430px;top:330px;transform:rotate(3deg)"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-agy.svg" alt="">agy · payments-api</div><div class="tx" data-layout-allow-overlap>Running tests…
+<span data-layout-allow-overlap class="o">1. Yes  2. No</span></div></div>
+      <div data-layout-allow-overlap class="term ghost" id="f02-g2" style="left:1090px;top:70px;transform:rotate(5deg)"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-opencode.svg" alt="">opencode · web-app</div><div class="tx" data-layout-allow-overlap>Reading router.tsx
+<span data-layout-allow-overlap class="b">● thinking</span></div></div>
+      <div data-layout-allow-overlap class="term ghost" id="f02-g3" style="left:1290px;top:560px;transform:rotate(-6deg)"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-kilo.svg" alt="">kilo · web-app</div><div class="tx" data-layout-allow-overlap>Add dark mode
+<span data-layout-allow-overlap class="g">✓ theme.css</span></div></div>
+      <div class="dim"></div>
+      <div data-layout-allow-overlap class="prompt" id="f02-p0" style="left:60px;top:90px">1. Yes  2. No
+<span data-layout-allow-overlap class="o">esc to cancel</span></div>
+      <div data-layout-allow-overlap class="prompt" id="f02-p1" style="left:1330px;top:70px">Allow: npm install
+react-router@7? <span data-layout-allow-overlap class="o">(y/n)</span></div>
+      <div data-layout-allow-overlap class="prompt" id="f02-p2" style="left:1360px;top:690px">Do you trust this folder?
+<span data-layout-allow-overlap class="o">1. Yes, proceed</span></div>
+      <div data-layout-allow-overlap class="prompt" id="f02-p3" style="left:80px;top:720px">Run: rm -rf dist?
+<span data-layout-allow-overlap class="o">1. Yes  2. No</span></div>
+      <div data-layout-allow-overlap class="prompt" id="f02-p4" style="left:700px;top:800px">Allow edit to auth.ts?</div>
+      <div data-layout-allow-overlap class="prompt" id="f02-p5" style="left:640px;top:60px">Allow: git push --force? <span data-layout-allow-overlap class="o">(y/n)</span></div>
+      <div data-layout-allow-overlap class="prompt" id="f02-p6" style="left:40px;top:410px">1. Yes  2. No
+<span data-layout-allow-overlap class="o">esc to cancel</span></div>
+      <div data-layout-allow-overlap class="prompt" id="f02-p7" style="left:1400px;top:430px">Allow: curl install.sh | sh?</div>
+      <div data-layout-allow-overlap class="badge" id="f02-b0" style="left:560px;top:170px">needs you</div>
+      <div data-layout-allow-overlap class="badge" id="f02-b1" style="left:1180px;top:580px">needs you</div>
+      <div data-layout-allow-overlap class="badge" id="f02-b2" style="left:380px;top:620px">needs you</div>
+      <div data-layout-allow-overlap class="badge" id="f02-b3" style="left:1250px;top:280px">needs you</div>
+      <div class="h head"><div data-layout-allow-overlap id="f02-l1">which one</div><div data-layout-allow-overlap id="f02-l2" class="o">needs you?</div></div>
+      <svg class="cursor" viewBox="0 0 24 24"><path d="M3 2l17 10-7 2 4 7-3 1.5-4-7-5 4.5z" fill="#fff" stroke="#000" stroke-width="1.2"/></svg>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  const R = document.querySelector('[data-composition-id="02-everyone-needs-you"]')
+  const $ = s => R.querySelector(s), $$ = s => Array.from(R.querySelectorAll(s))
+  const tl = gsap.timeline({ paused: true })
+
+  const P = [[60,90,-3,0.1],[1330,70,4,0.6],[1360,690,-5,1.5],[80,720,5,1.9],[700,800,-2,2.3],[640,60,2,2.7],[40,410,-4,3],[1400,430,3,3.2]], B = [[560,170,-6,1.7],[1180,580,8,2.1],[380,620,4,2.5],[1250,280,-5,3.3]]
+  const pop = (el, r, t) => tl.fromTo(el, { opacity: 0, scale: .4, rotation: r * 3 }, { opacity: 1, scale: 1, rotation: r, duration: .32, ease: "back.out(2.6)" }, t)
+  const close = (el, cx, cy) => tl.to(el, { x: (960 - cx) * .3, y: (470 - cy) * .3, duration: 2.5, ease: "power1.in" }, 3.5)
+  $$('.prompt').forEach((el, i) => { pop(el, P[i][2], P[i][3]); close(el, P[i][0] + 200, P[i][1] + 40) })
+  $$('.badge').forEach((el, i) => { pop(el, B[i][2], B[i][3]); close(el, B[i][0] + 70, B[i][1] + 20) })
+  const cur = $('.cursor'), C = [[1500,250],[300,170],[1560,760],[260,800],[900,860],[960,130],[200,470],[1600,500],[700,300],[1250,700],[420,640]]
+  tl.fromTo(cur, { x: 1700, y: 900, opacity: 0 }, { x: C[0][0], y: C[0][1], opacity: 1, duration: .4, ease: "power2.out" }, 1.1)
+  C.slice(1).forEach(([x, y], i) => {
+    tl.to(cur, { x, y, duration: .34 - Math.min(i, 8) * .018, ease: "power2.inOut" }, 1.5 + i * .4)
+    tl.to(cur, { scale: .8, duration: .06, yoyo: true, repeat: 1 }, 1.84 + i * .4)
+  })
+  tl.fromTo($('#f02-l1'), { opacity: 0, scale: 1.4 }, { opacity: 1, scale: 1, duration: .25, ease: "power4.out" }, 3.5)
+  tl.fromTo($('#f02-l2'), { opacity: 0, scale: 1.4 }, { opacity: 1, scale: 1, duration: .25, ease: "power4.out" }, 3.85)
+  tl.to($('.cam'), { x: 4, y: -3, duration: 0.2, ease: "none" }, 3.500)
+  tl.to($('.cam'), { x: -5, y: 2, duration: 0.2, ease: "none" }, 3.700)
+  tl.to($('.cam'), { x: 3, y: 5, duration: 0.2, ease: "none" }, 3.900)
+  tl.to($('.cam'), { x: -2, y: -6, duration: 0.2, ease: "none" }, 4.100)
+  tl.to($('.cam'), { x: 6, y: 1, duration: 0.2, ease: "none" }, 4.300)
+  tl.to($('.cam'), { x: -4, y: 4, duration: 0.2, ease: "none" }, 4.500)
+  tl.to($('.cam'), { x: 2, y: -4, duration: 0.2, ease: "none" }, 4.700)
+  tl.to($('.cam'), { x: -6, y: -1, duration: 0.2, ease: "none" }, 4.900)
+  tl.to($('.cam'), { x: 5, y: 3, duration: 0.2, ease: "none" }, 5.100)
+  tl.to($('.cam'), { x: -3, y: 5, duration: 0.2, ease: "none" }, 5.300)
+  tl.to($('.cam'), { x: 4, y: -4, duration: 0.2, ease: "none" }, 5.500)
+  tl.to($('.cam'), { x: -5, y: 2, duration: 0.2, ease: "none" }, 5.700)
+  tl.to($('.cam'), { x: 0, y: 0, duration: 0.2, ease: "none" }, 5.900)
+
+  window.__timelines["02-everyone-needs-you"] = tl
+})()
+</script>
+</template>

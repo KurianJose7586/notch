@@ -1,0 +1,115 @@
+<template>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+@font-face { font-family: "Notch Sans"; src: url("assets/fonts/SegUIVar.ttf"); font-weight: 100 900; }
+@font-face { font-family: "Notch Mono"; src: url("assets/fonts/CascadiaMono.ttf"); }
+#root { position: absolute; inset: 0; overflow: hidden; }
+
+[data-composition-id="01-tab-chaos"] { font-family: "Notch Sans", sans-serif; color: #fff; }
+[data-composition-id="01-tab-chaos"] .bg { position: absolute; inset: 0; background: #000; }
+[data-composition-id="01-tab-chaos"] .cam, [data-composition-id="01-tab-chaos"] .cam2 { position: absolute; inset: 0; }
+[data-composition-id="01-tab-chaos"] .wall { position: absolute; inset: 0; background: radial-gradient(120% 90% at 30% 20%, #34405e, #1a1f2e 60%, #0d0f16); }
+[data-composition-id="01-tab-chaos"] .h { position: absolute; font-weight: 700; font-variation-settings: "opsz" 36; letter-spacing: -.045em; line-height: 1.04; text-transform: lowercase; color: #fff; }
+[data-composition-id="01-tab-chaos"] .h div { display: block; }
+[data-composition-id="01-tab-chaos"] .o { color: #FF9F0A; } [data-composition-id="01-tab-chaos"] .b { color: #0A84FF; } [data-composition-id="01-tab-chaos"] .r { color: #FF453A; } [data-composition-id="01-tab-chaos"] .g { color: #30D158; }
+[data-composition-id="01-tab-chaos"] .term { position: absolute; width: 500px; height: 300px; background: #0c0c0c; border: 2px solid #3a3a3a; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,.6); overflow: hidden; }
+[data-composition-id="01-tab-chaos"] .term .bar { height: 40px; background: #202020; display: flex; align-items: center; gap: 12px; padding: 0 16px; font-size: 19px; color: #ddd; }
+[data-composition-id="01-tab-chaos"] .term .bar img { width: 22px; height: 22px; }
+[data-composition-id="01-tab-chaos"] .term .tx { padding: 14px 18px; font: 19px/1.5 "Notch Mono", monospace; color: #c8c8c8; white-space: pre; }
+[data-composition-id="01-tab-chaos"] .pill { position: absolute; left: 0; right: 0; margin: 0 auto; top: 36px; width: max-content; height: 72px; border-radius: 36px; background: #000;
+          display: flex; align-items: center; gap: 18px; padding: 0 30px 0 26px; font-size: 27px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap;
+          box-shadow: 0 0 0 1px rgba(255,255,255,.1) inset, 0 24px 64px rgba(0,0,0,.55), 0 4px 12px rgba(0,0,0,.4); }
+[data-composition-id="01-tab-chaos"] .rim { position: absolute; inset: 0; border-radius: inherit; padding: 3px; --spin: 0deg;
+         background: conic-gradient(from var(--spin), transparent 0deg 240deg, rgba(10,132,255,.9) 315deg, rgba(191,90,242,.95) 342deg, transparent 360deg);
+         -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+[data-composition-id="01-tab-chaos"] .dots { position: relative; display: flex; }
+[data-composition-id="01-tab-chaos"] .dots i { display: block; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #000; margin-left: -9px; }
+[data-composition-id="01-tab-chaos"] .dots i:first-child { margin-left: 0; }
+[data-composition-id="01-tab-chaos"] .tile { display: grid; place-items: center; border-radius: 22%; box-shadow: 0 0 0 1px rgba(255,255,255,.12) inset, 0 2px 4px rgba(0,0,0,.4); flex: none; }
+[data-composition-id="01-tab-chaos"] .tile img { width: 62%; height: 62%; }
+[data-composition-id="01-tab-chaos"] .tile.agy img, [data-composition-id="01-tab-chaos"] .tile.kilo img { width: 80%; height: 80%; }
+[data-composition-id="01-tab-chaos"] .claude { background: #F4EFE6; } [data-composition-id="01-tab-chaos"] .agy { background: linear-gradient(160deg, #24252B, #131418); }
+[data-composition-id="01-tab-chaos"] .opencode { background: linear-gradient(160deg, #262222, #121010); } [data-composition-id="01-tab-chaos"] .kilo { background: #0B0B0B; }
+[data-composition-id="01-tab-chaos"] .copilot { background: linear-gradient(160deg, #3B2A6B, #17112E); }
+[data-composition-id="01-tab-chaos"] .key { position: absolute; display: grid; place-items: center; background: linear-gradient(#2c2c2e, #1c1c1e); border: 3px solid #48484a; color: #fff; font-weight: 700;
+         box-shadow: 0 10px 0 #0a0a0a, 0 24px 48px rgba(0,0,0,.55); }
+[data-composition-id="01-tab-chaos"] .card { position: absolute; background: #1c1c1e; border-radius: 28px; }
+[data-composition-id="01-tab-chaos"] .spin { display: inline-block; border-radius: 50%; border: 3px solid rgba(10,132,255,.25); border-top-color: #0A84FF; }
+
+[data-composition-id="01-tab-chaos"] .word { position: absolute; left: 0; right: 0; top: 330px; text-align: center; font-size: 210px; text-shadow: 0 10px 80px rgba(0,0,0,.95), 0 0 24px rgba(0,0,0,.8); }
+
+</style>
+<div id="root" data-composition-id="01-tab-chaos" data-width="1920" data-height="1080">
+  <div class="bg clip" id="f01-tab-chaos-bg" data-start="0" data-duration="5" data-track-index="0"></div>
+  <div class="clip" id="f01-tab-chaos-content" data-start="0" data-duration="5" data-track-index="1" style="position:absolute;inset:0">
+    <div class="cam" data-layout-allow-overlap><div class="cam2">
+      <div class="wall"></div>
+      <div data-layout-allow-overlap class="term" id="f01-t0" style="left:70px;top:90px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-claude.svg" alt="">claude · payments-api</div><div class="tx" data-layout-allow-overlap>✻ Editing auth.ts…
+<span data-layout-allow-overlap class="o">? Allow edit to auth.ts</span></div></div>
+      <div data-layout-allow-overlap class="term" id="f01-t1" style="left:430px;top:330px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-agy.svg" alt="">agy · payments-api</div><div class="tx" data-layout-allow-overlap>Running tests…
+<span data-layout-allow-overlap class="o">1. Yes  2. No</span></div></div>
+      <div data-layout-allow-overlap class="term" id="f01-t2" style="left:1090px;top:70px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-opencode.svg" alt="">opencode · web-app</div><div class="tx" data-layout-allow-overlap>Reading router.tsx
+<span data-layout-allow-overlap class="b">● thinking</span></div></div>
+      <div data-layout-allow-overlap class="term" id="f01-t3" style="left:1290px;top:560px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-kilo.svg" alt="">kilo · web-app</div><div class="tx" data-layout-allow-overlap>Add dark mode
+<span data-layout-allow-overlap class="g">✓ theme.css</span></div></div>
+      <div data-layout-allow-overlap class="term" id="f01-t4" style="left:780px;top:640px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-copilot.svg" alt="">copilot · docs</div><div class="tx" data-layout-allow-overlap>EditFiles quickstart.md
+…</div></div>
+      <div data-layout-allow-overlap class="term" id="f01-t5" style="left:40px;top:640px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-claude.svg" alt="">claude · landing</div><div class="tx" data-layout-allow-overlap>✻ Thinking…</div></div>
+      <div data-layout-allow-overlap class="term" id="f01-t6" style="left:650px;top:30px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-agy.svg" alt="">agy · infra</div><div class="tx" data-layout-allow-overlap><span data-layout-allow-overlap class="o">Do you trust this folder?</span></div></div>
+      <div data-layout-allow-overlap class="term" id="f01-t7" style="left:1380px;top:300px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-opencode.svg" alt="">opencode · cli</div><div class="tx" data-layout-allow-overlap>Run: npm i
+<span data-layout-allow-overlap class="o">Allow? (y/n)</span></div></div>
+      <div data-layout-allow-overlap class="term" id="f01-t8" style="left:240px;top:400px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-kilo.svg" alt="">kilo · mobile</div><div class="tx" data-layout-allow-overlap>Edit App.tsx
+<span data-layout-allow-overlap class="o">needs you</span></div></div>
+      <div data-layout-allow-overlap class="term" id="f01-t9" style="left:1020px;top:400px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-copilot.svg" alt="">copilot · api</div><div class="tx" data-layout-allow-overlap>Plan: 4 steps</div></div>
+      <div data-layout-allow-overlap class="term" id="f01-t10" style="left:560px;top:520px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-claude.svg" alt="">claude · infra</div><div class="tx" data-layout-allow-overlap><span data-layout-allow-overlap class="r">Error: 429</span></div></div>
+      <div data-layout-allow-overlap class="term" id="f01-t11" style="left:1500px;top:40px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-agy.svg" alt="">agy · docs</div><div class="tx" data-layout-allow-overlap>Stop hook…</div></div>
+      <div data-layout-allow-overlap class="h word" id="f01-w0">claude.</div>
+      <div data-layout-allow-overlap class="h word" id="f01-w1">agy.</div>
+      <div data-layout-allow-overlap class="h word" id="f01-w2">opencode.</div>
+      <div data-layout-allow-overlap class="h word" id="f01-w3">kilo.</div>
+      <div data-layout-allow-overlap class="h word" id="f01-w4">copilot.</div>
+      <div data-layout-allow-overlap class="h word" id="f01-w5">claude <span data-layout-allow-overlap class="o">again.</span></div>
+    </div></div>
+  </div>
+</div>
+<script>
+(function () {
+  const R = document.querySelector('[data-composition-id="01-tab-chaos"]')
+  const $ = s => R.querySelector(s), $$ = s => Array.from(R.querySelectorAll(s))
+  const tl = gsap.timeline({ paused: true })
+
+  const T = [0.05,0.8,1.4,2,2.6,3.2,3.42,3.6,3.78,3.94,4.08,4.22], ROT = [-4,3,5,-6,-2,7,-8,9,-10,6,-5,3]
+  $$('.term').forEach((el, i) => {
+    tl.fromTo(el, { opacity: 0, scale: 1.55, rotation: ROT[i] * 2.2 }, { opacity: 1, scale: 1, rotation: ROT[i], duration: .22, ease: "back.out(2.2)" }, T[i])
+  })
+  const W = [0,0.8,1.4,2,2.6,3.2]
+  $$('.word').forEach((el, i) => {
+    if (i) tl.set(el, { opacity: 0 }, 0)
+    tl.fromTo(el, { opacity: 1, scale: 1.45 }, { opacity: 1, scale: 1, duration: .2, ease: "power4.out" }, W[i])
+    if (i < W.length - 1) tl.set(el, { opacity: 0 }, W[i + 1])
+  })
+  tl.fromTo($('.cam2'), { scale: 1 }, { scale: 1.07, duration: 5, ease: "none" }, 0)
+  tl.to($('.cam'), { x: 9, y: -6, duration: 0.1, ease: "none" }, 3.200)
+  tl.to($('.cam'), { x: -12, y: 4, duration: 0.1, ease: "none" }, 3.300)
+  tl.to($('.cam'), { x: 7, y: 11, duration: 0.1, ease: "none" }, 3.400)
+  tl.to($('.cam'), { x: -5, y: -13, duration: 0.1, ease: "none" }, 3.500)
+  tl.to($('.cam'), { x: 13, y: 2, duration: 0.1, ease: "none" }, 3.600)
+  tl.to($('.cam'), { x: -8, y: 9, duration: 0.1, ease: "none" }, 3.700)
+  tl.to($('.cam'), { x: 4, y: -10, duration: 0.1, ease: "none" }, 3.800)
+  tl.to($('.cam'), { x: -14, y: -3, duration: 0.1, ease: "none" }, 3.900)
+  tl.to($('.cam'), { x: 11, y: 7, duration: 0.1, ease: "none" }, 4.000)
+  tl.to($('.cam'), { x: -6, y: 12, duration: 0.1, ease: "none" }, 4.100)
+  tl.to($('.cam'), { x: 8, y: -9, duration: 0.1, ease: "none" }, 4.200)
+  tl.to($('.cam'), { x: -11, y: 5, duration: 0.1, ease: "none" }, 4.300)
+  tl.to($('.cam'), { x: 5, y: 13, duration: 0.1, ease: "none" }, 4.400)
+  tl.to($('.cam'), { x: -13, y: -7, duration: 0.1, ease: "none" }, 4.500)
+  tl.to($('.cam'), { x: 12, y: -4, duration: 0.1, ease: "none" }, 4.600)
+  tl.to($('.cam'), { x: -4, y: 10, duration: 0.1, ease: "none" }, 4.700)
+  tl.to($('.cam'), { x: 10, y: 6, duration: 0.1, ease: "none" }, 4.800)
+  tl.to($('.cam'), { x: -9, y: -11, duration: 0.1, ease: "none" }, 4.900)
+  tl.to($('.cam'), { x: 0, y: 0, duration: 0.1, ease: "none" }, 5.000)
+
+  window.__timelines["01-tab-chaos"] = tl
+})()
+</script>
+</template>

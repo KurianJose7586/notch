@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Notch Storyboard</title>
+<style>
+  :root {
+    --ink: #000; --ink-alt: #18191A; --line: #262728; --white: #fff; --muted: rgba(235,235,245,.6); --hint: #484C50;
+    --blue: #0A84FF; --orange: #FF9F0A; --red: #FF453A; --green: #30D158; --purple: #BF5AF2;
+    --display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+    --text: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    --mono: "Cascadia Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: #0b0b0c; color: var(--white); font: 15px/1.5 var(--text); padding: 40px 32px 80px; }
+  header { max-width: 1500px; margin: 0 auto 28px; display: flex; flex-wrap: wrap; align-items: end; gap: 12px 24px; }
+  header h1 { font: 800 40px/1 var(--display); letter-spacing: -.03em; }
+  header h1 small { font: 600 14px var(--mono); color: var(--blue); margin-left: 10px; letter-spacing: 0; vertical-align: middle; }
+  header p { color: var(--muted); flex: 1 1 360px; }
+  .tag { font: 12px var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 5px 12px; }
+  .act { max-width: 1500px; margin: 30px auto 12px; font: 600 12px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); display: flex; gap: 12px; align-items: center; }
+  .act::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+  .act b { color: var(--orange); } .act.order b { color: var(--blue); }
+  .grid { max-width: 1500px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; }
+  @media (max-width: 1100px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } body { padding: 24px 16px; } }
+  figure { display: flex; flex-direction: column; gap: 8px; }
+  .label { display: flex; justify-content: space-between; font: 12px var(--mono); color: var(--muted); letter-spacing: .06em; }
+  .label b { color: var(--white); font-weight: 600; }
+  figcaption { font-size: 13.5px; color: var(--muted); }
+  figcaption strong { color: var(--white); }
+  .seam { align-self: start; font: 11px var(--mono); padding: 3px 9px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+
+  /* ---------- the 16:9 cell: all sizes in cqw so it matches the 1920x1080 build ---------- */
+  .cell { aspect-ratio: 16 / 9; container-type: inline-size; position: relative; overflow: hidden; background: var(--ink); border-radius: 10px; border: 1px solid var(--line); }
+  .cell * { position: absolute; }
+  .cell .flow, .cell .flow *, .cell .h *, .cell .cap *, .cell .term .body *, .cell .prompt * { position: static; }
+  .h { font: 800 6.2cqw/0.95 var(--display); letter-spacing: -.035em; text-transform: lowercase; color: var(--white); }
+  .h em { font-style: normal; color: var(--orange); } .h i { font-style: normal; color: var(--blue); }
+  .cap { font: 1.5cqw/1.3 var(--text); color: var(--muted); }
+  .wall { inset: 0; background: radial-gradient(120% 90% at 30% 20%, #34405e, #1a1f2e 60%, #0d0f16); }
+  .shake { filter: saturate(1.3); }
+  .grey { filter: grayscale(1) brightness(.45); }
+
+  .term { width: 26cqw; height: 16cqw; background: #0c0c0c; border: .15cqw solid #3a3a3a; border-radius: .6cqw; box-shadow: 0 1cqw 2.5cqw rgba(0,0,0,.6); overflow: hidden; }
+  .term .bar { left: 0; right: 0; top: 0; height: 2.1cqw; background: #202020; display: flex; align-items: center; gap: .7cqw; padding: 0 .8cqw; font: 1cqw var(--text); color: #ddd; }
+  .term .bar img { position: static; width: 1.2cqw; height: 1.2cqw; }
+  .term .body { left: .9cqw; right: .9cqw; top: 2.8cqw; font: .95cqw/1.45 var(--mono); color: #c8c8c8; white-space: pre; }
+  .term .body .o { color: var(--orange); } .term .body .r { color: var(--red); } .term .body .b { color: var(--blue); } .term .body .g { color: var(--green); }
+
+  .pill { left: 50%; translate: -50% 0; top: 1.4cqw; height: 3.1cqw; border-radius: 99px; background: #000; border: .12cqw solid rgba(120,140,255,.55);
+          box-shadow: 0 0 0 .08cqw rgba(191,90,242,.35), 0 .8cqw 2cqw rgba(0,0,0,.7); display: flex; align-items: center; gap: .9cqw; padding: 0 1.4cqw; font: 600 1.25cqw var(--text); white-space: nowrap; }
+  .pill.warn { border-color: rgba(255,159,10,.7); box-shadow: 0 0 2.4cqw rgba(255,159,10,.35); color: var(--orange); }
+  .dots { position: relative !important; display: inline-block; width: 4cqw; height: 1.2cqw; }
+  .dots i { width: 1.2cqw; height: 1.2cqw; border-radius: 50%; top: 0; border: .15cqw solid #000; }
+  .glint { inset: 0; border-radius: 99px; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.55) 48%, transparent 60%); }
+
+  .prompt { background: #141414; border: .15cqw solid var(--orange); border-radius: .5cqw; padding: .8cqw 1.1cqw; font: 1.1cqw/1.45 var(--mono); color: #eee; white-space: pre; box-shadow: 0 .6cqw 1.6cqw rgba(0,0,0,.6); }
+  .prompt .o { color: var(--orange); }
+  .badge { background: var(--orange); color: #000; font: 700 1.1cqw var(--text); border-radius: 99px; padding: .3cqw .9cqw; }
+  .key { width: 7cqw; height: 7cqw; border-radius: 1.2cqw; background: linear-gradient(#2c2c2e, #1c1c1e); border: .15cqw solid #48484a; box-shadow: 0 .5cqw 0 #0a0a0a, 0 1cqw 2cqw rgba(0,0,0,.5);
+         display: grid; place-items: center; font: 700 3.4cqw var(--display); color: #fff; }
+  .key.wide { width: auto; height: 3.6cqw; padding: 0 1.4cqw; font-size: 1.5cqw; border-radius: .8cqw; }
+  .card { background: #1c1c1e; border-radius: 1.4cqw; }
+  .row { display: flex; align-items: center; gap: 1cqw; }
+  .tile { width: 2.6cqw; height: 2.6cqw; border-radius: .6cqw; display: grid; place-items: center; }
+  .tile img { position: static; width: 1.7cqw; height: 1.7cqw; }
+  .switch { width: 3.2cqw; height: 1.9cqw; border-radius: 99px; background: var(--green); }
+  .switch::after { content: ''; position: absolute; right: .2cqw; top: .2cqw; width: 1.5cqw; height: 1.5cqw; border-radius: 50%; background: #fff; }
+  .track { height: .55cqw; border-radius: 99px; background: rgba(118,118,128,.3); }
+  .cell .track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; }
+  .ph { border: .12cqw dashed #555; border-radius: .6cqw; display: grid; place-items: center; color: #777; font: 1cqw var(--mono); }
+
+  /* closing cells */
+  .strip { inset: 0; display: flex; align-items: center; padding: 0 2cqw; gap: .6cqw; }
+  .strip div { position: relative; flex: 1; height: 26cqw; border-radius: .6cqw; display: flex; flex-direction: column; justify-content: end; padding: .8cqw; font: 1.1cqw/1.3 var(--mono); }
+  .strip div b { font: 700 1.6cqw var(--display); }
+  .tok { inset: 3cqw; display: grid; grid-template-columns: 1fr 1fr; gap: 1.6cqw 3cqw; align-content: start; }
+  .tok > div { position: relative; }
+  .tok h4 { font: 600 1.1cqw var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: .7cqw; }
+  .sw { display: flex; gap: .6cqw; flex-wrap: wrap; }
+  .sw span { position: relative; width: 3.4cqw; height: 3.4cqw; border-radius: .5cqw; border: .1cqw solid #333; }
+  .tok p { position: relative; font: 1.25cqw/1.45 var(--text); color: #ddd; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Agent Notch, launch promo <small>v1</small></h1>
+  <p>Fun, loud chaos from too many coding agents, until a glossy black notch drops in and brings order.</p>
+  <span class="tag">1920×1080 · ~46s · 10 beats · music + SFX, no voice</span>
+</header>
+
+<!-- ============================== ACT 1: CHAOS ============================== -->
+<div class="act"><b>Act 1</b> Chaos · 0–15s</div>
+<div class="grid">
+
+<figure>
+  <div class="cell" id="frame-01">
+    <div class="wall shake"></div>
+    <div class="term" style="left:4cqw;top:6cqw;rotate:-4deg"><div class="bar"><img src="capture/assets/logo-claude.svg">claude · payments-api</div><div class="body">✻ Editing auth.ts…
+<span class="o">? Allow edit to auth.ts</span></div></div>
+    <div class="term" style="left:22cqw;top:20cqw;rotate:3deg"><div class="bar"><img src="capture/assets/logo-agy.svg">agy · payments-api</div><div class="body">Running tests…
+<span class="o">1. Yes  2. No</span></div></div>
+    <div class="term" style="left:56cqw;top:4cqw;rotate:5deg"><div class="bar"><img src="capture/assets/logo-opencode.svg">opencode · web-app</div><div class="body">Reading router.tsx
+<span class="b">● thinking</span></div></div>
+    <div class="term" style="left:66cqw;top:30cqw;rotate:-6deg"><div class="bar"><img src="capture/assets/logo-kilo.svg">kilo · web-app</div><div class="body">Add dark mode
+<span class="g">✓ theme.css</span></div></div>
+    <div class="term" style="left:40cqw;top:34cqw;rotate:-2deg"><div class="bar"><img src="capture/assets/logo-copilot.svg">copilot · docs</div><div class="body">EditFiles quickstart.md</div></div>
+    <div class="term" style="left:2cqw;top:36cqw;rotate:7deg"><div class="bar"><img src="capture/assets/logo-claude.svg">claude · landing</div><div class="body">✻ Thinking…</div></div>
+    <div class="term" style="left:34cqw;top:2cqw;rotate:-8deg;opacity:.9"><div class="bar"><img src="capture/assets/logo-agy.svg">agy · infra</div><div class="body"><span class="o">Do you trust this folder?</span></div></div>
+    <div class="h" style="left:0;right:0;top:22cqw;text-align:center;font-size:9cqw;text-shadow:0 .6cqw 3cqw #000">claude <em>again.</em></div>
+  </div>
+  <div class="label"><b>01 · TAB CHAOS</b><span>hook · 0–5s</span></div>
+  <figcaption><strong>Windows slam in, one per word.</strong> "claude." "agy." "opencode." "kilo." "copilot." "claude again." hard-cut on the beat, each word bringing a new tilted terminal; about 12 by the end, slight camera shake.</figcaption>
+  <span class="seam">→ cut</span>
+</figure>
+
+<figure>
+  <div class="cell" id="frame-02">
+    <div class="wall shake" style="filter:brightness(.7)"></div>
+    <div class="prompt" style="left:3cqw;top:5cqw;rotate:-3deg">1. Yes  2. No
+<span class="o">esc to cancel</span></div>
+    <div class="prompt" style="left:66cqw;top:4cqw;rotate:4deg">Allow: npm install
+react-router@7? <span class="o">(y/n)</span></div>
+    <div class="prompt" style="left:70cqw;top:38cqw;rotate:-5deg">Do you trust this folder?
+<span class="o">1. Yes, proceed</span></div>
+    <div class="prompt" style="left:4cqw;top:40cqw;rotate:5deg">Run: rm -rf dist?
+<span class="o">1. Yes  2. No</span></div>
+    <div class="prompt" style="left:34cqw;top:44cqw;rotate:-2deg">Allow edit to auth.ts?</div>
+    <div class="badge" style="left:30cqw;top:7cqw;rotate:-6deg">needs you</div>
+    <div class="badge" style="left:58cqw;top:30cqw;rotate:8deg">needs you</div>
+    <div class="badge" style="left:20cqw;top:34cqw;rotate:4deg">needs you</div>
+    <svg viewBox="0 0 24 24" style="left:62cqw;top:18cqw;width:3.4cqw;height:3.4cqw;filter:drop-shadow(0 .3cqw .5cqw #000)"><path d="M3 2l17 10-7 2 4 7-3 1.5-4-7-5 4.5z" fill="#fff" stroke="#000" stroke-width="1.2"/></svg>
+    <div class="h" style="left:0;right:0;top:18cqw;text-align:center">which one<br><em>needs you?</em></div>
+  </div>
+  <div class="label"><b>02 · EVERYONE NEEDS YOU</b><span>problem · 5–11s</span></div>
+  <figcaption><strong>Prompts close in from every edge.</strong> Real agent prompts pop in and crowd toward the centre while a panicked cursor zigzags and presses Enter on the wrong window.</figcaption>
+  <span class="seam">→ cut</span>
+</figure>
+
+<figure>
+  <div class="cell" id="frame-03">
+    <div class="wall" style="filter:brightness(.5) blur(.3cqw)"></div>
+    <div class="term" style="left:14cqw;top:8cqw;width:72cqw;height:40cqw;border-color:#555">
+      <div class="bar" style="height:4cqw;font-size:1.8cqw;gap:1.2cqw;padding:0 1.6cqw"><img src="capture/assets/logo-claude.svg" style="width:2.2cqw;height:2.2cqw">claude · payments-api</div>
+      <div class="body" style="top:7cqw;left:2.4cqw;font-size:2.1cqw;line-height:1.6">✻ Refactoring the API layer…
+<span class="r">⎿ Usage limit reached · resets 10:16 PM</span>
+</div>
+      <div class="pill" style="top:auto;bottom:3cqw;left:auto;right:3cqw;translate:none;border-color:var(--blue);color:var(--blue);font-size:1.9cqw;height:4.2cqw">◌ Working… 2h 14m</div>
+    </div>
+    <div class="cap" style="left:0;right:0;top:50cqw;text-align:center;font-size:2.2cqw;color:#fff">that one's been <em style="font-style:normal;color:var(--orange)">"working"</em> for 2 hours.</div>
+  </div>
+  <div class="label"><b>03 · STILL "WORKING"</b><span>problem · 11–15s</span></div>
+  <figcaption><strong>Punch-in on one Claude terminal.</strong> Red "Usage limit reached" while the spinner insists "Working… 2h 14m", the timer racing. Glitch builds hard for the last half-second.</figcaption>
+  <span class="seam">→ cut (hard freeze)</span>
+</figure>
+
+</div>
+
+<!-- ============================== THE TURN ============================== -->
+<div class="act order"><b>The turn</b> 15–19s</div>
+<div class="grid">
+
+<figure>
+  <div class="cell" id="frame-04">
+    <div class="wall grey" style="opacity:.35"></div>
+    <div class="term grey" style="left:6cqw;top:24cqw;rotate:-4deg;opacity:.35"></div>
+    <div class="term grey" style="left:66cqw;top:28cqw;rotate:5deg;opacity:.35"></div>
+    <div style="left:22cqw;top:8cqw;width:26cqw;height:.3cqw;rotate:-18deg;background:linear-gradient(90deg,transparent,#D97757)"></div>
+    <div style="left:52cqw;top:9cqw;width:24cqw;height:.3cqw;rotate:16deg;background:linear-gradient(90deg,#3DBE6A,transparent)"></div>
+    <div style="left:30cqw;top:14cqw;width:18cqw;height:.3cqw;rotate:-28deg;background:linear-gradient(90deg,transparent,#8B5CF6)"></div>
+    <div class="pill" style="top:4cqw;height:4.6cqw;font-size:1.9cqw;padding:0 2.2cqw;gap:1.3cqw">
+      <span class="dots" style="width:6cqw;height:1.8cqw"><i style="left:0;background:#D97757;width:1.8cqw;height:1.8cqw"></i><i style="left:1.1cqw;background:#3DBE6A;width:1.8cqw;height:1.8cqw"></i><i style="left:2.2cqw;background:#EDE8E6;width:1.8cqw;height:1.8cqw"></i><i style="left:3.3cqw;background:#F8F675;width:1.8cqw;height:1.8cqw"></i><i style="left:4.4cqw;background:#8B5CF6;width:1.8cqw;height:1.8cqw"></i></span>
+      <span style="position:static">5 working</span><span class="glint"></span>
+    </div>
+    <div class="h" style="left:0;right:0;top:25cqw;text-align:center;font-size:8cqw">meet <i>agent notch.</i></div>
+  </div>
+  <div class="label"><b>04 · THE NOTCH DROPS</b><span>turn · 15–19s</span></div>
+  <figcaption><strong>Freeze, silence, then the notch.</strong> Chaos drains to grey; the glossy pill springs down from the top edge, a glint sweeps its glass, and every window streaks into it as a coloured dot. The one crisp thing on screen.</figcaption>
+  <span class="seam">→ crossfade</span>
+</figure>
+
+</div>
+
+<!-- ============================== ACT 2: ORDER ============================== -->
+<div class="act order"><b>Act 2</b> Order · 19–46s</div>
+<div class="grid">
+
+<figure>
+  <div class="cell" id="frame-05">
+    <div class="h" style="left:6cqw;top:17cqw;font-size:5.6cqw">every agent.<br>every project.<br><i>one glance.</i></div>
+    <img src="capture/assets/notch-panel-open.png" alt="The expanded notch panel" style="right:8cqw;top:1cqw;height:53cqw">
+  </div>
+  <div class="label"><b>05 · ONE GLANCE</b><span>feature · 19–24s</span></div>
+  <figcaption><strong>The pill springs open into the real panel.</strong> Project groups cascade in (web-app, payments-api, docs); header counts tick into place. Panel is rebuilt in HTML from the app's own CSS, not a screenshot.</figcaption>
+  <span class="seam">→ push-slide left</span>
+</figure>
+
+<figure>
+  <div class="cell" id="frame-06">
+    <img src="capture/assets/notch-pill-needs-you.png" alt="Notch pill: OpenCode needs you" style="left:50%;translate:-50% 0;top:0;width:44cqw">
+    <div class="card row" style="left:50%;translate:-50% 0;top:10cqw;width:40cqw;padding:1.4cqw 1.8cqw">
+      <div class="tile" style="position:static;background:#000"><img src="capture/assets/logo-opencode.svg"></div>
+      <div class="flow" style="font:1.35cqw/1.4 var(--text)"><b style="color:var(--orange)">OpenCode needs you</b><br><span style="font-family:var(--mono);font-size:1.15cqw;color:var(--muted)">Allow: npm install react-router@7</span></div>
+    </div>
+    <div class="key" style="left:60cqw;top:24cqw">Y</div>
+    <div class="h" style="left:6cqw;top:25cqw;font-size:5.4cqw">needs you?<br><i>one key.</i></div>
+    <div class="cap" style="left:6cqw;top:44cqw">Y allow · N deny · Ctrl+Alt+J jumps to it</div>
+  </div>
+  <div class="label"><b>06 · NEEDS YOU? ONE KEY.</b><span>feature · 24–29s</span></div>
+  <figcaption><strong>Pill glows orange, peeks the request.</strong> A big Y keycap presses with a spring; the row flips to blue "Working" and the glow fades. Answers frame 02.</figcaption>
+  <span class="seam">→ push-slide left</span>
+</figure>
+
+<figure>
+  <div class="cell" id="frame-07">
+    <div class="term" style="left:6cqw;top:12cqw;width:44cqw;height:28cqw"><div class="bar" style="height:3cqw;font-size:1.4cqw"><img src="capture/assets/logo-agy.svg" style="width:1.7cqw;height:1.7cqw">agy · payments-api</div><div class="body" style="top:4.6cqw;font-size:1.45cqw;line-height:1.6">Run: npm test
+<span class="o">1. Yes</span>  2. No   esc to cancel
+<span class="g">↵ pressed by notch</span>
+Run: git add -A
+<span class="o">1. Yes</span>  2. No   esc to cancel
+<span class="g">↵ pressed by notch</span></div></div>
+    <div class="card row" style="left:56cqw;top:12cqw;width:38cqw;padding:1.3cqw 1.6cqw;justify-content:space-between">
+      <div class="row" style="position:relative"><div class="tile" style="position:static;background:#111"><img src="capture/assets/logo-agy.svg"></div><b class="flow" style="font:600 1.5cqw var(--text)">Antigravity</b></div>
+      <div class="row" style="position:relative"><b class="flow" style="font:700 1.1cqw var(--text);color:var(--green)">AUTO</b><div class="switch" style="position:relative"></div></div>
+    </div>
+    <div class="cap" style="left:56cqw;top:22cqw;font:1.3cqw var(--mono)">Enters pressed for you: <b style="color:#fff;font-size:2.4cqw">147</b></div>
+    <div class="h" style="left:56cqw;top:32cqw;font-size:5cqw">auto-enter.<br><i>finally.</i></div>
+  </div>
+  <div class="label"><b>07 · AUTO-ENTER</b><span>feature · 29–33s</span></div>
+  <figcaption><strong>AUTO flicks on, green.</strong> agy prompts land and get answered instantly, a small ↵ ripple from the notch each time; the counter races to 147.</figcaption>
+  <span class="seam">→ push-slide left</span>
+</figure>
+
+<figure>
+  <div class="cell" id="frame-08">
+    <div class="pill" style="top:2cqw">
+      <span class="dots"><i style="left:0;background:#D97757"></i><i style="left:.7cqw;background:#3DBE6A"></i><i style="left:1.4cqw;background:#EDE8E6"></i><i style="left:2.1cqw;background:#F8F675"></i></span>
+      <span style="position:static">4 working</span>
+      <span style="position:static;display:grid;grid-template-columns:repeat(2,.55cqw);gap:.18cqw"><i style="position:static;width:.55cqw;height:.55cqw;background:#fff;border-radius:.1cqw"></i><i style="position:static;width:.55cqw;height:.55cqw;background:#fff;border-radius:.1cqw"></i><i style="position:static;width:.55cqw;height:.55cqw;background:#fff;border-radius:.1cqw"></i><i style="position:static;width:.55cqw;height:.55cqw;background:#fff;border-radius:.1cqw"></i></span>
+    </div>
+    <div class="term" style="left:6cqw;top:9cqw;width:28cqw;height:16cqw"><div class="bar"><img src="capture/assets/logo-claude.svg">claude · payments-api</div></div>
+    <div class="term" style="left:36cqw;top:9cqw;width:28cqw;height:16cqw"><div class="bar"><img src="capture/assets/logo-agy.svg">agy · payments-api</div></div>
+    <div class="term" style="left:66cqw;top:9cqw;width:28cqw;height:16cqw"><div class="bar"><img src="capture/assets/logo-opencode.svg">opencode · web-app</div></div>
+    <div class="term" style="left:6cqw;top:27cqw;width:28cqw;height:16cqw"><div class="bar"><img src="capture/assets/logo-kilo.svg">kilo · web-app</div></div>
+    <div class="term" style="left:36cqw;top:27cqw;width:28cqw;height:16cqw"><div class="bar"><img src="capture/assets/logo-copilot.svg">copilot · docs</div></div>
+    <div class="term" style="left:66cqw;top:27cqw;width:28cqw;height:16cqw"><div class="bar"><img src="capture/assets/logo-claude.svg">claude · landing</div></div>
+    <div class="h" style="left:6cqw;top:46.5cqw;font-size:4.2cqw">one click. <i>every window.</i></div>
+    <div class="key wide" style="right:6cqw;top:46cqw">Ctrl+Alt+G</div>
+  </div>
+  <div class="label"><b>08 · ONE-CLICK GRID</b><span>feature · 33–37s</span></div>
+  <figcaption><strong>Frame 01's pile returns, calm.</strong> The grid button presses and every window flies on a spring into a tidy 3×2 grid, staggered, soft settle. Callback to frame 01.</figcaption>
+  <span class="seam">→ push-slide left</span>
+</figure>
+
+<figure>
+  <div class="cell" id="frame-09">
+    <img src="capture/assets/notch-toast-limits.png" alt="Notch toast: Claude at 82% of your 5-hour limit" style="left:50%;translate:-50% 0;top:0;width:44cqw">
+    <div class="card" style="left:6cqw;top:17cqw;width:44cqw;height:12cqw">
+      <div class="tile" style="left:1.6cqw;top:4.6cqw;background:#F4EFE6"><img src="capture/assets/logo-claude.svg"></div>
+      <div class="flow" style="position:absolute;left:6cqw;top:1.8cqw;right:1.6cqw;font:1.25cqw var(--text);color:var(--muted)">
+        <div style="display:flex;justify-content:space-between">5-hour <b style="color:#fff;font-size:1.6cqw">82%</b></div>
+        <div class="track" style="position:relative;margin:.5cqw 0 1.4cqw"><i style="width:82%;background:var(--orange)"></i></div>
+        <div style="display:flex;justify-content:space-between">Weekly <b style="color:#fff;font-size:1.6cqw">41%</b></div>
+        <div class="track" style="position:relative;margin-top:.5cqw"><i style="width:41%;background:var(--blue)"></i></div>
+      </div>
+    </div>
+    <div class="card row" style="left:6cqw;top:31cqw;width:44cqw;padding:1.3cqw 1.6cqw;background:rgba(255,69,58,.1)">
+      <div class="tile" style="position:static;background:#F4EFE6"><img src="capture/assets/logo-claude.svg"></div>
+      <div class="flow" style="font:1.3cqw/1.4 var(--text)"><b>Claude</b> <span style="color:var(--red);font-weight:600">● Stopped</span><br><span style="color:#FF8A80">Usage limit reached · resets 10:16 PM</span></div>
+    </div>
+    <div class="h" style="left:56cqw;top:20cqw;font-size:5cqw">know before<br>you hit<br><i>the wall.</i></div>
+  </div>
+  <div class="label"><b>09 · KNOW BEFORE THE WALL</b><span>feature · 37–41s</span></div>
+  <figcaption><strong>The 5-hour bar counts up to 82%, blue turning orange.</strong> The heads-up toast drops; frame 03's Claude returns honest: red "Stopped". Answers frame 03.</figcaption>
+  <span class="seam">→ zoom-through</span>
+</figure>
+
+<figure>
+  <div class="cell" id="frame-10">
+    <img src="capture/assets/agent-notch-icon.png" alt="Agent Notch icon" style="left:50%;translate:-50% 0;top:7cqw;width:11cqw">
+    <div class="h" style="left:0;right:0;top:20cqw;text-align:center;font-size:8cqw;text-transform:none">Agent Notch</div>
+    <div class="cap" style="left:0;right:0;top:30.5cqw;text-align:center;font:600 2.6cqw var(--display);color:#fff">All your coding agents. <span style="color:var(--blue)">One notch.</span></div>
+    <div class="row" style="left:50%;translate:-50% 0;top:40cqw;gap:1.6cqw">
+      <img src="capture/assets/logo-claude.svg" style="position:static;width:2.4cqw"><img src="capture/assets/logo-agy.svg" style="position:static;width:2.4cqw"><img src="capture/assets/logo-opencode.svg" style="position:static;width:2.4cqw"><img src="capture/assets/logo-kilo.svg" style="position:static;width:2.4cqw"><img src="capture/assets/logo-copilot.svg" style="position:static;width:2.4cqw">
+      <span class="flow" style="font:1.2cqw var(--mono);color:var(--muted);letter-spacing:.14em">FOR WINDOWS</span>
+    </div>
+  </div>
+  <div class="label"><b>10 · ONE NOTCH</b><span>lockup · 41–46s</span></div>
+  <figcaption><strong>The notch's goodbye stretch-up, then the lockup.</strong> Icon springs in, name and tagline settle, the five agent marks line up. <strong>Held frame:</strong> nothing moves for the final 2s.</figcaption>
+  <span class="seam">end</span>
+</figure>
+
+<!-- closing cells -->
+<figure>
+  <div class="cell">
+    <div class="strip">
+      <div style="background:#3a2a10;color:var(--orange)"><b>01</b>cut</div><div style="background:#3a2a10;color:var(--orange)"><b>02</b>cut</div><div style="background:#3a2a10;color:var(--orange)"><b>03</b>freeze</div>
+      <div style="background:#10223a;color:var(--blue)"><b>04</b>fade</div><div style="background:#10223a;color:var(--blue)"><b>05</b>push ←</div><div style="background:#10223a;color:var(--blue)"><b>06</b>push ←</div>
+      <div style="background:#10223a;color:var(--blue)"><b>07</b>push ←</div><div style="background:#10223a;color:var(--blue)"><b>08</b>push ←</div><div style="background:#10223a;color:var(--blue)"><b>09</b>zoom</div><div style="background:#1c1c1e;color:#fff"><b>10</b>hold</div>
+    </div>
+  </div>
+  <div class="label"><b>SEAM MAP</b><span>one direction: leftward</span></div>
+  <figcaption><strong>Chaos cuts hard; order glides.</strong> Act 1 is hard cuts on the beat. After the freeze, every feature pushes left like one continuous stage, and the lockup zooms through.</figcaption>
+</figure>
+
+<figure>
+  <div class="cell">
+    <div class="tok">
+      <div><h4>Palette</h4><div class="sw"><span style="background:#000"></span><span style="background:#fff"></span><span style="background:#0A84FF"></span><span style="background:#BF5AF2"></span><span style="background:#FF9F0A"></span><span style="background:#FF453A"></span><span style="background:#30D158"></span></div></div>
+      <div><h4>Type</h4><p>Segoe UI Variable Display 800, lowercase headlines · Segoe UI text · Cascadia Mono for terminals</p></div>
+      <div><h4>Spine</h4><p>The notch pill: it arrives at 04 and every later beat happens in or under it.</p></div>
+      <div><h4>Bans</h4><p>No fake notch UI (rebuild from the app's CSS) · no slideshow cards · no motion that says nothing · no chaos after the freeze</p></div>
+    </div>
+  </div>
+  <div class="label"><b>TOKENS</b><span>frame.md · broadside → notch</span></div>
+  <figcaption><strong>Two registers:</strong> orange noise for chaos, blue calm for order. Blue/violet rim and glint belong only to the notch.</figcaption>
+</figure>
+
+</div>
+</body>
+</html>

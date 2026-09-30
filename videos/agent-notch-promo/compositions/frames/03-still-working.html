@@ -1,0 +1,105 @@
+<template>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+@font-face { font-family: "Notch Sans"; src: url("assets/fonts/SegUIVar.ttf"); font-weight: 100 900; }
+@font-face { font-family: "Notch Mono"; src: url("assets/fonts/CascadiaMono.ttf"); }
+#root { position: absolute; inset: 0; overflow: hidden; }
+
+[data-composition-id="03-still-working"] { font-family: "Notch Sans", sans-serif; color: #fff; }
+[data-composition-id="03-still-working"] .bg { position: absolute; inset: 0; background: #000; }
+[data-composition-id="03-still-working"] .cam, [data-composition-id="03-still-working"] .cam2 { position: absolute; inset: 0; }
+[data-composition-id="03-still-working"] .wall { position: absolute; inset: 0; background: radial-gradient(120% 90% at 30% 20%, #34405e, #1a1f2e 60%, #0d0f16); }
+[data-composition-id="03-still-working"] .h { position: absolute; font-weight: 700; font-variation-settings: "opsz" 36; letter-spacing: -.045em; line-height: 1.04; text-transform: lowercase; color: #fff; }
+[data-composition-id="03-still-working"] .h div { display: block; }
+[data-composition-id="03-still-working"] .o { color: #FF9F0A; } [data-composition-id="03-still-working"] .b { color: #0A84FF; } [data-composition-id="03-still-working"] .r { color: #FF453A; } [data-composition-id="03-still-working"] .g { color: #30D158; }
+[data-composition-id="03-still-working"] .term { position: absolute; width: 500px; height: 300px; background: #0c0c0c; border: 2px solid #3a3a3a; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,.6); overflow: hidden; }
+[data-composition-id="03-still-working"] .term .bar { height: 40px; background: #202020; display: flex; align-items: center; gap: 12px; padding: 0 16px; font-size: 19px; color: #ddd; }
+[data-composition-id="03-still-working"] .term .bar img { width: 22px; height: 22px; }
+[data-composition-id="03-still-working"] .term .tx { padding: 14px 18px; font: 19px/1.5 "Notch Mono", monospace; color: #c8c8c8; white-space: pre; }
+[data-composition-id="03-still-working"] .pill { position: absolute; left: 0; right: 0; margin: 0 auto; top: 36px; width: max-content; height: 72px; border-radius: 36px; background: #000;
+          display: flex; align-items: center; gap: 18px; padding: 0 30px 0 26px; font-size: 27px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap;
+          box-shadow: 0 0 0 1px rgba(255,255,255,.1) inset, 0 24px 64px rgba(0,0,0,.55), 0 4px 12px rgba(0,0,0,.4); }
+[data-composition-id="03-still-working"] .rim { position: absolute; inset: 0; border-radius: inherit; padding: 3px; --spin: 0deg;
+         background: conic-gradient(from var(--spin), transparent 0deg 240deg, rgba(10,132,255,.9) 315deg, rgba(191,90,242,.95) 342deg, transparent 360deg);
+         -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+[data-composition-id="03-still-working"] .dots { position: relative; display: flex; }
+[data-composition-id="03-still-working"] .dots i { display: block; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #000; margin-left: -9px; }
+[data-composition-id="03-still-working"] .dots i:first-child { margin-left: 0; }
+[data-composition-id="03-still-working"] .tile { display: grid; place-items: center; border-radius: 22%; box-shadow: 0 0 0 1px rgba(255,255,255,.12) inset, 0 2px 4px rgba(0,0,0,.4); flex: none; }
+[data-composition-id="03-still-working"] .tile img { width: 62%; height: 62%; }
+[data-composition-id="03-still-working"] .tile.agy img, [data-composition-id="03-still-working"] .tile.kilo img { width: 80%; height: 80%; }
+[data-composition-id="03-still-working"] .claude { background: #F4EFE6; } [data-composition-id="03-still-working"] .agy { background: linear-gradient(160deg, #24252B, #131418); }
+[data-composition-id="03-still-working"] .opencode { background: linear-gradient(160deg, #262222, #121010); } [data-composition-id="03-still-working"] .kilo { background: #0B0B0B; }
+[data-composition-id="03-still-working"] .copilot { background: linear-gradient(160deg, #3B2A6B, #17112E); }
+[data-composition-id="03-still-working"] .key { position: absolute; display: grid; place-items: center; background: linear-gradient(#2c2c2e, #1c1c1e); border: 3px solid #48484a; color: #fff; font-weight: 700;
+         box-shadow: 0 10px 0 #0a0a0a, 0 24px 48px rgba(0,0,0,.55); }
+[data-composition-id="03-still-working"] .card { position: absolute; background: #1c1c1e; border-radius: 28px; }
+[data-composition-id="03-still-working"] .spin { display: inline-block; border-radius: 50%; border: 3px solid rgba(10,132,255,.25); border-top-color: #0A84FF; }
+
+[data-composition-id="03-still-working"] .blur { position: absolute; inset: 0; filter: blur(10px) brightness(.4); }
+[data-composition-id="03-still-working"] .big { left: 240px; top: 90px; width: 1440px; height: 600px; border-radius: 20px; border-color: #555; }
+[data-composition-id="03-still-working"] .big .bar { height: 72px; font-size: 30px; gap: 18px; padding: 0 28px; }
+[data-composition-id="03-still-working"] .big .bar img { width: 36px; height: 36px; }
+[data-composition-id="03-still-working"] .big .tx { padding: 44px 52px; font-size: 40px; line-height: 1.7; }
+[data-composition-id="03-still-working"] .line1 { display: inline-block; }
+[data-composition-id="03-still-working"] .chip { position: absolute; right: 48px; bottom: 44px; display: flex; align-items: center; gap: 16px; padding: 16px 30px; border-radius: 99px; border: 2px solid #0A84FF; color: #2E95FF; font-size: 34px; font-weight: 600; background: rgba(10,132,255,.08); }
+[data-composition-id="03-still-working"] .chip .spin { width: 32px; height: 32px; }
+[data-composition-id="03-still-working"] .timer { font-variant-numeric: tabular-nums; }
+[data-composition-id="03-still-working"] .cap { position: absolute; left: 0; right: 0; top: 750px; text-align: center; font-size: 66px; font-weight: 600; letter-spacing: -.02em; }
+[data-composition-id="03-still-working"] .slice { position: absolute; left: 0; right: 0; height: 26px; opacity: 0; mix-blend-mode: screen; }
+
+</style>
+<div id="root" data-composition-id="03-still-working" data-width="1920" data-height="1080">
+  <div class="bg clip" id="f03-still-working-bg" data-start="0" data-duration="4" data-track-index="0"></div>
+  <div class="clip" id="f03-still-working-content" data-start="0" data-duration="4" data-track-index="1" style="position:absolute;inset:0">
+    <div class="cam"><div class="cam2">
+      <div data-layout-allow-overlap class="blur" data-layout-allow-overlap><div class="wall"></div><div data-layout-allow-overlap class="term" id="f03-g0" style="left:70px;top:90px;transform:rotate(-4deg)"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-claude.svg" alt="">claude · payments-api</div><div class="tx" data-layout-allow-overlap>✻ Editing auth.ts…
+<span data-layout-allow-overlap class="o">? Allow edit to auth.ts</span></div></div><div data-layout-allow-overlap class="term" id="f03-g1" style="left:430px;top:330px;transform:rotate(3deg)"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-agy.svg" alt="">agy · payments-api</div><div class="tx" data-layout-allow-overlap>Running tests…
+<span data-layout-allow-overlap class="o">1. Yes  2. No</span></div></div><div data-layout-allow-overlap class="term" id="f03-g2" style="left:1090px;top:70px;transform:rotate(5deg)"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-opencode.svg" alt="">opencode · web-app</div><div class="tx" data-layout-allow-overlap>Reading router.tsx
+<span data-layout-allow-overlap class="b">● thinking</span></div></div><div data-layout-allow-overlap class="term" id="f03-g3" style="left:1290px;top:560px;transform:rotate(-6deg)"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-kilo.svg" alt="">kilo · web-app</div><div class="tx" data-layout-allow-overlap>Add dark mode
+<span data-layout-allow-overlap class="g">✓ theme.css</span></div></div><div data-layout-allow-overlap class="term" id="f03-g4" style="left:780px;top:640px;transform:rotate(-2deg)"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-copilot.svg" alt="">copilot · docs</div><div class="tx" data-layout-allow-overlap>EditFiles quickstart.md
+…</div></div></div>
+      <div data-layout-allow-overlap class="term big"><div data-layout-allow-overlap class="bar"><img src="assets/logo-claude.svg" alt="">claude · payments-api</div>
+        <div class="tx"><span class="line1" id="f03-l1">✻ Refactoring the API layer…</span>
+<span data-layout-allow-overlap class="r" id="f03-l2">⎿ Usage limit reached · resets 10:16 PM</span></div>
+        <div data-layout-allow-overlap class="chip" id="f03-chip"><span class="spin" id="f03-spin"></span><span>Working… <span class="timer" id="f03-timer">1h 58m</span></span></div>
+      </div>
+      <div class="cap" id="f03-cap">that one's been <span data-layout-allow-overlap class="o">"working"</span> for 2 hours.</div>
+      <div class="slice" id="f03-s1" style="top:260px;background:rgba(255,0,80,.55)"></div>
+      <div class="slice" id="f03-s2" style="top:470px;background:rgba(0,220,255,.5)"></div>
+      <div class="slice" id="f03-s3" style="top:640px;background:rgba(255,159,10,.5)"></div>
+    </div></div>
+  </div>
+</div>
+<script>
+(function () {
+  const R = document.querySelector('[data-composition-id="03-still-working"]')
+  const $ = s => R.querySelector(s), $$ = s => Array.from(R.querySelectorAll(s))
+  const tl = gsap.timeline({ paused: true })
+
+  tl.fromTo($('.big'), { opacity: 0, scale: .82 }, { opacity: 1, scale: 1, duration: .35, ease: "power4.out" }, 0)
+  tl.fromTo($('#f03-l1'), { clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)", duration: .9, ease: "steps(28)" }, .15)
+  tl.fromTo($('#f03-chip'), { opacity: 0, x: 30 }, { opacity: 1, x: 0, duration: .3, ease: "power3.out" }, .25)
+  tl.fromTo($('#f03-spin'), { rotation: 0 }, { rotation: 360 * 7, duration: 4, ease: "none" }, 0)
+  tl.fromTo($('#f03-l2'), { opacity: 0, x: -24 }, { opacity: 1, x: 0, duration: .22, ease: "power3.out" }, 1.2)
+  const timer = $('#f03-timer'), clock = { m: 118 }
+  tl.fromTo(clock, { m: 118 }, { m: 134, duration: 2.4, ease: "power2.in", onUpdate: () => { const m = Math.round(clock.m); timer.textContent = Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm' } }, 1.2)
+  tl.fromTo($('#f03-cap'), { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .45, ease: "power3.out" }, 2.4)
+  tl.fromTo($('.cam2'), { scale: 1 }, { scale: 1.05, duration: 4, ease: "none" }, 0)
+  tl.to($('.cam'), { x: 14, y: -10, duration: 0.1, ease: "none" }, 3.400)
+  tl.to($('.cam'), { x: -19, y: 6, duration: 0.1, ease: "none" }, 3.500)
+  tl.to($('.cam'), { x: 11, y: 18, duration: 0.1, ease: "none" }, 3.600)
+  tl.to($('.cam'), { x: -8, y: -21, duration: 0.1, ease: "none" }, 3.700)
+  tl.to($('.cam'), { x: 21, y: 3, duration: 0.1, ease: "none" }, 3.800)
+  tl.to($('.cam'), { x: -13, y: 14, duration: 0.1, ease: "none" }, 3.900)
+  tl.to($('.cam'), { x: 0, y: 0, duration: 0.1, ease: "none" }, 4.000)
+  ;['#f03-s1', '#f03-s2', '#f03-s3'].forEach((s, i) => {
+    tl.fromTo($(s), { opacity: 0, x: -40 }, { opacity: 1, x: 40, duration: .08, ease: "none", yoyo: true, repeat: 3 }, 3.45 + i * .12)
+  })
+  tl.to($('.big'), { skewX: 6, duration: .06, yoyo: true, repeat: 5, ease: "none" }, 3.55)
+  tl.to($('.cam2'), { filter: "brightness(1.8) saturate(2)", duration: .05, yoyo: true, repeat: 3, ease: "none" }, 3.72)
+
+  window.__timelines["03-still-working"] = tl
+})()
+</script>
+</template>

@@ -1,0 +1,94 @@
+<template>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+@font-face { font-family: "Notch Sans"; src: url("assets/fonts/SegUIVar.ttf"); font-weight: 100 900; }
+@font-face { font-family: "Notch Mono"; src: url("assets/fonts/CascadiaMono.ttf"); }
+#root { position: absolute; inset: 0; overflow: hidden; }
+
+[data-composition-id="07-auto-enter"] { font-family: "Notch Sans", sans-serif; color: #fff; }
+[data-composition-id="07-auto-enter"] .bg { position: absolute; inset: 0; background: #000; }
+[data-composition-id="07-auto-enter"] .cam, [data-composition-id="07-auto-enter"] .cam2 { position: absolute; inset: 0; }
+[data-composition-id="07-auto-enter"] .wall { position: absolute; inset: 0; background: radial-gradient(120% 90% at 30% 20%, #34405e, #1a1f2e 60%, #0d0f16); }
+[data-composition-id="07-auto-enter"] .h { position: absolute; font-weight: 700; font-variation-settings: "opsz" 36; letter-spacing: -.045em; line-height: 1.04; text-transform: lowercase; color: #fff; }
+[data-composition-id="07-auto-enter"] .h div { display: block; }
+[data-composition-id="07-auto-enter"] .o { color: #FF9F0A; } [data-composition-id="07-auto-enter"] .b { color: #0A84FF; } [data-composition-id="07-auto-enter"] .r { color: #FF453A; } [data-composition-id="07-auto-enter"] .g { color: #30D158; }
+[data-composition-id="07-auto-enter"] .term { position: absolute; width: 500px; height: 300px; background: #0c0c0c; border: 2px solid #3a3a3a; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,.6); overflow: hidden; }
+[data-composition-id="07-auto-enter"] .term .bar { height: 40px; background: #202020; display: flex; align-items: center; gap: 12px; padding: 0 16px; font-size: 19px; color: #ddd; }
+[data-composition-id="07-auto-enter"] .term .bar img { width: 22px; height: 22px; }
+[data-composition-id="07-auto-enter"] .term .tx { padding: 14px 18px; font: 19px/1.5 "Notch Mono", monospace; color: #c8c8c8; white-space: pre; }
+[data-composition-id="07-auto-enter"] .pill { position: absolute; left: 0; right: 0; margin: 0 auto; top: 36px; width: max-content; height: 72px; border-radius: 36px; background: #000;
+          display: flex; align-items: center; gap: 18px; padding: 0 30px 0 26px; font-size: 27px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap;
+          box-shadow: 0 0 0 1px rgba(255,255,255,.1) inset, 0 24px 64px rgba(0,0,0,.55), 0 4px 12px rgba(0,0,0,.4); }
+[data-composition-id="07-auto-enter"] .rim { position: absolute; inset: 0; border-radius: inherit; padding: 3px; --spin: 0deg;
+         background: conic-gradient(from var(--spin), transparent 0deg 240deg, rgba(10,132,255,.9) 315deg, rgba(191,90,242,.95) 342deg, transparent 360deg);
+         -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+[data-composition-id="07-auto-enter"] .dots { position: relative; display: flex; }
+[data-composition-id="07-auto-enter"] .dots i { display: block; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #000; margin-left: -9px; }
+[data-composition-id="07-auto-enter"] .dots i:first-child { margin-left: 0; }
+[data-composition-id="07-auto-enter"] .tile { display: grid; place-items: center; border-radius: 22%; box-shadow: 0 0 0 1px rgba(255,255,255,.12) inset, 0 2px 4px rgba(0,0,0,.4); flex: none; }
+[data-composition-id="07-auto-enter"] .tile img { width: 62%; height: 62%; }
+[data-composition-id="07-auto-enter"] .tile.agy img, [data-composition-id="07-auto-enter"] .tile.kilo img { width: 80%; height: 80%; }
+[data-composition-id="07-auto-enter"] .claude { background: #F4EFE6; } [data-composition-id="07-auto-enter"] .agy { background: linear-gradient(160deg, #24252B, #131418); }
+[data-composition-id="07-auto-enter"] .opencode { background: linear-gradient(160deg, #262222, #121010); } [data-composition-id="07-auto-enter"] .kilo { background: #0B0B0B; }
+[data-composition-id="07-auto-enter"] .copilot { background: linear-gradient(160deg, #3B2A6B, #17112E); }
+[data-composition-id="07-auto-enter"] .key { position: absolute; display: grid; place-items: center; background: linear-gradient(#2c2c2e, #1c1c1e); border: 3px solid #48484a; color: #fff; font-weight: 700;
+         box-shadow: 0 10px 0 #0a0a0a, 0 24px 48px rgba(0,0,0,.55); }
+[data-composition-id="07-auto-enter"] .card { position: absolute; background: #1c1c1e; border-radius: 28px; }
+[data-composition-id="07-auto-enter"] .spin { display: inline-block; border-radius: 50%; border: 3px solid rgba(10,132,255,.25); border-top-color: #0A84FF; }
+
+[data-composition-id="07-auto-enter"] .aterm { left: 110px; top: 150px; width: 860px; height: 600px; border-radius: 18px; }
+[data-composition-id="07-auto-enter"] .aterm .bar { height: 64px; font-size: 27px; gap: 16px; padding: 0 24px; }
+[data-composition-id="07-auto-enter"] .aterm .bar img { width: 32px; height: 32px; }
+[data-composition-id="07-auto-enter"] .aterm .tx { padding: 26px 34px; font-size: 30px; line-height: 1.55; }
+[data-composition-id="07-auto-enter"] .aterm .tx div { display: block; }
+[data-composition-id="07-auto-enter"] .arow { left: 1040px; top: 150px; width: 780px; padding: 26px 30px; display: flex; align-items: center; gap: 22px; }
+[data-composition-id="07-auto-enter"] .arow .nm { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+[data-composition-id="07-auto-enter"] .arow b { font-size: 36px; font-weight: 600; }
+[data-composition-id="07-auto-enter"] .arow .sub { font-size: 26px; color: rgba(235,235,245,.6); }
+[data-composition-id="07-auto-enter"] .autol { font-size: 24px; font-weight: 700; letter-spacing: .03em; color: rgba(235,235,245,.55); }
+[data-composition-id="07-auto-enter"] .knob { position: relative; width: 76px; height: 44px; border-radius: 22px; background: rgba(120,120,128,.36); }
+[data-composition-id="07-auto-enter"] .knob i { position: absolute; top: 4px; left: 4px; width: 36px; height: 36px; border-radius: 18px; background: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.35); }
+[data-composition-id="07-auto-enter"] .cnt { position: absolute; left: 1044px; top: 330px; font: 28px "Notch Mono", monospace; color: rgba(235,235,245,.6); display: flex; align-items: baseline; gap: 22px; }
+[data-composition-id="07-auto-enter"] .cnt b { font: 700 96px "Notch Sans", sans-serif; color: #fff; font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
+[data-composition-id="07-auto-enter"] .zap { position: absolute; left: 0; top: 0; width: 46px; height: 46px; border-radius: 50%; background: #0A84FF; color: #fff; display: grid; place-items: center; font-size: 28px; font-weight: 700; box-shadow: 0 0 30px rgba(10,132,255,.8); }
+[data-composition-id="07-auto-enter"] .head { left: 1040px; top: 500px; font-size: 130px; }
+
+</style>
+<div id="root" data-composition-id="07-auto-enter" data-width="1920" data-height="1080">
+  <div class="bg clip" id="f07-auto-enter-bg" data-start="0" data-duration="4" data-track-index="0"></div>
+  <div class="clip" id="f07-auto-enter-content" data-start="0" data-duration="4" data-track-index="1" style="position:absolute;inset:0">
+      <div data-layout-allow-overlap class="term aterm"><div data-layout-allow-overlap class="bar"><img src="assets/logo-agy.svg" alt="">agy · payments-api</div><div class="tx"><div id="f07-x0">Run: npm test</div><div id="f07-x1"><span data-layout-allow-overlap class="o">1. Yes</span>  2. No   esc to cancel</div><div id="f07-x2"><span data-layout-allow-overlap class="g">↵ pressed by notch</span></div><div id="f07-x3">Run: git add -A</div><div id="f07-x4"><span data-layout-allow-overlap class="o">1. Yes</span>  2. No   esc to cancel</div><div id="f07-x5"><span data-layout-allow-overlap class="g">↵ pressed by notch</span></div><div id="f07-x6">Edit: webhook.test.ts</div><div id="f07-x7"><span data-layout-allow-overlap class="o">1. Yes</span>  2. No   esc to cancel</div><div id="f07-x8"><span data-layout-allow-overlap class="g">↵ pressed by notch</span></div></div></div>
+      <div class="card arow" id="f07-row"><div class="tile agy" style="width:76px;height:76px"><img src="assets/logo-agy.svg" alt=""></div><div class="nm"><b>Antigravity</b><span class="sub">Write the webhook tests</span></div><span class="autol" id="f07-al">AUTO</span><div class="knob" id="f07-kb"><i id="f07-kn"></i></div></div>
+      <div class="cnt" id="f07-cnt">Enters pressed for you <b id="f07-n">0</b></div>
+      <div class="zap" id="f07-z0">↵</div><div class="zap" id="f07-z1">↵</div><div class="zap" id="f07-z2">↵</div>
+      <div class="h head"><div data-layout-allow-overlap id="f07-l0">auto-enter.</div><div data-layout-allow-overlap id="f07-l1" class="b">finally.</div></div>
+  </div>
+</div>
+<script>
+(function () {
+  const R = document.querySelector('[data-composition-id="07-auto-enter"]')
+  const $ = s => R.querySelector(s), $$ = s => Array.from(R.querySelectorAll(s))
+  const tl = gsap.timeline({ paused: true })
+
+  const L = [0.2,0.9,1.12,1.4,1.6,1.82,2.05,2.25,2.47]
+  tl.fromTo($('.aterm'), { opacity: 0, x: -60 }, { opacity: 1, x: 0, duration: .5, ease: "power3.out" }, 0)
+  tl.fromTo($('#f07-row'), { opacity: 0, x: 60 }, { opacity: 1, x: 0, duration: .5, ease: "power3.out" }, .05)
+  L.forEach((t, i) => tl.fromTo($('#f07-x' + i), { opacity: 0 }, { opacity: 1, duration: .08, ease: "none" }, t))
+  tl.to($('#f07-kn'), { x: 32, duration: .4, ease: "back.out(2)" }, .6)
+  tl.to($('#f07-kb'), { backgroundColor: "#30D158", duration: .25 }, .6)
+  tl.to($('#f07-al'), { color: "#30D158", duration: .25 }, .6)
+  tl.fromTo($('#f07-cnt'), { opacity: 0 }, { opacity: 1, duration: .3 }, .8)
+  ;[0, 1, 2].forEach(i => {
+    const z = $('#f07-z' + i), t = [0.9, 1.6, 2.25][i], ly = 150 + 64 + 26 + (1 + i * 3) * 46.5
+    tl.fromTo(z, { x: 1700, y: 200, opacity: 0, scale: .6 }, { x: 560, y: ly - 4, opacity: 1, scale: 1, duration: .2, ease: "power2.in" }, t)
+    tl.to(z, { opacity: 0, scale: 2, duration: .18, ease: "power2.out" }, t + .2)
+  })
+  const n = $('#f07-n'), c = { v: 0 }
+  tl.fromTo(c, { v: 0 }, { v: 147, duration: 2, ease: "power2.in", onUpdate: () => { n.textContent = Math.round(c.v) } }, .9)
+  tl.fromTo($('#f07-l0'), { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: .6, ease: "power3.out" }, 2.8)
+  tl.fromTo($('#f07-l1'), { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: .6, ease: "power3.out" }, 3.0)
+
+  window.__timelines["07-auto-enter"] = tl
+})()
+</script>
+</template>

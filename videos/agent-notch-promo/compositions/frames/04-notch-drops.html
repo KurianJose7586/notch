@@ -1,0 +1,102 @@
+<template>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+@font-face { font-family: "Notch Sans"; src: url("assets/fonts/SegUIVar.ttf"); font-weight: 100 900; }
+@font-face { font-family: "Notch Mono"; src: url("assets/fonts/CascadiaMono.ttf"); }
+#root { position: absolute; inset: 0; overflow: hidden; }
+
+[data-composition-id="04-notch-drops"] { font-family: "Notch Sans", sans-serif; color: #fff; }
+[data-composition-id="04-notch-drops"] .bg { position: absolute; inset: 0; background: #000; }
+[data-composition-id="04-notch-drops"] .cam, [data-composition-id="04-notch-drops"] .cam2 { position: absolute; inset: 0; }
+[data-composition-id="04-notch-drops"] .wall { position: absolute; inset: 0; background: radial-gradient(120% 90% at 30% 20%, #34405e, #1a1f2e 60%, #0d0f16); }
+[data-composition-id="04-notch-drops"] .h { position: absolute; font-weight: 700; font-variation-settings: "opsz" 36; letter-spacing: -.045em; line-height: 1.04; text-transform: lowercase; color: #fff; }
+[data-composition-id="04-notch-drops"] .h div { display: block; }
+[data-composition-id="04-notch-drops"] .o { color: #FF9F0A; } [data-composition-id="04-notch-drops"] .b { color: #0A84FF; } [data-composition-id="04-notch-drops"] .r { color: #FF453A; } [data-composition-id="04-notch-drops"] .g { color: #30D158; }
+[data-composition-id="04-notch-drops"] .term { position: absolute; width: 500px; height: 300px; background: #0c0c0c; border: 2px solid #3a3a3a; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,.6); overflow: hidden; }
+[data-composition-id="04-notch-drops"] .term .bar { height: 40px; background: #202020; display: flex; align-items: center; gap: 12px; padding: 0 16px; font-size: 19px; color: #ddd; }
+[data-composition-id="04-notch-drops"] .term .bar img { width: 22px; height: 22px; }
+[data-composition-id="04-notch-drops"] .term .tx { padding: 14px 18px; font: 19px/1.5 "Notch Mono", monospace; color: #c8c8c8; white-space: pre; }
+[data-composition-id="04-notch-drops"] .pill { position: absolute; left: 0; right: 0; margin: 0 auto; top: 36px; width: max-content; height: 72px; border-radius: 36px; background: #000;
+          display: flex; align-items: center; gap: 18px; padding: 0 30px 0 26px; font-size: 27px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap;
+          box-shadow: 0 0 0 1px rgba(255,255,255,.1) inset, 0 24px 64px rgba(0,0,0,.55), 0 4px 12px rgba(0,0,0,.4); }
+[data-composition-id="04-notch-drops"] .rim { position: absolute; inset: 0; border-radius: inherit; padding: 3px; --spin: 0deg;
+         background: conic-gradient(from var(--spin), transparent 0deg 240deg, rgba(10,132,255,.9) 315deg, rgba(191,90,242,.95) 342deg, transparent 360deg);
+         -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+[data-composition-id="04-notch-drops"] .dots { position: relative; display: flex; }
+[data-composition-id="04-notch-drops"] .dots i { display: block; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #000; margin-left: -9px; }
+[data-composition-id="04-notch-drops"] .dots i:first-child { margin-left: 0; }
+[data-composition-id="04-notch-drops"] .tile { display: grid; place-items: center; border-radius: 22%; box-shadow: 0 0 0 1px rgba(255,255,255,.12) inset, 0 2px 4px rgba(0,0,0,.4); flex: none; }
+[data-composition-id="04-notch-drops"] .tile img { width: 62%; height: 62%; }
+[data-composition-id="04-notch-drops"] .tile.agy img, [data-composition-id="04-notch-drops"] .tile.kilo img { width: 80%; height: 80%; }
+[data-composition-id="04-notch-drops"] .claude { background: #F4EFE6; } [data-composition-id="04-notch-drops"] .agy { background: linear-gradient(160deg, #24252B, #131418); }
+[data-composition-id="04-notch-drops"] .opencode { background: linear-gradient(160deg, #262222, #121010); } [data-composition-id="04-notch-drops"] .kilo { background: #0B0B0B; }
+[data-composition-id="04-notch-drops"] .copilot { background: linear-gradient(160deg, #3B2A6B, #17112E); }
+[data-composition-id="04-notch-drops"] .key { position: absolute; display: grid; place-items: center; background: linear-gradient(#2c2c2e, #1c1c1e); border: 3px solid #48484a; color: #fff; font-weight: 700;
+         box-shadow: 0 10px 0 #0a0a0a, 0 24px 48px rgba(0,0,0,.55); }
+[data-composition-id="04-notch-drops"] .card { position: absolute; background: #1c1c1e; border-radius: 28px; }
+[data-composition-id="04-notch-drops"] .spin { display: inline-block; border-radius: 50%; border: 3px solid rgba(10,132,255,.25); border-top-color: #0A84FF; }
+
+[data-composition-id="04-notch-drops"] .chaos { position: absolute; inset: 0; }
+[data-composition-id="04-notch-drops"] .halo { position: absolute; left: 0; right: 0; margin: 0 auto; top: -120px; width: 900px; height: 420px; border-radius: 50%;
+          background: radial-gradient(closest-side, rgba(10,132,255,.35), rgba(191,90,242,.18) 55%, transparent); }
+[data-composition-id="04-notch-drops"] .pill { gap: 16px; }
+[data-composition-id="04-notch-drops"] .glint { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; }
+[data-composition-id="04-notch-drops"] .glint i { position: absolute; top: -20px; bottom: -20px; width: 140px; background: linear-gradient(100deg, transparent, rgba(255,255,255,.75), transparent); }
+[data-composition-id="04-notch-drops"] .head { left: 0; right: 0; top: 420px; text-align: center; font-size: 170px; }
+
+</style>
+<div id="root" data-composition-id="04-notch-drops" data-width="1920" data-height="1080">
+  <div class="bg clip" id="f04-notch-drops-bg" data-start="0" data-duration="4" data-track-index="0"></div>
+  <div class="clip" id="f04-notch-drops-content" data-start="0" data-duration="4" data-track-index="1" style="position:absolute;inset:0">
+      <div class="chaos" id="f04-chaos" data-layout-allow-overlap><div class="wall" id="f04-wall"></div>
+        <div data-layout-allow-overlap class="term" id="f04-t0" style="left:70px;top:90px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-claude.svg" alt="">claude · payments-api</div><div class="tx" data-layout-allow-overlap>✻ Editing auth.ts…
+<span data-layout-allow-overlap class="o">? Allow edit to auth.ts</span></div></div>
+        <div data-layout-allow-overlap class="term" id="f04-t1" style="left:430px;top:330px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-agy.svg" alt="">agy · payments-api</div><div class="tx" data-layout-allow-overlap>Running tests…
+<span data-layout-allow-overlap class="o">1. Yes  2. No</span></div></div>
+        <div data-layout-allow-overlap class="term" id="f04-t2" style="left:1090px;top:70px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-opencode.svg" alt="">opencode · web-app</div><div class="tx" data-layout-allow-overlap>Reading router.tsx
+<span data-layout-allow-overlap class="b">● thinking</span></div></div>
+        <div data-layout-allow-overlap class="term" id="f04-t3" style="left:1290px;top:560px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-kilo.svg" alt="">kilo · web-app</div><div class="tx" data-layout-allow-overlap>Add dark mode
+<span data-layout-allow-overlap class="g">✓ theme.css</span></div></div>
+        <div data-layout-allow-overlap class="term" id="f04-t4" style="left:780px;top:640px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-copilot.svg" alt="">copilot · docs</div><div class="tx" data-layout-allow-overlap>EditFiles quickstart.md
+…</div></div>
+        <div data-layout-allow-overlap class="term" id="f04-t5" style="left:40px;top:640px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-claude.svg" alt="">claude · landing</div><div class="tx" data-layout-allow-overlap>✻ Thinking…</div></div>
+      </div>
+      <div class="halo" id="f04-halo"></div>
+      <div class="pill" id="f04-pill"><div data-layout-allow-overlap class="rim" id="f04-rim"></div><span class="dots"><i style="background:#D97757"></i><i style="background:#3DBE6A"></i><i style="background:#EDE8E6"></i><i style="background:#F8F675"></i><i style="background:#8B5CF6"></i></span><span id="f04-label">5 working</span><div data-layout-allow-overlap class="glint"><i id="f04-glint"></i></div></div>
+      <div class="h head"><span id="f04-a">meet </span><span data-layout-allow-overlap class="b" id="f04-b">agent notch.</span></div>
+  </div>
+</div>
+<script>
+(function () {
+  const R = document.querySelector('[data-composition-id="04-notch-drops"]')
+  const $ = s => R.querySelector(s), $$ = s => Array.from(R.querySelectorAll(s))
+  const tl = gsap.timeline({ paused: true })
+
+  const ROT = [-4,3,5,-6,-2,7], POS = [[320,240],[680,480],[1340,220],[1540,710],[1030,790],[290,790]]
+  const COL = ["#D97757","#3DBE6A","#EDE8E6","#F8F675","#8B5CF6","#D97757"]
+  const terms = $$('.term')
+  terms.forEach((el, i) => tl.set(el, { rotation: ROT[i] }, 0))
+  tl.fromTo($('#f04-chaos'), { filter: "grayscale(0.3) brightness(0.8)" }, { filter: "grayscale(1) brightness(0.45)", duration: .7, ease: "power2.out" }, 0)
+  tl.fromTo($('#f04-pill'), { y: -170, scale: .8 }, { y: 0, scale: 1.6, duration: 1.1, ease: "elastic.out(1, 0.62)" }, .7)
+  tl.fromTo($('#f04-halo'), { opacity: 0 }, { opacity: 1, duration: 1, ease: "power2.out" }, 1.1)
+  tl.fromTo($('#f04-rim'), { opacity: 0 }, { opacity: 1, duration: .6, ease: "power2.out" }, 1.15)
+  tl.fromTo($('#f04-rim'), { "--spin": "0deg" }, { "--spin": "620deg", duration: 2.9, ease: "power1.inOut" }, 1.1)
+  tl.fromTo($('#f04-glint'), { x: -200 }, { x: 560, duration: .75, ease: "power2.inOut" }, 1.3)
+  const dotsEls = $$('.dots i')
+  dotsEls.forEach(d => tl.set(d, { scale: 0 }, 0))
+  tl.set($('#f04-label'), { opacity: 0 }, 0)
+  terms.forEach((el, i) => {
+    const t = 1.8 + i * .12
+    tl.to(el, { x: 960 - POS[i][0], y: 72 - POS[i][1], scale: .03, rotation: 0, opacity: 0, boxShadow: '0 0 90px 40px ' + COL[i], duration: .55, ease: "power3.in" }, t)
+  })
+  tl.to($('#f04-wall'), { opacity: 0, duration: .8, ease: "power2.in" }, 1.85)
+  dotsEls.forEach((d, i) => tl.fromTo(d, { scale: 0 }, { scale: 1, duration: .35, ease: "back.out(3)" }, 2.3 + i * .09))
+  tl.fromTo($('#f04-label'), { opacity: 0, x: -10 }, { opacity: 1, x: 0, duration: .3, ease: "power2.out" }, 2.55)
+  tl.to($('#f04-pill'), { scale: 1.7, duration: .12, yoyo: true, repeat: 1, ease: "power2.out" }, 2.72)
+  tl.fromTo($('#f04-a'), { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: .7, ease: "power3.out" }, 2.85)
+  tl.fromTo($('#f04-b'), { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: .7, ease: "power3.out" }, 3.02)
+
+  window.__timelines["04-notch-drops"] = tl
+})()
+</script>
+</template>

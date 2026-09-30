@@ -1,0 +1,86 @@
+<template>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+@font-face { font-family: "Notch Sans"; src: url("assets/fonts/SegUIVar.ttf"); font-weight: 100 900; }
+@font-face { font-family: "Notch Mono"; src: url("assets/fonts/CascadiaMono.ttf"); }
+#root { position: absolute; inset: 0; overflow: hidden; }
+
+[data-composition-id="08-grid"] { font-family: "Notch Sans", sans-serif; color: #fff; }
+[data-composition-id="08-grid"] .bg { position: absolute; inset: 0; background: #000; }
+[data-composition-id="08-grid"] .cam, [data-composition-id="08-grid"] .cam2 { position: absolute; inset: 0; }
+[data-composition-id="08-grid"] .wall { position: absolute; inset: 0; background: radial-gradient(120% 90% at 30% 20%, #34405e, #1a1f2e 60%, #0d0f16); }
+[data-composition-id="08-grid"] .h { position: absolute; font-weight: 700; font-variation-settings: "opsz" 36; letter-spacing: -.045em; line-height: 1.04; text-transform: lowercase; color: #fff; }
+[data-composition-id="08-grid"] .h div { display: block; }
+[data-composition-id="08-grid"] .o { color: #FF9F0A; } [data-composition-id="08-grid"] .b { color: #0A84FF; } [data-composition-id="08-grid"] .r { color: #FF453A; } [data-composition-id="08-grid"] .g { color: #30D158; }
+[data-composition-id="08-grid"] .term { position: absolute; width: 500px; height: 300px; background: #0c0c0c; border: 2px solid #3a3a3a; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,.6); overflow: hidden; }
+[data-composition-id="08-grid"] .term .bar { height: 40px; background: #202020; display: flex; align-items: center; gap: 12px; padding: 0 16px; font-size: 19px; color: #ddd; }
+[data-composition-id="08-grid"] .term .bar img { width: 22px; height: 22px; }
+[data-composition-id="08-grid"] .term .tx { padding: 14px 18px; font: 19px/1.5 "Notch Mono", monospace; color: #c8c8c8; white-space: pre; }
+[data-composition-id="08-grid"] .pill { position: absolute; left: 0; right: 0; margin: 0 auto; top: 36px; width: max-content; height: 72px; border-radius: 36px; background: #000;
+          display: flex; align-items: center; gap: 18px; padding: 0 30px 0 26px; font-size: 27px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap;
+          box-shadow: 0 0 0 1px rgba(255,255,255,.1) inset, 0 24px 64px rgba(0,0,0,.55), 0 4px 12px rgba(0,0,0,.4); }
+[data-composition-id="08-grid"] .rim { position: absolute; inset: 0; border-radius: inherit; padding: 3px; --spin: 0deg;
+         background: conic-gradient(from var(--spin), transparent 0deg 240deg, rgba(10,132,255,.9) 315deg, rgba(191,90,242,.95) 342deg, transparent 360deg);
+         -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+[data-composition-id="08-grid"] .dots { position: relative; display: flex; }
+[data-composition-id="08-grid"] .dots i { display: block; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #000; margin-left: -9px; }
+[data-composition-id="08-grid"] .dots i:first-child { margin-left: 0; }
+[data-composition-id="08-grid"] .tile { display: grid; place-items: center; border-radius: 22%; box-shadow: 0 0 0 1px rgba(255,255,255,.12) inset, 0 2px 4px rgba(0,0,0,.4); flex: none; }
+[data-composition-id="08-grid"] .tile img { width: 62%; height: 62%; }
+[data-composition-id="08-grid"] .tile.agy img, [data-composition-id="08-grid"] .tile.kilo img { width: 80%; height: 80%; }
+[data-composition-id="08-grid"] .claude { background: #F4EFE6; } [data-composition-id="08-grid"] .agy { background: linear-gradient(160deg, #24252B, #131418); }
+[data-composition-id="08-grid"] .opencode { background: linear-gradient(160deg, #262222, #121010); } [data-composition-id="08-grid"] .kilo { background: #0B0B0B; }
+[data-composition-id="08-grid"] .copilot { background: linear-gradient(160deg, #3B2A6B, #17112E); }
+[data-composition-id="08-grid"] .key { position: absolute; display: grid; place-items: center; background: linear-gradient(#2c2c2e, #1c1c1e); border: 3px solid #48484a; color: #fff; font-weight: 700;
+         box-shadow: 0 10px 0 #0a0a0a, 0 24px 48px rgba(0,0,0,.55); }
+[data-composition-id="08-grid"] .card { position: absolute; background: #1c1c1e; border-radius: 28px; }
+[data-composition-id="08-grid"] .spin { display: inline-block; border-radius: 50%; border: 3px solid rgba(10,132,255,.25); border-top-color: #0A84FF; }
+
+[data-composition-id="08-grid"] .gterm { width: 520px; height: 290px; }
+[data-composition-id="08-grid"] .gicon { display: grid; grid-template-columns: repeat(2, 11px); gap: 4px; margin-left: 6px; }
+[data-composition-id="08-grid"] .gicon i { display: block; width: 11px; height: 11px; border-radius: 3px; background: #fff; }
+[data-composition-id="08-grid"] .head { left: 144px; top: 800px; font-size: 84px; }
+[data-composition-id="08-grid"] .keyG { right: 150px; top: 790px; height: 86px; padding: 0 34px; border-radius: 20px; font-size: 34px; }
+
+</style>
+<div id="root" data-composition-id="08-grid" data-width="1920" data-height="1080">
+  <div class="bg clip" id="f08-grid-bg" data-start="0" data-duration="4" data-track-index="0"></div>
+  <div class="clip" id="f08-grid-content" data-start="0" data-duration="4" data-track-index="1" style="position:absolute;inset:0">
+      <div class="pill" id="f08-pill"><div data-layout-allow-overlap class="rim" style="--spin:120deg"></div><span class="dots"><i style="background:#D97757"></i><i style="background:#3DBE6A"></i><i style="background:#EDE8E6"></i><i style="background:#F8F675"></i></span><span>4 working</span><span data-layout-allow-overlap class="gicon" id="f08-gi"><i></i><i></i><i></i><i></i></span></div>
+      <div data-layout-allow-overlap class="term gterm" id="f08-t0" style="left:140px;top:150px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-claude.svg" alt="">claude · payments-api</div><div class="tx" data-layout-allow-overlap>✻ Editing auth.ts…
+<span data-layout-allow-overlap class="o">? Allow edit to auth.ts</span></div></div>
+      <div data-layout-allow-overlap class="term gterm" id="f08-t1" style="left:700px;top:150px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-agy.svg" alt="">agy · payments-api</div><div class="tx" data-layout-allow-overlap>Running tests…
+<span data-layout-allow-overlap class="o">1. Yes  2. No</span></div></div>
+      <div data-layout-allow-overlap class="term gterm" id="f08-t2" style="left:1260px;top:150px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-opencode.svg" alt="">opencode · web-app</div><div class="tx" data-layout-allow-overlap>Reading router.tsx
+<span data-layout-allow-overlap class="b">● thinking</span></div></div>
+      <div data-layout-allow-overlap class="term gterm" id="f08-t3" style="left:140px;top:480px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-kilo.svg" alt="">kilo · web-app</div><div class="tx" data-layout-allow-overlap>Add dark mode
+<span data-layout-allow-overlap class="g">✓ theme.css</span></div></div>
+      <div data-layout-allow-overlap class="term gterm" id="f08-t4" style="left:700px;top:480px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-copilot.svg" alt="">copilot · docs</div><div class="tx" data-layout-allow-overlap>EditFiles quickstart.md
+…</div></div>
+      <div data-layout-allow-overlap class="term gterm" id="f08-t5" style="left:1260px;top:480px;"><div data-layout-allow-overlap class="bar" data-layout-allow-overlap><img src="assets/logo-claude.svg" alt="">claude · landing</div><div class="tx" data-layout-allow-overlap>✻ Thinking…</div></div>
+      <div class="h head"><span id="f08-a">one click. </span><span id="f08-b" class="b">every window.</span></div>
+      <div class="key keyG" id="f08-key">Ctrl+Alt+G</div>
+  </div>
+</div>
+<script>
+(function () {
+  const R = document.querySelector('[data-composition-id="08-grid"]')
+  const $ = s => R.querySelector(s), $$ = s => Array.from(R.querySelectorAll(s))
+  const tl = gsap.timeline({ paused: true })
+
+  const FROM = [[-70,-60,-4],[-270,180,3],[-170,-80,5],[1150,80,-6],[80,160,-2],[-1220,160,7]]
+  $$('.gterm').forEach((el, i) => {
+    tl.fromTo(el, { x: FROM[i][0], y: FROM[i][1], rotation: FROM[i][2], opacity: 0, scale: .92 }, { opacity: 1, scale: 1, duration: .35, ease: "power2.out" }, .05 * i)
+    tl.to(el, { x: 0, y: 0, rotation: 0, duration: .95, ease: "back.out(1.15)" }, 1.25 + i * .08)
+  })
+  tl.fromTo($('#f08-key'), { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: .4, ease: "power3.out" }, .5)
+  tl.to($('#f08-key'), { y: 10, boxShadow: "0 2px 0 #0a0a0a, 0 10px 24px rgba(0,0,0,.55)", duration: .08, ease: "power2.in" }, 1.05)
+  tl.to($('#f08-key'), { y: 0, boxShadow: "0 10px 0 #0a0a0a, 0 24px 48px rgba(0,0,0,.55)", duration: .45, ease: "elastic.out(1, 0.5)" }, 1.15)
+  tl.fromTo($('#f08-gi'), { scale: 1 }, { scale: 1.5, duration: .14, yoyo: true, repeat: 1, ease: "power2.out" }, 1.08)
+  tl.fromTo($('#f08-a'), { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .5, ease: "power3.out" }, 2.6)
+  tl.fromTo($('#f08-b'), { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .5, ease: "power3.out" }, 2.8)
+
+  window.__timelines["08-grid"] = tl
+})()
+</script>
+</template>
