@@ -64,7 +64,7 @@ const PILE = [
 
 function frame(id, dur, css, html, js) {
   // chaos layers and tight display leading overlap on purpose; tell the layout audit so
-  html = html.replace(/<(div|span) (class="(?:term|prompt|badge|h word|chip|o|r|g|b)[^"]*"|id="f\d\d-l\d")/g, '<$1 data-layout-allow-overlap $2')
+  html = html.replace(/<(div|span) (class="(?:term|prompt|badge|h word|chip|o|r|g|b)[^"]*"|id="f(?:\d\d|ph)-l\d")/g, '<$1 data-layout-allow-overlap $2')
   const scope = `[data-composition-id="${id}"]`
   const style = (COMMON + css).replace(/\$ /g, scope + ' ').replace(/\$ \{/g, scope + ' {').replace(/\$\s*\{/g, scope + ' {')
   return `<template>
@@ -408,6 +408,95 @@ $ .keyY { left: 1250px; top: 520px; width: 210px; height: 210px; border-radius: 
   tl.fromTo($('#f06-spin'), { rotation: 0 }, { rotation: 720, duration: 2.2, ease: "none" }, 2.8)
   tl.fromTo($('#f06-l1'), { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: .6, ease: "power3.out" }, 2.75)
   tl.fromTo($('#f06-cap'), { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: .5, ease: "power2.out" }, 3.6)
+`)
+
+// ================= 06b · Phone approve (5s) =================
+write('06b-phone-approve', 5, `
+$ .pill { width: 330px; padding: 0; justify-content: center; overflow: hidden; }
+$ .pill .lbl { position: absolute; left: 0; right: 0; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; gap: 18px; }
+$ .pill .lbl2 { position: absolute; left: 0; right: 0; justify-content: center; top: 0; bottom: 0; display: flex; align-items: center; gap: 18px; }
+$ .head { left: 150px; top: 330px; font-size: 112px; }
+$ .cap { position: absolute; left: 154px; top: 790px; font: 30px "Notch Mono", monospace; color: rgba(235,235,245,.6); }
+$ .phone { position: absolute; left: 1210px; top: 150px; width: 430px; height: 790px; border-radius: 64px; background: #050505; border: 3px solid #3a3a3c; padding: 16px;
+           box-shadow: 0 0 0 10px #151517, 0 50px 120px rgba(0,0,0,.7); transform-origin: 50% 100%; }
+$ .scr { position: relative; width: 100%; height: 100%; border-radius: 48px; background: #000; overflow: hidden; padding: 58px 22px 0; }
+$ .scr .notchbar { position: absolute; top: 14px; left: 50%; margin-left: -62px; width: 124px; height: 32px; border-radius: 16px; background: #0b0b0c; }
+$ .ph-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+$ .ph-h b { font-size: 34px; font-weight: 700; letter-spacing: -.02em; }
+$ .ph-h span { font-size: 18px; color: rgba(235,235,245,.6); display: flex; align-items: center; gap: 8px; }
+$ .ph-h i { width: 11px; height: 11px; border-radius: 50%; background: #30D158; }
+$ .ph-ask { position: absolute; left: 22px; right: 22px; top: 106px; padding: 22px; border-radius: 26px; background: #1c1c1e; border: 2px solid rgba(255,159,10,.6); box-shadow: 0 0 40px rgba(255,159,10,.22); transform-origin: 50% 0; }
+$ .ph-who { display: flex; align-items: center; gap: 14px; font-size: 24px; font-weight: 600; }
+$ .ph-who em { font-style: normal; color: rgba(235,235,245,.6); font-weight: 500; font-size: 18px; margin-left: auto; }
+$ .ph-what { margin-top: 14px; font-size: 22px; font-weight: 600; color: #FF9F0A; }
+$ .ph-code { margin-top: 10px; padding: 14px 16px; border-radius: 14px; background: #000; font: 19px/1.4 "Notch Mono", monospace; color: rgba(255,255,255,.85); }
+$ .ph-btns { display: grid; grid-template-columns: 1fr 1.6fr; gap: 14px; margin-top: 20px; }
+$ .ph-btns span { height: 76px; border-radius: 22px; display: grid; place-items: center; font-size: 28px; font-weight: 700; }
+$ .ph-deny { background: rgba(255,255,255,.14); } $ .ph-allow { background: #0A84FF; box-shadow: 0 8px 26px rgba(10,132,255,.45); }
+$ .ph-ok { position: absolute; left: 22px; right: 22px; top: 106px; padding: 26px 22px; border-radius: 26px; background: #1c1c1e; display: flex; align-items: center; gap: 18px; font-size: 26px; font-weight: 600; }
+$ .ph-ok svg { width: 48px; height: 48px; flex: none; fill: none; stroke: #30D158; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+$ .ph-ok small { display: block; font-size: 18px; font-weight: 500; color: rgba(235,235,245,.6); margin-top: 2px; }
+$ .ph-list { position: absolute; left: 22px; right: 22px; bottom: 34px; border-radius: 22px; background: #1c1c1e; overflow: hidden; }
+$ .ph-row { display: flex; align-items: center; gap: 14px; padding: 16px 18px; }
+$ .ph-row + .ph-row { border-top: 1px solid rgba(84,84,88,.45); }
+$ .ph-row b { font-size: 21px; } $ .ph-row small { display: block; font-size: 16px; color: rgba(235,235,245,.6); }
+$ .ph-row .stw { margin-left: auto; display: grid; justify-items: end; }
+$ .ph-row .st { grid-area: 1 / 1; font-size: 17px; font-weight: 600; color: #0A84FF; }
+$ .finger { position: absolute; left: 0; top: 0; width: 76px; height: 76px; border-radius: 50%; background: rgba(255,255,255,.4); border: 3px solid rgba(255,255,255,.85); }
+$ .buzz { position: absolute; top: 400px; width: 14px; height: 150px; border-radius: 8px; border: 5px solid #FF9F0A; border-top: 0; border-bottom: 0; opacity: 0; }
+$ .ring { position: absolute; left: 50%; top: 72px; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 4px solid #0A84FF; opacity: 0; }
+`, `      <div class="pill" id="fph-pill"><div class="rim" style="--spin:200deg"></div>
+        <div class="lbl" id="fph-ok">${dots(['claude', 'agy', 'opencode', 'kilo', 'copilot'])}<span>5 working</span></div>
+        <div class="lbl2" id="fph-warn">${dots(['claude', 'agy', 'opencode', 'kilo'])}<span style="color:#FF9F0A">Claude needs you</span><span style="color:rgba(235,235,245,.6);font-weight:500">payments-api</span></div></div>
+      <div class="ring" id="fph-ring"></div>
+      <div class="h head"><div id="fph-l0">step away.</div><div id="fph-l1" class="b">approve from</div><div id="fph-l2" class="b">your phone.</div></div>
+      <div class="cap" id="fph-cap">scan once · same wi-fi · no app</div>
+      <div class="buzz" id="fph-b0" style="left:1150px"></div><div class="buzz" id="fph-b1" style="left:1680px"></div>
+      <div class="phone" id="fph-phone"><div class="scr">
+        <div class="notchbar"></div>
+        <div class="ph-h"><b>Notch</b><span><i></i>Live</span></div>
+        <div class="ph-ask" id="fph-ask"><div class="ph-who">${tile('claude', 52)}<span>Claude</span><em>payments-api</em></div>
+          <div class="ph-what">Allow Bash?</div><div class="ph-code">npm run deploy</div>
+          <div class="ph-btns"><span class="ph-deny">Deny</span><span class="ph-allow" id="fph-allow">Allow</span></div></div>
+        <div class="ph-ok" id="fph-done"><svg viewBox="0 0 24 24"><path d="M5 12.5 10 17.5 19 7"/></svg><div>Allowed<small>Claude is working again</small></div></div>
+        <div class="ph-list"><div class="ph-row">${tile('claude', 44)}<div><b>Claude</b><small>payments-api</small></div><span class="stw"><span class="st" id="fph-st1" style="color:#FF9F0A">Waiting</span><span class="st" id="fph-st2">Working</span></span></div>
+          <div class="ph-row">${tile('agy', 44)}<div><b>Antigravity</b><small>payments-api</small></div><span class="stw"><span class="st">Working</span></span></div></div>
+        <div class="finger" id="fph-finger"></div>
+      </div></div>`, `
+  tl.set($('#fph-warn'), { opacity: 0 }, 0)
+  tl.fromTo($('#fph-phone'), { y: 900, rotation: 4 }, { y: 0, rotation: 0, duration: .9, ease: "back.out(1.15)" }, .15)
+  tl.fromTo($('#fph-l0'), { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: .6, ease: "power3.out" }, .3)
+  tl.set($('#fph-ask'), { opacity: 0 }, 0)
+  tl.set($('#fph-done'), { opacity: 0 }, 0)
+  tl.set($('#fph-finger'), { opacity: 0 }, 0)
+  // the request arrives: the pill turns orange, the phone buzzes, the card pops
+  tl.to($('#fph-ok'), { opacity: 0, duration: .2 }, 1.2)
+  tl.to($('#fph-warn'), { opacity: 1, duration: .25 }, 1.3)
+  tl.to($('#fph-pill'), { boxShadow: "0 0 0 1.5px rgba(255,159,10,.7) inset, 0 16px 80px rgba(255,159,10,.42), 0 4px 12px rgba(0,0,0,.4)", duration: .4 }, 1.2)
+  tl.fromTo($('#fph-pill'), { width: 330 }, { width: 660, duration: .55, ease: "back.out(1.4)" }, 1.2)
+  tl.fromTo($('#fph-ask'), { opacity: 0, scale: .9, y: -10 }, { opacity: 1, scale: 1, y: 0, duration: .45, ease: "back.out(1.6)" }, 1.25)
+  tl.set($('#fph-st1'), { opacity: 0 }, 0)
+  tl.to($('#fph-st2'), { opacity: 0, duration: .15 }, 1.25)
+  tl.to($('#fph-st1'), { opacity: 1, duration: .15 }, 1.25)
+  tl.to($('#fph-phone'), { x: 9, duration: .05, yoyo: true, repeat: 9, ease: "none" }, 1.25)
+  ;['#fph-b0', '#fph-b1'].forEach(s => tl.fromTo($(s), { opacity: .9, scaleY: .5 }, { opacity: 0, scaleY: 1.2, duration: .5, ease: "power2.out", immediateRender: false }, 1.3))
+  // the tap
+  tl.fromTo($('#fph-finger'), { opacity: 0, x: 210, y: 690, scale: 1.4 }, { opacity: 1, x: 250, y: 484, scale: 1, duration: .6, ease: "power3.out" }, 2.0)
+  tl.to($('#fph-finger'), { scale: .8, duration: .09, ease: "power2.in" }, 2.65)
+  tl.to($('#fph-allow'), { scale: .94, duration: .09, ease: "power2.in" }, 2.65)
+  tl.to($('#fph-finger'), { scale: 1.1, opacity: 0, duration: .3, ease: "power2.out" }, 2.75)
+  tl.to($('#fph-allow'), { scale: 1, duration: .3, ease: "back.out(2)" }, 2.75)
+  tl.to($('#fph-ask'), { opacity: 0, scale: .96, duration: .22, ease: "power2.in" }, 2.8)
+  tl.fromTo($('#fph-done'), { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: .4, ease: "power3.out" }, 2.95)
+  tl.to($('#fph-st1'), { opacity: 0, duration: .2 }, 2.95)
+  tl.to($('#fph-st2'), { opacity: 1, duration: .3 }, 3.0)
+  // back on the PC, it carries on
+  tl.to($('#fph-warn'), { opacity: 0, duration: .25 }, 2.95)
+  tl.to($('#fph-ok'), { opacity: 1, duration: .3 }, 3.05)
+  tl.to($('#fph-pill'), { boxShadow: "0 0 0 1px rgba(255,255,255,.1) inset, 0 24px 64px rgba(0,0,0,.55), 0 4px 12px rgba(0,0,0,.4)", width: 330, duration: .6, ease: "power3.inOut" }, 2.95)
+  tl.fromTo($('#fph-ring'), { opacity: .9, scale: .3 }, { opacity: 0, scale: 3, duration: .7, ease: "power2.out", immediateRender: false }, 2.95)
+  ;['#fph-l1', '#fph-l2'].forEach((s, i) => tl.fromTo($(s), { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: .6, ease: "power3.out" }, 3.0 + i * .2))
+  tl.fromTo($('#fph-cap'), { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: .5, ease: "power2.out" }, 3.8)
 `)
 
 // ================= 07 · Auto-Enter (4s) =================

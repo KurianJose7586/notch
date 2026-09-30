@@ -1,6 +1,6 @@
 ---
 format: 1920x1080
-duration: 46s
+duration: 51s
 message: "All your coding agents. One notch."
 arc: Chaos → Freeze → Notch drops → Order (5 features) → Lockup
 audience: developers who run several AI coding agents at once
@@ -15,7 +15,7 @@ Two registers: orange noise for the chaos act, blue calm for the order act; the 
 Bans: no fake notch UI (rebuild from the app's own CSS and the captured stills) · no slideshow of fresh cards · no motion that says nothing · no chaos after the freeze.
 Held frame: frame 10 holds still for its last 2s.
 Seams: hard cuts in act 1, push-slide left through the features, zoom-through into the lockup.
-Sketch sheet: storyboard.html v1.
+Sketch sheet: storyboard.html v1 (scene 7, the phone, was added later and is not on the sheet).
 
 ## Video direction
 
@@ -205,7 +205,29 @@ The pill glows orange: "OpenCode needs you · web-app". It peeks down showing "A
 react-router@7". A large keycap "Y" presses with a satisfying spring; the row flips to "Working" in blue, the
 glow fades. Headline: "needs you? one key." Small caption: "Y allow · N deny · Ctrl+Alt+J jumps to it".
 
-## Frame 7 — Auto-Enter for Antigravity
+## Frame 7 — Step away
+
+- scene: A phone buzzes with the request; one tap on Allow and the notch on the PC carries on
+- voiceover: ""
+- duration: 5s
+- transition_in: push-slide LEFT
+- status: animated
+- src: compositions/frames/06b-phone-approve.html
+- type: feature_showcase
+- persuasion: Friction reduction
+- beat: freedom + relief
+- blueprint: device-surface-showcase (Adapt)
+- focal: the phone showing the request
+- roles: logo-claude.svg, logo-agy.svg = supporting (row glyphs); the phone page is rebuilt from phone.html
+- sfx: soft alert chime, phone buzz, tap, success tick
+
+Adapt device-surface-showcase: a device held as the hero while its screen changes through a real flow; the flow is one request arriving and being approved.
+Scene 1 (0.0–1.2s): the pill (continuing from frame 6, top-centre, "5 working") holds; the phone springs up from the bottom right showing "Notch · Live" and two agent rows; "step away." lands on the left.
+Scene 2 (1.2–2.0s): the request arrives: the pill turns orange "Claude needs you · payments-api", the phone buzzes (shake plus two vibration arcs) and the ask card pops: Claude, "Allow Bash?", "npm run deploy", Deny / Allow.
+Scene 3 (2.0–3.0s): a finger lands on Allow and taps; the card turns into a green "Allowed · Claude is working again".
+Scene 4 (3.0–5.0s): the pill flips back to blue "5 working" with a ripple; "approve from / your phone." (blue) builds on the left, then the caption "scan once · same wi-fi · no app"; hold.
+
+## Frame 8 — Auto-Enter for Antigravity
 
 - scene: agy permission prompts appear and are answered instantly by themselves while the AUTO switch glows green
 - voiceover: ""
@@ -234,7 +256,7 @@ A clean agy terminal. The notch row's AUTO switch flicks on (green). Prompts "1.
 times in quick succession and each is answered the instant it lands, a tiny "↵" ripple from the notch each time;
 a counter in the corner ticks "Enters pressed for you: 1, 2, 3 … 147". Headline: "auto-enter. finally."
 
-## Frame 8 — One-click grid
+## Frame 9 — One-click grid
 
 - scene: A messy pile of agent windows snaps into a perfect grid when the grid button is pressed
 - voiceover: ""
@@ -263,7 +285,7 @@ Frame 1's overlapping windows reappear (the same ones, now calm). The notch's gr
 "Ctrl+Alt+G" beside it); every window flies on a spring into a tidy 3×2 grid, staggered, with a soft settle.
 Headline: "one click. every window."
 
-## Frame 9 — Know before the wall
+## Frame 10 — Know before the wall
 
 - scene: The limits card fills, 5-hour bar counts up to 82% and turns orange, the heads-up toast drops; a stopped agent reads "Stopped", not "Working"
 - voiceover: ""
@@ -292,7 +314,7 @@ The Claude limits card: "5-hour" bar counts up 0 → 82% (blue → orange at 70%
 drops: "Claude at 82% of your 5-hour limit · Resets 11:06 PM". Below, frame 3's Claude row reappears, now honest:
 red dot, "Stopped · Usage limit reached · resets 10:16 PM". Headline: "know before you hit the wall."
 
-## Frame 10 — One notch
+## Frame 11 — One notch
 
 - scene: The notch shrinks back to a pill, then the lockup: app icon, "Agent Notch", tagline, supported agents row
 - voiceover: ""

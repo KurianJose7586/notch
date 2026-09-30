@@ -6,9 +6,9 @@
 
 A Dynamic-Island-style notch for Windows that shows what every coding agent is doing, which ones need you, and lets you answer them without hunting for the terminal.
 
-[![Agent Notch demo](docs/demo.gif)](https://github.com/KurianJose7586/notch/releases/download/v0.1.0/AgentNotch-promo.mp4)
+[![Agent Notch demo](docs/demo.gif)](https://github.com/KurianJose7586/notch/releases/download/v0.2.0/AgentNotch-promo.mp4)
 
-[**Watch the 46s demo**](https://github.com/KurianJose7586/notch/releases/download/v0.1.0/AgentNotch-promo.mp4) · [**Download for Windows**](https://github.com/KurianJose7586/notch/releases/latest)
+[**Watch the 51s demo**](https://github.com/KurianJose7586/notch/releases/download/v0.2.0/AgentNotch-promo.mp4) · [**Download for Windows**](https://github.com/KurianJose7586/notch/releases/latest)
 
 </div>
 
@@ -68,6 +68,8 @@ Requirements: Windows 10 or 11. Terminal agents are found in Windows Terminal or
 
 ## Approve from your phone
 
+![Approving a request from a phone](docs/phone.gif)
+
 Off by default. Turn it on in **Setup → Approve from your phone** and scan the QR code with your phone's camera. It opens a small web page from your PC, so there is no app to install and nothing goes through the internet.
 
 - Works on the same Wi-Fi as your PC. Windows may ask to let Agent Notch through the firewall the first time: choose **Private networks**.
@@ -114,8 +116,8 @@ npm run dist           # builds dist/AgentNotch-Setup-<version>.exe
 To publish a release, push a version tag. GitHub Actions builds the installer on Windows and attaches it to a release for that tag; the tag sets the version.
 
 ```bash
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.3.0
+git push origin v0.3.0
 ```
 
 ## Repository layout

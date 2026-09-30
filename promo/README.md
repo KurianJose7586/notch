@@ -1,6 +1,6 @@
 # Promo video
 
-Source of the 46s Agent Notch demo, made with [HyperFrames](https://hyperframes.heygen.com) (HTML + GSAP rendered to MP4).
+Source of the 51s Agent Notch demo, made with [HyperFrames](https://hyperframes.heygen.com) (HTML + GSAP rendered to MP4).
 
 | File | What |
 |---|---|
@@ -8,13 +8,14 @@ Source of the 46s Agent Notch demo, made with [HyperFrames](https://hyperframes.
 | `storyboard.html` | Sketch sheet of every scene |
 | `build-frames.cjs` | Generates `compositions/frames/*.html`, one per scene |
 | `index.html` | The assembled timeline |
-| `audio_meta.json` | Music and sound-effect cues |
+| `build-audio.cjs`, `audio_meta.json` | Builds the music mix and the timed sound-effect cues |
 | `assets/` | Agent logos, the app icon and stills of the real notch UI |
 
 ## Rebuild
 
 ```bash
 node build-frames.cjs
+node build-audio.cjs   # needs ffmpeg on PATH
 npx hyperframes check
 npx hyperframes render --output renders/video.mp4
 ```
