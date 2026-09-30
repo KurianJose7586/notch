@@ -45,7 +45,7 @@ export const AgentNotch = async ({ directory }) => {
     'tool.execute.before': async (input, output) => send('tool', { sessionID: input.sessionID, tool: input.tool, args: output.args }),
     'tool.execute.after': async input => send('toolDone', { sessionID: input.sessionID }),
     'permission.ask': async (input, output) => { // the notch may hold this until you click Allow / Deny
-      const r = await send('permission', { sessionID: input.sessionID, title: input.title, detail: [].concat(input.pattern || []).join(' ') }, 45000)
+      const r = await send('permission', { sessionID: input.sessionID, title: input.title, detail: [].concat(input.pattern || []).join(' ') }, 58000)
       if (r === 'allow' || r === 'deny') output.status = r
     },
     event: async ({ event }) => {
