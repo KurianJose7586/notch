@@ -1,0 +1,1119 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<title>Notch</title>
+<style>
+  :root {
+    --spring: linear(0, .012, .05 2.6%, .2 6%, .45 11%, .72 17%, .9 23%, 1.01 30%, 1.04 36%, 1.035 42%, 1.012 52%, .998 65%, 1);
+    --ease: cubic-bezier(.32, .72, 0, 1);
+    --label: #fff;
+    --secondary: rgba(235, 235, 245, .6);
+    --tertiary: rgba(235, 235, 245, .3);
+    --fill: rgba(118, 118, 128, .18);
+    --sep: rgba(84, 84, 88, .45);
+    --blue: #0A84FF; --green: #30D158; --orange: #FF9F0A; --red: #FF453A; --gray: #8E8E93; --purple: #BF5AF2;
+    --mono: "Cascadia Mono", "SF Mono", Consolas, monospace;
+  }
+  @property --spin { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { background: transparent; overflow: hidden; height: 100%; }
+  body {
+    font: 13px/1.35 "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    color: var(--label); -webkit-font-smoothing: antialiased; user-select: none; cursor: default;
+  }
+  button { font: inherit; color: inherit; border: 0; cursor: pointer; }
+
+  #island {
+    position: absolute; top: 8px; left: 50%; translate: -50% 0;
+    width: 150px; height: 36px; border-radius: 18px; overflow: hidden;
+    background: #000;
+    box-shadow: 0 0 0 .5px rgba(255,255,255,.09) inset, 0 12px 32px rgba(0,0,0,.32), 0 2px 6px rgba(0,0,0,.2);
+    transition: width .62s var(--spring), height .62s var(--spring), border-radius .5s var(--ease), box-shadow .4s ease,
+                scale .45s var(--spring), transform .9s var(--spring), opacity .35s ease;
+  }
+  #island.intro { opacity: 0; transform: translateY(-72px) scale(.45); }
+  #pill.bye { padding: 0 18px 0 7px; gap: 12px; }
+  .bye .hello-icons .icon { animation: doze .9s var(--ease) both; } /* each one hops, then droops and dims: nodding off */
+  @keyframes doze { 0% { translate: 0 0; } 28% { translate: 0 -6px; } 100% { translate: 0 3px; filter: grayscale(.9) brightness(.55); } }
+  .bye b { color: rgba(235, 235, 245, .85); }
+  .zzz { position: relative; width: 26px; height: 20px; }
+  .zzz i { position: absolute; left: 0; bottom: 1px; font: italic 700 11px/1 "SF Pro Display", "Segoe UI Variable Display", sans-serif;
+           color: rgba(235, 235, 245, .85); opacity: 0; animation: snooze 1.3s ease-out both; }
+  .zzz i:nth-child(2) { font-size: 14px; animation-delay: .22s; }
+  .zzz i:nth-child(3) { font-size: 17px; animation-delay: .44s; }
+  @keyframes snooze { 0% { opacity: 0; translate: 0 4px; scale: .6; } 35% { opacity: 1; } 100% { opacity: 0; translate: 12px -16px; scale: 1.1; } }
+  #island:not(.open):hover { scale: 1.03; }
+  #island.req:not(.open):hover { scale: 1.01; }
+  #island.peek { border-radius: 24px; }
+  #island.req { border-radius: 26px; }
+  #island.open { border-radius: 30px; }
+  /* Looping animations are stepped (~10-13 fps instead of 60): a transparent window is recomposited whole on every
+     frame, so ambient motion at 60 fps cost a full CPU core. Stepped, these small loops look the same. */
+  #island.alert:not(.open) { animation: breathe 2.6s steps(26) infinite; }
+  #island.bump { animation: bump .6s var(--spring); }
+  #island.alert.bump:not(.open) { animation: bump .6s var(--spring), breathe 2.6s ease-in-out infinite; }
+  @keyframes bump { 30% { scale: 1.07 } 60% { scale: .985 } }
+  @keyframes breathe {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(255,159,10,.28) inset, 0 8px 24px rgba(255,159,10,.12), 0 2px 6px rgba(0,0,0,.2); }
+    50%      { box-shadow: 0 0 0 1px rgba(255,159,10,.6) inset, 0 10px 40px rgba(255,159,10,.34), 0 2px 6px rgba(0,0,0,.2); }
+  }
+
+  /* While agents work, a comet of light orbits the pill's edge */
+  #island::before {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px; pointer-events: none;
+    background: conic-gradient(from var(--spin), transparent 0deg 240deg, rgba(10,132,255,.9) 315deg, rgba(191,90,242,.95) 342deg, transparent 360deg);
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
+    opacity: 0; transition: opacity .7s ease;
+  }
+  #island.busy::before { opacity: .9; animation: orbit 2.8s steps(36) infinite; } /* only while it's visible: hidden, it still repainted */
+  @keyframes orbit { to { --spin: 360deg } }
+
+  /* Collapsed: pill, transient peek, pending permission, or the welcome */
+  #pill {
+    position: absolute; top: 0; left: 50%; translate: -50% 0; min-height: 36px; padding: 0 15px 0 12px;
+    display: flex; align-items: center; gap: 9px; white-space: nowrap;
+    transition: opacity .25s ease, filter .3s ease, scale .4s var(--ease);
+  }
+  #island.open #pill { opacity: 0; filter: blur(6px); scale: .92; pointer-events: none; }
+  #pill.ghost { pointer-events: none; }
+  #pill.ghost, #pill.ghost * { animation: none !important; } /* a clone would otherwise replay its entrance animations */
+  .cluster { display: flex; }
+  .cluster .dot { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 0 2px #000; }
+  .cluster .dot + .dot { margin-left: -3px; }
+  #pill b { font-weight: 600; font-size: 13px; letter-spacing: -.01em; }
+  #pill .sub { color: var(--secondary); font-size: 12.5px; }
+  #pill .warn { color: var(--orange); }
+  #pill .ok { color: var(--green); }
+  #pill .muted { color: var(--secondary); font-weight: 500; }
+  #pill .roll { animation: roll .45s var(--ease); }
+  @keyframes roll { from { translate: 0 8px; opacity: 0; filter: blur(3px); } }
+
+  #pill.hello { padding: 0 17px 0 7px; gap: 12px; }
+  .hello-icons { display: flex; gap: 5px; }
+  .hello-icons .icon { width: 22px; height: 22px; border-radius: 6.5px; animation: pop .6s var(--spring) both; }
+  .hello-text { display: flex; gap: 8px; align-items: baseline; animation: rise .6s var(--ease) .3s both; }
+  .hello-text b { background: linear-gradient(90deg, #fff 0 38%, #A8D1FF 50%, #fff 62% 100%); background-size: 260% 100%;
+                  -webkit-background-clip: text; background-clip: text; color: transparent; animation: shine 1.5s ease .7s both; }
+  @keyframes pop { from { scale: .2; opacity: 0; } }
+  @keyframes rise { from { translate: 0 6px; opacity: 0; filter: blur(4px); } }
+  @keyframes shine { from { background-position: 100% 0; } to { background-position: 0 0; } }
+
+  #pill.card { width: 380px; padding: 11px 14px 11px 11px; align-items: flex-start; gap: 11px; white-space: normal; }
+  #pill.card.request { width: 420px; cursor: pointer; }
+  #pill.card .icon { width: 30px; height: 30px; border-radius: 8.5px; animation: pop .55s var(--spring) both; }
+  .card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .card-body > * { animation: rise .5s var(--ease) both; }
+  .card-body > :nth-child(2) { animation-delay: .05s; } .card-body > :nth-child(3) { animation-delay: .1s; } .card-body > :nth-child(4) { animation-delay: .15s; }
+  .card-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+  .card-top b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card-top span { color: var(--tertiary); font-size: 12px; flex: none; }
+  .card-line { color: var(--secondary); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card-top b.ok { color: var(--green); } .card-top b.no, .card-top b.bad { color: #FF6961; } .card-top b.warn { color: var(--orange); }
+
+  /* Allowed / Denied confirmation badge: pops, then the stroke draws itself */
+  .badge { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; animation: pop .55s var(--spring) both; }
+  .badge.ok { background: rgba(48,209,88,.18); } .badge.no { background: rgba(255,69,58,.18); }
+  .badge svg { width: 16px; height: 16px; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
+               stroke-dasharray: 1; animation: draw .42s ease-out .14s both; }
+  .badge.ok svg { stroke: var(--green); } .badge.no svg { stroke: var(--red); }
+  @keyframes draw { from { stroke-dashoffset: 1; } }
+
+  /* Permission request (in the card and in panel rows) */
+  .code { font: 11.5px/1.45 var(--mono); color: rgba(255,255,255,.85); background: rgba(255,255,255,.07); border-radius: 8px;
+          padding: 6px 8px; margin-top: 6px; white-space: pre-wrap; word-break: break-all;
+          display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .actions { display: flex; gap: 8px; margin-top: 9px; }
+  .actions button { height: 28px; padding: 0 14px; border-radius: 14px; font-size: 12.5px; font-weight: 600;
+                    transition: background .15s ease, scale .35s var(--spring), color .15s ease; }
+  .actions button:hover { scale: 1.04; }
+  .actions button:active { scale: .93; transition-duration: .08s; }
+  .actions .deny { background: rgba(255,255,255,.12); }
+  .actions .deny:hover { background: rgba(255,69,58,.22); color: #FF6961; }
+  .actions .allow { background: var(--blue); box-shadow: 0 4px 14px rgba(10,132,255,.35); }
+  .actions .allow:hover { background: #409CFF; }
+  .actions .all { background: none; color: var(--secondary); padding: 0 8px; margin-left: auto; box-shadow: none; }
+  .actions .all:hover { color: #fff; }
+  .actions kbd { font: 600 10px var(--mono); opacity: .55; margin-left: 5px; }
+
+  /* Expanded panel */
+  #panel {
+    position: absolute; top: 0; left: 50%; translate: -50% 0; width: 460px;
+    padding: 18px 16px 12px; max-height: 690px; overflow-y: auto;
+    opacity: 0; filter: blur(8px); scale: .96; transform-origin: top center; pointer-events: none;
+    visibility: hidden; /* once faded out, stop painting it: its spinners and timers would otherwise keep redrawing */
+    transition: opacity .2s ease, filter .25s ease, scale .45s var(--ease), visibility 0s linear .45s;
+  }
+  #panel::-webkit-scrollbar { display: none; }
+  #island.open #panel { opacity: 1; filter: none; scale: 1; pointer-events: auto; visibility: visible; transition-delay: .08s, .08s, .08s, 0s; }
+
+  .head { display: flex; align-items: center; gap: 10px; padding: 0 6px 2px; }
+  .head h1 { font: 600 17px/1.2 "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", sans-serif; letter-spacing: -.02em; }
+  .head .summary { flex: 1; text-align: right; color: var(--secondary); font-size: 12px; }
+  .round { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,.1); display: grid; place-items: center;
+           transition: background .15s ease, scale .35s var(--spring); }
+  .round:hover { background: rgba(255,255,255,.18); scale: 1.08; }
+  .round:active { scale: .9; transition-duration: .08s; }
+  .round svg { width: 14px; height: 14px; }
+
+  .group { margin-top: 14px; }
+  .group > .title { display: flex; justify-content: space-between; padding: 0 8px 6px; font-size: 12px; font-weight: 600; color: var(--secondary); letter-spacing: .01em; }
+  .group > .title span:last-child { color: var(--tertiary); font-weight: 500; }
+  .list { background: var(--fill); border-radius: 16px; overflow: hidden; }
+
+  .row { position: relative; display: flex; gap: 12px; padding: 11px 12px; overflow: hidden; transition: background .2s ease, scale .3s var(--spring); }
+  .row.jump { cursor: pointer; }
+  .row.jump:hover { background: rgba(255,255,255,.05); }
+  .row.jump:active { background: rgba(255,255,255,.09); scale: .985; transition-duration: .1s; }
+  .row.waiting { background: rgba(255,159,10,.08); }
+  .row.sel { background: rgba(10,132,255,.14); box-shadow: 0 0 0 1.5px rgba(10,132,255,.8) inset; }
+  .row + .row::before { content: ""; position: absolute; top: 0; left: 56px; right: 0; height: .5px; background: var(--sep); }
+
+  .icon { position: relative; flex: none; width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center;
+          box-shadow: 0 0 0 .5px rgba(255,255,255,.12) inset, 0 1px 2px rgba(0,0,0,.4); }
+  .icon svg { width: 62%; height: 62%; }
+  .row.unread .icon::after { content: ""; position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; border-radius: 50%;
+                             background: var(--blue); box-shadow: 0 0 0 2.5px #1c1c1e; animation: pop .5s var(--spring) both; }
+  .claude { background: #F4EFE6; }
+  .agy { background: linear-gradient(160deg, #24252B, #131418); }
+  .opencode { background: linear-gradient(160deg, #262222, #121010); }
+  .kilo { background: #0B0B0B; }
+  .copilot { background: linear-gradient(160deg, #3B2A6B, #17112E); }
+  .agy svg, .kilo svg { width: 80%; height: 80%; } /* these marks fill their tile in the originals */
+  .other { background: linear-gradient(160deg, #636366, #3A3A3C); font-weight: 700; }
+  .tag { margin-left: 7px; padding: 1px 6px; border-radius: 5px; background: rgba(255,255,255,.1); color: var(--secondary);
+         font-size: 10.5px; font-weight: 600; letter-spacing: .01em; vertical-align: 1px; }
+
+  .body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .name { font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
+  .task { color: rgba(255,255,255,.86); }
+  .action, .task { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .action { color: var(--secondary); font-size: 12.5px; }
+  .progress { display: flex; align-items: center; gap: 8px; margin-top: 5px; color: var(--secondary); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  .track { flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,.1); overflow: hidden; }
+  .track i { display: block; height: 100%; border-radius: 2px; background: var(--blue); }
+  .row.working .track i { background: linear-gradient(90deg, var(--blue) 0 35%, #7CC0FF 50%, var(--blue) 65% 100%); background-size: 300% 100%; animation: flow 2.2s steps(22) infinite; }
+  @keyframes flow { from { background-position: 100% 0; } to { background-position: -50% 0; } }
+
+  .side { flex: none; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; gap: 8px; }
+  .status { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; transform-origin: right center; }
+  .status.working { color: var(--blue); } .status.waiting { color: var(--orange); }
+  .status.done { color: var(--green); } .status.idle { color: var(--gray); } .status.error { color: #FF6961; }
+  .row.error { background: rgba(255,69,58,.08); }
+  .row.error .action { color: #FF8A80; }
+  .ind.error { width: 7px; height: 7px; background: var(--red); box-shadow: 0 0 0 3px rgba(255,69,58,.22); }
+  #pill .bad { color: #FF6961; }
+  .name .meta { margin-left: 7px; font-size: 11px; font-weight: 600; color: var(--tertiary); }
+  .name .meta.warn { color: var(--orange); } .name .meta.bad { color: #FF6961; }
+
+  /* Usage limits card */
+  .limits { display: flex; gap: 16px; margin: 12px 0 0; padding: 10px 12px; border-radius: 14px; background: var(--fill); }
+  .limits .who { flex: none; display: flex; align-items: center; }
+  .limits .who .icon { width: 24px; height: 24px; border-radius: 7px; }
+  .lim { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .lim .top { display: flex; justify-content: space-between; gap: 6px; font-size: 11.5px; color: var(--secondary); }
+  .lim .top b { color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .lim .when { color: var(--tertiary); font-size: 11px; }
+  .lim .track { flex: none; height: 5px; } /* .track grows along its row elsewhere; in this column that collapsed it */
+  .lim .track i { transition: none; }
+  .lim.warn .track i { background: var(--orange); } .lim.bad .track i { background: var(--red); }
+  .controls { display: flex; align-items: center; gap: 10px; }
+  .timer { color: var(--tertiary); font-size: 11.5px; font-variant-numeric: tabular-nums; min-width: 24px; text-align: right; }
+  .row.waiting .timer { color: var(--orange); font-weight: 600; }
+  .x { display: none; width: 18px; height: 18px; border-radius: 50%; padding: 0; background: rgba(255,255,255,.14);
+       color: var(--secondary); font-size: 11px; line-height: 18px; transition: background .15s ease, scale .3s var(--spring); }
+  .x:hover { background: rgba(255,255,255,.24); color: #fff; scale: 1.12; }
+  .row:hover .timer { display: none; } .row:hover .x { display: block; }
+
+  /* Status indicators; looping animations are phase-synced to the clock so re-renders don't restart them */
+  .ind { flex: none; display: inline-block; border-radius: 50%; }
+  .ind.working { width: 11px; height: 11px; border: 1.8px solid rgba(10,132,255,.25); border-top-color: var(--blue); animation: spin .9s steps(12) infinite; }
+  .ind.waiting { width: 7px; height: 7px; background: var(--orange); animation: halo 1.6s steps(16) infinite; }
+  .ind.done { width: 11px; height: 11px; border-radius: 0; }
+  .ind.done svg { display: block; width: 100%; height: 100%; fill: none; stroke: var(--green); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; }
+  .ind.idle { width: 6px; height: 6px; background: var(--gray); }
+  @keyframes spin { to { rotate: 360deg } }
+  @keyframes halo { 0% { box-shadow: 0 0 0 0 rgba(255,159,10,.6) } 80%, 100% { box-shadow: 0 0 0 6px rgba(255,159,10,0) } }
+  .cluster .dot.waiting { animation: halo 1.6s steps(16) infinite; }
+
+  /* iOS switch: the knob stretches while pressed, then springs across */
+  .switch { background: none; padding: 0; border-radius: 6px; display: flex; align-items: center; gap: 6px; color: var(--tertiary); font-size: 11px; font-weight: 600; letter-spacing: .02em; cursor: pointer; transition: color .25s ease; }
+  .switch .knob { position: relative; width: 34px; height: 20px; border-radius: 10px; background: rgba(120,120,128,.36); transition: background .25s ease; }
+  .switch .knob::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 8px; background: #fff;
+                         box-shadow: 0 2px 4px rgba(0,0,0,.3); transition: translate .38s var(--spring), width .22s var(--ease); }
+  .switch:active .knob::after { width: 21px; }
+  .switch.on { color: var(--green); }
+  .switch.on .knob { background: var(--green); }
+  .switch.on .knob::after { translate: 14px 0; }
+  .switch.on:active .knob::after { translate: 9px 0; }
+
+  .empty { padding: 26px 0 18px; text-align: center; color: var(--secondary); }
+  .empty b { display: block; color: var(--label); font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+  .foot { display: flex; align-items: center; gap: 4px; padding: 12px 8px 0; color: var(--tertiary); font-size: 11.5px; }
+  .foot > span { flex: 1; }
+  .foot button { background: none; color: var(--tertiary); padding: 2px 6px; border-radius: 6px; transition: background .15s ease, color .15s ease; }
+  .foot button:hover { color: var(--secondary); background: rgba(255,255,255,.06); }
+  .keys { padding: 10px 8px 0; color: var(--tertiary); font-size: 11px; text-align: center; }
+  .keys { line-height: 2; }
+  .keys .anywhere { color: var(--tertiary); opacity: .8; }
+  .keys kbd { font: 600 10px var(--mono); color: var(--secondary); background: rgba(255,255,255,.08); border-radius: 4px; padding: 1px 4px; }
+
+  /* Rename */
+  .name .agent-sub { margin-left: 7px; color: var(--tertiary); font-size: 12px; font-weight: 500; }
+  .name .pen { margin-left: 6px; padding: 0 4px; border-radius: 5px; background: none; color: var(--tertiary); font-size: 12px; opacity: 0; transition: opacity .2s ease, color .15s ease, background .15s ease; }
+  .row:hover .name .pen { opacity: 1; }
+  .name .pen:hover { color: #fff; background: rgba(255,255,255,.1); }
+  .name input { width: 230px; margin-left: -6px; padding: 1px 6px; border: 0; outline: 0; border-radius: 6px; font: inherit; color: #fff;
+                background: rgba(255,255,255,.1); box-shadow: 0 0 0 1.5px rgba(10,132,255,.75) inset; user-select: text; }
+  .name input::placeholder { color: var(--tertiary); }
+
+  /* Launcher */
+  .group > .title .right { display: flex; align-items: center; gap: 8px; }
+  .gplus { width: 18px; height: 18px; border-radius: 50%; padding: 0; background: rgba(255,255,255,.1); color: var(--secondary);
+           font-size: 13px; line-height: 18px; opacity: 0; scale: .7; transition: opacity .2s ease, scale .35s var(--spring), background .15s ease; }
+  .group:hover .gplus { opacity: 1; scale: 1; }
+  .gplus:hover { background: rgba(10,132,255,.35); color: #fff; }
+  .stack { display: flex; }
+  .stack .icon { box-shadow: 0 0 0 2px #000; }
+  .stack .icon + .icon { margin-left: -12px; }
+  .chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 16px 0 12px; }
+  .chip { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 12px 6px 10px; border-radius: 14px; background: var(--fill);
+          color: var(--secondary); font-size: 12px; font-weight: 600; transition: background .2s ease, color .2s ease, box-shadow .25s ease, scale .35s var(--spring); }
+  .chip:hover { background: rgba(118,118,128,.26); color: #fff; }
+  .chip:active { scale: .94; transition-duration: .08s; }
+  .chip.on { background: rgba(10,132,255,.16); color: #fff; box-shadow: 0 0 0 1.5px var(--blue) inset; }
+  .chip .icon { width: 34px; height: 34px; border-radius: 9.5px; filter: saturate(.3) brightness(.7); transition: filter .25s ease, scale .4s var(--spring); }
+  .chip.on .icon { filter: none; scale: 1.08; }
+  .field { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--fill); text-align: left; transition: background .2s ease; }
+  .field:hover { background: rgba(118,118,128,.26); }
+  .field svg { flex: none; width: 15px; height: 15px; }
+  .field b { font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .field .fpath { flex: 1; min-width: 0; color: var(--tertiary); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .field .chev { transition: rotate .4s var(--spring); }
+  .field.open .chev { rotate: 180deg; }
+  .folders { margin-top: 6px; background: var(--fill); border-radius: 12px; max-height: 210px; overflow-y: auto; }
+  .folders::-webkit-scrollbar { display: none; }
+  .folders button { width: 100%; display: flex; gap: 10px; align-items: baseline; padding: 8px 12px; background: none; text-align: left; transition: background .15s ease; }
+  .folders button:hover { background: rgba(255,255,255,.06); }
+  .folders button + button { box-shadow: 0 -.5px 0 var(--sep); }
+  .folders b { font-weight: 600; white-space: nowrap; }
+  .folders span { color: var(--tertiary); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .folders .browse b { color: var(--blue); }
+  .launch textarea { display: block; width: 100%; margin-top: 10px; min-height: 78px; resize: none; padding: 10px 12px; border: 0; outline: 0; border-radius: 12px;
+                     background: var(--fill); color: #fff; font: inherit; font-size: 13px; line-height: 1.45; user-select: text; box-shadow: 0 0 0 1.5px transparent inset;
+                     transition: box-shadow .25s ease, background .2s ease; }
+  .launch textarea:focus { background: rgba(118,118,128,.24); box-shadow: 0 0 0 1.5px rgba(10,132,255,.75) inset; }
+  .launch textarea::placeholder { color: var(--tertiary); }
+  .opts { display: flex; align-items: center; gap: 16px; margin-top: 12px; padding: 0 2px; }
+  .go { margin-left: auto; height: 32px; padding: 0 16px; border-radius: 16px; background: var(--blue); font-size: 13px; font-weight: 600;
+        box-shadow: 0 6px 18px rgba(10,132,255,.35); transition: background .15s ease, scale .35s var(--spring), opacity .2s ease, box-shadow .2s ease; }
+  .go:hover { background: #409CFF; scale: 1.04; }
+  .go:active { scale: .93; transition-duration: .08s; }
+  .go:disabled { opacity: .35; cursor: default; scale: 1; box-shadow: none; }
+  .go.busy { animation: busy 1s ease-in-out infinite; }
+  @keyframes busy { 50% { opacity: .55; } }
+  .go kbd { font: 600 10px var(--mono); opacity: .6; margin-left: 7px; }
+  .err { margin-top: 10px; padding: 8px 12px; border-radius: 10px; background: rgba(255,69,58,.14); color: #FF6961; font-size: 12px; }
+  .err:empty { display: none; }
+
+  button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .chip:focus-visible, .field:focus-visible, .folders button:focus-visible { outline-offset: -2px; }
+
+  /* Shortcuts sheet */
+  .help h2 { margin: 16px 8px 6px; font-size: 12px; font-weight: 600; color: var(--secondary); letter-spacing: .01em; }
+  .help h2 span { color: var(--tertiary); font-weight: 500; }
+  .krow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; font-size: 12.5px; color: rgba(255,255,255,.86); }
+  .krow + .krow { box-shadow: 0 -.5px 0 var(--sep); }
+  .krow .combo { display: flex; gap: 4px; flex: none; }
+  .krow kbd { min-width: 22px; padding: 2px 6px; border-radius: 6px; text-align: center; font: 600 11px var(--mono); color: #fff;
+              background: rgba(255,255,255,.1); box-shadow: 0 1px 0 rgba(255,255,255,.08) inset, 0 1px 1px rgba(0,0,0,.4); }
+
+  /* Setup sheet */
+  .setup .intro { padding: 12px 8px 2px; color: var(--secondary); font-size: 12.5px; line-height: 1.45; }
+  .srow { display: flex; align-items: center; gap: 12px; padding: 10px 12px; }
+  .srow + .srow { box-shadow: 0 -.5px 0 var(--sep); }
+  .srow .sbody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .srow b { font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
+  .srow .sub { color: var(--tertiary); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .srow .sub.on { color: var(--green); }
+  .srow.missing { opacity: .45; }
+  .switch:disabled { cursor: default; opacity: .5; }
+  .setup .finish { display: flex; justify-content: flex-end; margin-top: 14px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; }
+  }
+</style>
+</head>
+<body>
+<div id="island" class="intro"><div id="pill"></div><div id="panel"></div></div>
+<script>
+const NAMES = { claude: 'Claude', agy: 'Antigravity', opencode: 'OpenCode', kilo: 'Kilo', copilot: 'Copilot' }
+const APP_TAG = { claude: 'Desktop', code: 'VS Code', antigravity: 'IDE' } // which app hosts an agent that isn't in a terminal
+const STATUS = { working: 'Working', waiting: 'Needs you', error: 'Stopped', done: 'Done', idle: 'Idle' }
+const RANK = { waiting: 0, error: 1, working: 2, done: 3, idle: 4 }
+const GLYPH = { // Claude + OpenCode: official marks (simple-icons). Antigravity + Kilo: redrawn from their logos.
+  claude: '<svg viewBox="0 0 24 24"><path fill="#D97757" d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/></svg>',
+  agy: '<svg viewBox="0 0 24 24"><defs><linearGradient id="agyg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF5A3C"/><stop offset=".28" stop-color="#F9C22E"/><stop offset=".55" stop-color="#3DBE6A"/><stop offset=".8" stop-color="#3B82F6"/></linearGradient></defs><path fill="url(#agyg)" d="M3.4 20.2C6.3 20.2 8.1 3.8 12 3.8s5.7 16.4 8.6 16.4c.9 0 1-1.2.3-1.6C18.7 17.5 17.3 9.9 12 9.9S5.3 17.5 3.1 18.6c-.7.4-.6 1.6.3 1.6z"/></svg>',
+  opencode: '<svg viewBox="0 0 24 24"><path fill="#F1ECEA" fill-rule="evenodd" d="M22 24H2V0h20zM17 4.8H7v14.4h10z"/><path fill="#4B4846" d="M7 9.6h10v9.6H7z"/></svg>',
+  kilo: '<svg viewBox="0 0 24 24"><rect x="2.5" y="2.5" width="19" height="19" fill="none" stroke="#F8F675" stroke-width="1.8"/><g fill="#F8F675" font-family="Consolas,monospace" font-weight="700" font-size="7.4" text-anchor="middle"><text x="12" y="11.4">K1</text><text x="12" y="18.8">L0</text></g></svg>',
+  copilot: '<svg viewBox="0 0 24 24"><path fill="#fff" d="M23.922 16.997C23.061 18.492 18.063 22.02 12 22.02 5.937 22.02.939 18.492.078 16.997A.641.641 0 0 1 0 16.741v-2.869a.883.883 0 0 1 .053-.22c.372-.935 1.347-2.292 2.605-2.656.167-.429.414-1.055.644-1.517a10.098 10.098 0 0 1-.052-1.086c0-1.331.282-2.499 1.132-3.368.397-.406.89-.717 1.474-.952C7.255 2.937 9.248 1.98 11.978 1.98c2.731 0 4.767.957 6.166 2.093.584.235 1.077.546 1.474.952.85.869 1.132 2.037 1.132 3.368 0 .368-.014.733-.052 1.086.23.462.477 1.088.644 1.517 1.258.364 2.233 1.721 2.605 2.656a.841.841 0 0 1 .053.22v2.869a.641.641 0 0 1-.078.256Zm-11.75-5.992h-.344a4.359 4.359 0 0 1-.355.508c-.77.947-1.918 1.492-3.508 1.492-1.725 0-2.989-.359-3.782-1.259a2.137 2.137 0 0 1-.085-.104L4 11.746v6.585c1.435.779 4.514 2.179 8 2.179 3.486 0 6.565-1.4 8-2.179v-6.585l-.098-.104s-.033.045-.085.104c-.793.9-2.057 1.259-3.782 1.259-1.59 0-2.738-.545-3.508-1.492a4.359 4.359 0 0 1-.355-.508Zm2.328 3.25c.549 0 1 .451 1 1v2c0 .549-.451 1-1 1-.549 0-1-.451-1-1v-2c0-.549.451-1 1-1Zm-5 0c.549 0 1 .451 1 1v2c0 .549-.451 1-1 1-.549 0-1-.451-1-1v-2c0-.549.451-1 1-1Zm3.313-6.185c.136 1.057.403 1.913.878 2.497.442.544 1.134.938 2.344.938 1.573 0 2.292-.337 2.657-.751.384-.435.558-1.15.558-2.361 0-1.14-.243-1.847-.705-2.319-.477-.488-1.319-.862-2.824-1.025-1.487-.161-2.192.138-2.533.529-.269.307-.437.808-.438 1.578v.021c0 .265.021.562.063.893Zm-1.626 0c.042-.331.063-.628.063-.894v-.02c-.001-.77-.169-1.271-.438-1.578-.341-.391-1.046-.69-2.533-.529-1.505.163-2.347.537-2.824 1.025-.462.472-.705 1.179-.705 2.319 0 1.211.175 1.926.558 2.361.365.414 1.084.751 2.657.751 1.21 0 1.902-.394 2.344-.938.475-.584.742-1.44.878-2.497Z"/></svg>',
+}
+const DOT = { copilot: '#8B5CF6', claude: '#D97757', agy: 'linear-gradient(180deg,#F9C22E,#3DBE6A 50%,#3B82F6)', opencode: '#EDE8E6', kilo: '#F8F675' }
+const GRID_ICON = '<svg viewBox="0 0 16 16" fill="#fff"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.5"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.5"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.5"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.5"/></svg>'
+const INFO_ICON = '<svg viewBox="0 0 16 16"><circle cx="8" cy="4" r="1.35" fill="#fff"/><path d="M8 7.2v5.4" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/></svg>'
+// Every shortcut, one place. [keys, what it does]; keys joined by + render as separate keycaps.
+const SHORTCUTS = [
+  ['Anywhere', '', [
+    ['Ctrl+Alt+N', 'Open the notch with the keyboard'], ['Ctrl+Alt+J', 'Jump to the next agent that needs you'],
+    ['Ctrl+Alt+G', 'Tile all agent windows'], ['Ctrl+Alt+R', 'Reload the notch'], ['Ctrl+Alt+Q', 'Quit (agents won\'t restart it)'],
+  ]],
+  ['In the notch', 'after Ctrl+Alt+N', [
+    ['↑ ↓', 'Select an agent'], ['↵', 'Open its terminal'], ['Y N', 'Allow / deny its request'], ['A', 'Toggle AUTO'],
+    ['R', 'Rename'], ['D', 'Dismiss'], ['+', 'New agent'], ['G', 'Tile windows'], ['C', 'Clear finished'],
+    ['S', 'Sound on / off'], [',', 'Setup'], ['I', 'This sheet'], ['Q', 'Quit'], ['Esc', 'Close'],
+  ]],
+  ['New agent', '', [['Tab', 'Move between fields'], ['Space', 'Pick an agent / flip a switch'], ['Ctrl+↵', 'Launch'], ['Esc', 'Back']]],
+  ['Mouse', '', [
+    ['Hover', 'Expand the notch'], ['Click', 'Open an agent\'s terminal'], ['Double-click', 'Rename an agent'], ['＋', 'New agent (on a project: in that folder)'],
+  ]],
+]
+const PLUS_ICON = '<svg viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>'
+const BACK_ICON = '<svg viewBox="0 0 16 16"><path d="M10 3 5 8l5 5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+const FOLDER_ICON = '<svg viewBox="0 0 16 16"><path d="M1.5 4.5a1.5 1.5 0 0 1 1.5-1.5h3l1.5 1.5H13a1.5 1.5 0 0 1 1.5 1.5v5.5A1.5 1.5 0 0 1 13 13H3a1.5 1.5 0 0 1-1.5-1.5z" fill="#64D2FF"/></svg>'
+const CHEV_ICON = '<svg class="chev" viewBox="0 0 16 16" style="width:12px;height:12px"><path d="M4 6l4 4 4-4" fill="none" stroke="rgba(235,235,245,.5)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+const CHECK = '<svg viewBox="0 0 24 24"><path pathLength="1" d="M5.5 12.5l4.2 4.2L18.5 7.5"/></svg>'
+const CROSS = '<svg viewBox="0 0 24 24"><path pathLength="1" d="M7 7l10 10M17 7 7 17"/></svg>'
+const PEEK_MS = 4500, RESOLVED_MS = 950
+
+const css = getComputedStyle(document.documentElement)
+const SPRING = css.getPropertyValue('--spring').trim(), EASE = css.getPropertyValue('--ease').trim()
+const calm = matchMedia('(prefers-reduced-motion: reduce)').matches
+const anim = (e, frames, opts) => calm ? null : e.animate(frames, { easing: EASE, ...opts })
+
+const island = document.getElementById('island'), pill = document.getElementById('pill'), panel = document.getElementById('panel')
+let limits = {}, warned = {}
+let sessions = [], ordered = [], open = false, keyboard = false, sel = 0, hoverTimer
+let prevState = {}, changed = new Set(), known = null, prevPct = {}, seenWaiting = new Set()
+let peek = null, peekTimer, toast = null, toastTimer, mode = '', pillSig = ''
+let view = 'list', launcher = null, browsing = false, editing = null // view: list | launch; editing: key of the row being renamed
+let welcome = calm ? null : 'drop' // drop -> hello -> null
+let farewell = null // quit | reload -> dot, while the goodbye plays
+let sound = true
+try { sound = localStorage.getItem('sound') !== 'off' } catch {}
+
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e }
+const synced = (e, ms) => (e.style.animationDelay = -(Date.now() % ms) + 'ms', e)
+const byRank = (a, b) => RANK[a.state] - RANK[b.state] || a.started - b.started
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`
+const agentName = s => NAMES[s.agent] || s.agent
+const name = s => s.label || agentName(s) // your name for the session, else the agent's
+const baseName = d => d.split(/[\\/]/).filter(Boolean).pop() || d
+const duration = t => { const s = Math.max(0, (Date.now() - t) / 1000); return s < 60 ? `${s | 0}s` : s < 3600 ? `${s / 60 | 0}m` : `${s / 3600 | 0}h` }
+function timerEl(t) { const e = el('span', 'timer', duration(t)); e.dataset.since = t; return e }
+
+function indicator(state) {
+  const i = el('span', 'ind ' + state)
+  if (state === 'done') i.innerHTML = '<svg viewBox="0 0 12 12"><path pathLength="1" d="M2.5 6.3 5 8.6l4.6-5.2"/></svg>'
+  return synced(i, state === 'working' ? 900 : 1600)
+}
+
+function icon(agent) {
+  const i = el('div', 'icon ' + (GLYPH[agent] ? agent : 'other'))
+  if (GLYPH[agent]) i.innerHTML = GLYPH[agent]; else i.textContent = agent[0].toUpperCase()
+  return i
+}
+
+// Sounds are synthesized so there are no audio files.
+const audio = () => (audio.ctx ||= new AudioContext())
+// Goodbye (quit or reload): "Goodnight", the agents nod off, zZz, a yawn-squash, back to a dot, and up it goes.
+notch.onGoodbye(kind => {
+  if (farewell) return
+  const wasOpen = open
+  if (keyboard) closeKeyboard()
+  setOpen(false)
+  const later = (ms, fn) => setTimeout(fn, calm ? 0 : ms)
+  later(wasOpen ? 380 : 0, () => {
+    farewell = kind; render(); lullaby()
+    later(1250, () => {
+      anim(island, [{ scale: '1 1' }, { scale: '1.07 .8' }, { scale: '1 1' }], { duration: 320, easing: 'ease-in-out' }) // the yawn
+      farewell = 'dot'; render()
+    })
+    later(1550, () => anim(island, [ // wind-up dip, then it stretches tall and shoots up into the screen edge
+      { transform: 'translateY(0) scale(1, 1)', opacity: 1 },
+      { transform: 'translateY(5px) scale(1.18, .8)', opacity: 1, offset: .32 },
+      { transform: 'translateY(-60px) scale(.62, 1.45)', opacity: 1, offset: .82 },
+      { transform: 'translateY(-96px) scale(.4, 1.6)', opacity: 0 },
+    ], { duration: 460, easing: 'cubic-bezier(.5, 0, .75, 0)', fill: 'forwards' }))
+    later(2100, () => notch.send('goodbye-done'))
+  })
+})
+
+function lullaby() { // goodbye: the welcome chime, falling
+  if (!sound) return
+  const ctx = audio(), t = ctx.currentTime
+  for (const [f, d] of [[1318.5, 0], [880, .14], [659.3, .3]]) {
+    const o = ctx.createOscillator(), g = ctx.createGain()
+    o.type = 'sine'; o.frequency.value = f
+    g.gain.setValueAtTime(0, t + d); g.gain.linearRampToValueAtTime(.08, t + d + .015); g.gain.exponentialRampToValueAtTime(.0001, t + d + .7)
+    o.connect(g).connect(ctx.destination); o.start(t + d); o.stop(t + d + .75)
+  }
+}
+
+function chime() { // needs you: soft two-note rise
+  if (!sound) return
+  const ctx = audio(), t = ctx.currentTime
+  for (const [f, d] of [[880, 0], [1318.5, .1]]) {
+    const o = ctx.createOscillator(), g = ctx.createGain()
+    o.type = 'sine'; o.frequency.value = f
+    g.gain.setValueAtTime(0, t + d); g.gain.linearRampToValueAtTime(.11, t + d + .012); g.gain.exponentialRampToValueAtTime(.0001, t + d + .6)
+    o.connect(g).connect(ctx.destination); o.start(t + d); o.stop(t + d + .65)
+  }
+}
+function tick(high = true) { // allow / deny: a short tactile click
+  if (!sound) return
+  const ctx = audio(), t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain()
+  o.frequency.setValueAtTime(high ? 1600 : 520, t); o.frequency.exponentialRampToValueAtTime(high ? 950 : 300, t + .06)
+  g.gain.setValueAtTime(.07, t); g.gain.exponentialRampToValueAtTime(.0001, t + .09)
+  o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + .1)
+}
+
+// A brief confirmation card on the pill: { lead(), title(), right, line }
+function showToast(t, ms = RESOLVED_MS) {
+  toast = { id: Date.now(), ...t }
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { toast = null; render() }, ms)
+  render()
+}
+function badge(ok) { const b = el('div', 'badge ' + (ok ? 'ok' : 'no')); b.innerHTML = ok ? CHECK : CROSS; return b }
+function stack(agents) {
+  const s = el('div', 'stack')
+  agents.forEach((a, i) => { const ic = icon(a); ic.style.animationDelay = i * 70 + 'ms'; s.append(ic) })
+  return s
+}
+
+function decideUI(s, choice) {
+  notch.send('decide', s.key, choice)
+  tick(choice !== 'deny')
+  const ok = choice !== 'deny'
+  showToast({
+    lead: () => badge(ok), right: s.project, line: `${name(s)} · ${s.request?.detail || s.request?.title || s.action}`,
+    title: () => el('b', ok ? 'ok' : 'no', choice === 'all' ? 'Allowed · AUTO on' : ok ? 'Allowed' : 'Denied'),
+  })
+}
+
+function requestActions(s, withAll) {
+  const a = el('div', 'actions')
+  const deny = el('button', 'deny', 'Deny'), allow = el('button', 'allow', 'Allow')
+  if (keyboard) { deny.append(el('kbd', '', 'N')); allow.append(el('kbd', '', 'Y')) }
+  deny.onclick = e => { e.stopPropagation(); decideUI(s, 'deny') }
+  allow.onclick = e => { e.stopPropagation(); decideUI(s, 'allow') }
+  a.append(deny, allow)
+  if (withAll) {
+    const all = el('button', 'all', 'Allow all'); all.title = 'Allow this and turn on AUTO for this agent'
+    all.onclick = e => { e.stopPropagation(); decideUI(s, 'all') }
+    a.append(all)
+  }
+  return a
+}
+
+function card(lead, top, right, line, extra) {
+  const body = el('div', 'card-body'), head = el('div', 'card-top')
+  head.append(top instanceof Node ? top : el('b', '', top), el('span', '', right))
+  body.append(head)
+  if (line) body.append(el('div', 'card-line', line))
+  if (extra) body.append(...extra)
+  return [lead, body]
+}
+
+// Picks what the collapsed island shows. Returns a signature so the DOM (and its entrance animations) only rebuilds on real change.
+function pillView() {
+  const waiting = sessions.filter(s => s.state === 'waiting'), working = sessions.filter(s => s.state === 'working')
+  const unread = sessions.filter(s => s.state === 'done' && s.unread)
+  const req = sessions.filter(s => s.request).sort((a, b) => a.since - b.since)[0]
+
+  if (farewell === 'dot') return { mode: 'drop', sig: 'bye-dot', build: () => [] }
+  if (farewell) return {
+    mode: 'bye', sig: 'bye', cls: 'bye', build: () => {
+      const icons = el('span', 'hello-icons')
+      Object.keys(GLYPH).forEach((a, i) => { const ic = icon(a); ic.style.animationDelay = 80 + i * 90 + 'ms'; icons.append(ic) })
+      const zzz = el('span', 'zzz'); zzz.append(el('i', '', 'z'), el('i', '', 'z'), el('i', '', 'Z'))
+      return [icons, el('b', '', farewell === 'reload' ? 'Be right back' : 'Goodnight'), zzz]
+    },
+  }
+  if (welcome === 'drop') return { mode: 'drop', sig: 'drop', build: () => [] }
+  if (welcome === 'hello') return {
+    mode: 'hello', sig: 'hello', cls: 'hello', build: () => {
+      const icons = el('span', 'hello-icons')
+      Object.keys(GLYPH).forEach((a, i) => { const ic = icon(a); ic.style.animationDelay = 30 + i * 70 + 'ms'; icons.append(ic) })
+      const text = el('span', 'hello-text')
+      text.append(el('b', '', 'Notch'), el('span', 'sub', 'watching your agents'))
+      return [icons, text]
+    },
+  }
+  if (toast) return { mode: 'toast', sig: 'toast' + toast.id, cls: 'card', build: () => card(toast.lead(), toast.title(), toast.right, toast.line) }
+  if (req) return {
+    mode: 'req', sig: 'req' + req.key + req.request.title + req.request.detail + keyboard, cls: 'card request', build: () =>
+      card(icon(req.agent), `${name(req)} · ${req.request.title}`, req.project, null, [el('div', 'code', req.request.detail || req.action), requestActions(req, false)]),
+  }
+  if (peek) {
+    const s = peek, verb = s.state === 'waiting' ? 'needs you' : s.state === 'error' ? 'stopped' : 'finished', line = s.state === 'done' ? (s.task || s.action) : s.action
+    return { mode: 'peek', sig: 'peek' + s.key + s.state + line, cls: 'card', build: () => card(icon(s.agent), `${name(s)} ${verb}`, s.project, line) }
+  }
+
+  let label
+  const failed = sessions.filter(s => s.state === 'error')
+  if (waiting.length) label = [['b', 'warn', `${name(waiting[0])} needs you`], ['span', 'sub', waiting.length > 1 ? `+${waiting.length - 1} more` : waiting[0].project]]
+  else if (failed.length) label = [['b', 'bad', `${name(failed[0])}: ${failed[0].action.split(' · ')[0]}`], ['span', 'sub', failed.length > 1 ? `+${failed.length - 1} more` : failed[0].project]]
+  else if (working.length) label = [['b', '', `${working.length} working`], ...(unread.length ? [['span', 'sub', `${unread.length} finished`]] : [])]
+  else if (unread.length) label = [['b', 'ok', `${unread.length} finished`]]
+  else if (sessions.some(s => s.state === 'done')) label = [['b', 'ok', 'All done']]
+  else label = [['b', 'muted', sessions.length ? plural(sessions.length, 'agent') : 'No agents']]
+  const dots = [...sessions].sort(byRank).slice(0, 4)
+  return {
+    mode: 'pill', sig: 'pill' + JSON.stringify(label) + dots.map(s => s.agent + s.state).join(), busy: working.length && !waiting.length, build: () => {
+      const cluster = el('span', 'cluster')
+      for (const s of dots) {
+        const d = synced(el('span', 'dot ' + s.state), 1600)
+        d.style.background = DOT[s.agent] || '#8E8E93'
+        cluster.append(d)
+      }
+      if (!dots.length) cluster.append(Object.assign(el('span', 'dot'), { style: 'background:#3A3A3C' }))
+      return [cluster, ...label.map(([t, c, x]) => el(t, c, x))]
+    },
+  }
+}
+
+function renderPill() {
+  const v = pillView()
+  if (v.sig !== pillSig) {
+    const sameMode = v.mode === mode
+    if (!sameMode && pill.childNodes.length && !calm) { // crossfade: the old content blurs away as the island reshapes
+      const ghost = pill.cloneNode(true) // keeps id="pill" for its styles; gone in 260ms
+      ghost.classList.add('ghost')
+      island.append(ghost)
+      anim(ghost, [{ opacity: 1, filter: 'blur(0px)', scale: 1 }, { opacity: 0, filter: 'blur(8px)', scale: .86 }], { duration: 260, fill: 'forwards' }).onfinish = () => ghost.remove()
+    }
+    pill.className = v.cls || ''
+    pill.replaceChildren(...v.build())
+    if (!sameMode) anim(pill, [{ opacity: 0, filter: 'blur(8px)', scale: 1.08 }, { opacity: 1, filter: 'blur(0px)', scale: 1 }], { duration: 440, delay: 70, fill: 'backwards' })
+    else if (v.mode === 'pill') for (const e of pill.querySelectorAll('b, .sub')) e.classList.add('roll') // counts slide in
+    pillSig = v.sig; mode = v.mode
+  }
+  island.classList.toggle('peek', v.mode === 'peek' || v.mode === 'toast')
+  island.classList.toggle('req', v.mode === 'req')
+  island.classList.toggle('busy', !!v.busy && !open)
+
+  const waiting = sessions.filter(s => s.state === 'waiting')
+  island.classList.toggle('alert', waiting.length > 0)
+  const fresh = waiting.some(s => !seenWaiting.has(s.key))
+  seenWaiting = new Set(waiting.map(s => s.key))
+  if (fresh) { chime(); island.classList.remove('bump'); void island.offsetWidth; island.classList.add('bump') }
+}
+
+function leave(r, key) { // collapse a row away, then drop the session
+  anim(r, [{ height: r.offsetHeight + 'px', opacity: 1 }, { height: '0px', opacity: 0, paddingTop: '0px', paddingBottom: '0px' }], { duration: 300, fill: 'forwards' })
+  setTimeout(() => notch.send('dismiss', key), calm ? 0 : 290)
+}
+
+function row(s, index) {
+  const r = el('div', `row ${s.state}${s.hwnd ? ' jump' : ''}${s.unread ? ' unread' : ''}${keyboard && index === sel ? ' sel' : ''}`)
+  r.dataset.key = s.key
+  r.title = s.app ? `Open ${agentName(s)} app` : s.hwnd ? 'Open terminal' : 'No window (background session)'
+  r.onclick = () => s.hwnd && notch.send('focus', s.key)
+
+  const body = el('div', 'body'), title = el('div', 'name', name(s)), pen = el('button', 'pen', '✎')
+  if (s.label) title.append(el('span', 'agent-sub', agentName(s)))
+  if (s.app) title.append(el('span', 'tag', APP_TAG[s.appName] || 'App'))
+  if (typeof s.context === 'number') title.append(Object.assign(el('span', 'meta' + (s.context >= 90 ? ' bad' : s.context >= 70 ? ' warn' : ''), s.context + '% context'), { title: 'How full this session\'s context window is' }))
+  pen.title = 'Rename (or double-click the name)'
+  pen.onclick = e => { e.stopPropagation(); startRename(s, title) }
+  title.ondblclick = e => { e.stopPropagation(); startRename(s, title) }
+  title.append(pen)
+  body.append(title)
+  if (s.task) body.append(el('div', 'task', s.task))
+  if (s.action) body.append(el('div', 'action', s.action))
+  if (s.request) body.append(el('div', 'code', s.request.detail || s.request.title), requestActions(s, true))
+  if (s.todos && s.todos.total) {
+    const p = el('div', 'progress'), t = el('div', 'track'), fill = synced(el('i'), 2200)
+    const pct = 100 * s.todos.done / s.todos.total, from = prevPct[s.key] ?? pct
+    fill.style.width = pct + '%'
+    if (from !== pct) anim(fill, [{ width: from + '%' }, { width: pct + '%' }], { duration: 750 }) // bar grows from where it was
+    prevPct[s.key] = pct
+    t.append(fill); p.append(t, el('span', '', `${s.todos.done} of ${s.todos.total}`))
+    body.append(p)
+  }
+
+  const status = el('div', 'status ' + s.state), ind = indicator(s.state)
+  status.append(ind, STATUS[s.state])
+  if (changed.has(s.key)) { // state just changed: pop the status, draw the check, flash amber for "needs you"
+    anim(status, [{ scale: .55, opacity: .2 }, { scale: 1, opacity: 1 }], { duration: 600, easing: SPRING })
+    if (s.state === 'done') anim(ind.querySelector('path'), [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 450, delay: 150, fill: 'backwards', easing: 'ease-out' })
+    if (s.state === 'waiting') anim(r, [{ background: 'rgba(255,159,10,.3)' }, { background: 'rgba(255,159,10,.08)' }], { duration: 1100, easing: 'ease-out' })
+  }
+  if (known && !known.has(s.key)) anim(r, [{ opacity: 0, translate: '0 -8px', scale: .97 }, { opacity: 1, translate: '0 0', scale: 1 }], { duration: 520 })
+
+  const sw = el('button', 'switch' + (s.auto ? ' on' : '')); sw.append('AUTO', el('span', 'knob'))
+  sw.setAttribute('role', 'switch'); sw.setAttribute('aria-checked', !!s.auto)
+  sw.title = 'Auto-approve permissions for this agent'
+  sw.onclick = e => { e.stopPropagation(); tick(!s.auto); notch.send('auto', s.key, !s.auto) }
+  const x = el('button', 'x', '✕'); x.title = 'Dismiss'
+  x.onclick = e => { e.stopPropagation(); leave(r, s.key) }
+  // AUTO needs a way to approve: no permission hook in Copilot, and no terminal prompt to press Enter on in Antigravity's IDE
+  const canAuto = s.agent !== 'copilot' && !(s.agent === 'agy' && s.app)
+  const controls = el('div', 'controls'); controls.append(...(canAuto ? [sw] : []), timerEl(s.since || s.updated), x)
+  const side = el('div', 'side'); side.append(status, controls)
+
+  r.append(icon(s.agent), body, side)
+  return r
+}
+
+// Claude's 5-hour and weekly limits (from its status line), shown when known.
+function limitsCard() {
+  const c = limits.claude
+  if (!c || (!c.five && !c.week)) return null
+  const card = el('div', 'limits'), who = el('div', 'who'); who.append(icon('claude')); card.append(who)
+  const clock = s => new Date(s * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+  const day = s => new Date(s * 1000).toLocaleDateString([], { weekday: 'short' })
+  for (const [label, w, when] of [['5-hour', c.five, w => 'resets ' + clock(w.resets_at)], ['Weekly', c.week, w => 'resets ' + day(w.resets_at)]]) {
+    if (!w) continue
+    const pct = Math.round(w.used_percentage), lim = el('div', 'lim' + (pct >= 90 ? ' bad' : pct >= 70 ? ' warn' : ''))
+    const top = el('div', 'top'), track = el('div', 'track'), fill = el('i')
+    top.append(el('span', '', label), el('b', '', pct + '%'))
+    fill.style.width = Math.min(100, pct) + '%'; track.append(fill)
+    lim.append(top, track, el('span', 'when', when(w)))
+    card.append(lim)
+  }
+  return card
+}
+
+// One heads-up per window per level as Claude's limits fill (80%, then 95%).
+function warnLimits() {
+  const c = limits.claude
+  if (!c) return
+  for (const [key, label, w] of [['five', '5-hour', c.five], ['week', 'weekly', c.week]]) {
+    if (!w) continue
+    const level = w.used_percentage >= 95 ? 95 : w.used_percentage >= 80 ? 80 : 0
+    const id = key + w.resets_at
+    if (level > (warned[id] || 0)) {
+      warned[id] = level
+      const when = new Date(w.resets_at * 1000).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })
+      chime()
+      showToast({ lead: () => icon('claude'), title: () => el('b', level >= 95 ? 'bad' : 'warn', `Claude at ${Math.round(w.used_percentage)}% of your ${label} limit`), right: '', line: 'Resets ' + when }, 5000)
+    }
+  }
+}
+
+function renderPanel() {
+  if (view !== 'list' || editing) return // built once and updated in place, so typing survives agent updates
+  const n = st => sessions.filter(s => s.state === st).length
+  const head = el('div', 'head'), tile = el('button', 'round')
+  tile.innerHTML = GRID_ICON; tile.title = 'Lay out all agent windows in a grid (Ctrl+Alt+G)'
+  const add = el('button', 'round'); add.innerHTML = PLUS_ICON; add.title = 'New agent'
+  add.onclick = () => openLauncher()
+  tile.onclick = () => { anim(tile.firstChild, [{ rotate: '0deg', scale: 1 }, { rotate: '90deg', scale: .8 }, { rotate: '180deg', scale: 1 }], { duration: 600, easing: SPRING }); notch.send('grid') }
+  const summary = [n('waiting') && `${n('waiting')} need you`, n('error') && `${n('error')} stopped`, n('working') && `${n('working')} working`, n('done') && `${n('done')} done`].filter(Boolean).join(' · ')
+  const info = el('button', 'round'); info.innerHTML = INFO_ICON; info.title = 'Shortcuts (I)'
+  info.onclick = () => openHelp()
+  head.append(el('h1', '', 'Agents'), el('span', 'summary', summary), info, add, tile)
+
+  const groups = {}
+  for (const s of sessions) (groups[s.cwd || s.project] ||= []).push(s)
+  const sorted = Object.values(groups).map(g => g.sort(byRank)).sort((a, b) => byRank(a[0], b[0]))
+  ordered = sorted.flat()
+  sel = Math.min(sel, Math.max(0, ordered.length - 1))
+
+  let i = 0
+  const content = sorted.map(g => {
+    const group = el('div', 'group'), title = el('div', 'title'), list = el('div', 'list')
+    title.title = g[0].cwd
+    const right = el('span', 'right'), plus = el('button', 'gplus', '+')
+    plus.title = 'New agent in ' + g[0].project
+    plus.onclick = () => openLauncher(g[0].cwd)
+    right.append(el('span', '', g.length > 1 ? plural(g.length, 'agent') : ''), plus)
+    title.append(el('span', '', g[0].project), right)
+    list.append(...g.map(s => row(s, i++)))
+    group.append(title, list)
+    return group
+  })
+  if (!sessions.length) {
+    const e = el('div', 'empty'), start = el('button', 'go', 'New agent')
+    start.style.marginTop = '14px'; start.onclick = () => openLauncher()
+    e.append(el('b', '', 'No agents running'), 'Start one here, or run claude, agy, opencode or kilo in any terminal.', el('br'), start)
+    content.push(e)
+  }
+
+  const foot = el('div', 'foot'), clear = el('button', '', 'Clear finished'), snd = el('button', '', sound ? 'Sound on' : 'Sound off'), quit = el('button', '', 'Quit'), reload = el('button', '', 'Reload'), setupBtn = el('button', '', 'Setup')
+  clear.onclick = () => panel.querySelectorAll('.row.done').forEach((r, i) => setTimeout(() => leave(r, r.dataset.key), i * 45))
+  snd.onclick = () => { sound = !sound; try { localStorage.setItem('sound', sound ? 'on' : 'off') } catch {}; tick(); render() }
+  quit.onclick = () => notch.send('quit')
+  reload.onclick = () => notch.send('reload')
+  setupBtn.onclick = () => openSetup(false); setupBtn.title = 'Connect agents, start with Windows (,)'
+  quit.title = 'Quit (Ctrl+Alt+Q). Agents won\'t restart it until you run npm start'
+  reload.title = 'Restart the notch (Ctrl+Alt+R)'
+  foot.append(el('span', '', sessions.length ? `${plural(sessions.length, 'agent')} · ${plural(sorted.length, 'project')}` : ''),
+    ...(n('done') ? [clear] : []), snd, setupBtn, reload, quit)
+
+  const extra = []
+  if (keyboard) {
+    const k = el('div', 'keys')
+    k.innerHTML = '<kbd>↑↓</kbd> select &nbsp; <kbd>↵</kbd> open &nbsp; <kbd>Y</kbd>/<kbd>N</kbd> allow / deny &nbsp; <kbd>I</kbd> all shortcuts &nbsp; <kbd>esc</kbd> close'
+    extra.push(k)
+  }
+  const lc = limitsCard()
+  panel.replaceChildren(head, ...(lc ? [lc] : []), ...content, foot, ...extra)
+}
+
+function startRename(s, title) {
+  if (editing) return
+  editing = s.key
+  if (!keyboard) notch.send('grab-focus')
+  const input = el('input'); input.value = s.label || ''; input.placeholder = agentName(s) + ' · ' + s.project; input.maxLength = 40
+  title.replaceChildren(input)
+  anim(input, [{ opacity: 0, scale: .96 }, { opacity: 1, scale: 1 }], { duration: 260 })
+  input.focus(); input.select()
+  let done = false
+  const finish = save => {
+    if (done) return
+    done = true; editing = null
+    if (save) { notch.send('rename', s.key, input.value); tick() }
+    if (!keyboard && view !== 'launch') notch.send('keyboard-closed')
+    render()
+  }
+  input.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') finish(true); if (e.key === 'Escape') finish(false) }
+  input.onclick = e => e.stopPropagation()
+  input.onblur = () => finish(true)
+}
+
+// Setup: connect agents (each switch adds or removes the notch's hook in that agent's own config), start with Windows.
+async function openSetup(first) {
+  const st = await notch.invoke('setup-status')
+  view = 'setup'
+  const head = el('div', 'head')
+  if (!first) { const back = el('button', 'round'); back.innerHTML = BACK_ICON; back.title = 'Back (Esc)'; back.onclick = () => closeSetup(); head.append(back) }
+  head.append(el('h1', '', first ? 'Welcome to Notch' : 'Setup'), el('span', 'summary', ''))
+  const intro = el('div', 'intro', 'Notch follows your agents through a small hook in each one\'s own settings. Turn on the ones you use; you can change this any time from Setup.')
+  const err = el('div', 'err')
+
+  const agents = el('div', 'list')
+  for (const a of Object.keys(GLYPH)) {
+    let info = st.agents[a]
+    const r = el('div', 'srow' + (info.installed || info.connected ? '' : ' missing')), body = el('div', 'sbody'), sub = el('span', 'sub')
+    const sw = el('button', 'switch'); sw.append(el('span', 'knob')); sw.setAttribute('role', 'switch'); sw.title = 'Connect ' + NAMES[a]
+    const paint = () => {
+      sw.classList.toggle('on', info.connected); sw.setAttribute('aria-checked', info.connected)
+      sw.disabled = !info.installed && !info.connected
+      sub.className = 'sub' + (info.connected ? ' on' : '')
+      sub.textContent = info.connected ? (a === 'agy' ? 'Connected · CLI and IDE' : 'Connected') : info.installed ? 'Adds a hook to ' + info.where : 'Not installed'
+    }
+    sw.onclick = async () => {
+      const res = await notch.invoke('setup-connect', a, !info.connected)
+      if (res.error) { err.textContent = res.error; layout(); anim(err, [0, -7, 6, -4, 2, 0].map(x => ({ translate: x + 'px 0' })), { duration: 420, easing: 'ease-out' }); return }
+      err.textContent = ''; info = res.agents[a]; paint(); tick(info.connected)
+      if (info.connected) anim(sub, [{ opacity: 0, translate: '0 4px' }, { opacity: 1, translate: '0 0' }], { duration: 300 })
+    }
+    paint()
+    body.append(el('b', '', NAMES[a]), sub)
+    r.append(icon(a), body, sw)
+    agents.append(r)
+  }
+
+  const prefs = el('div', 'list'), login = el('div', 'srow'), lbody = el('div', 'sbody')
+  let loginOn = st.login
+  const lsw = el('button', 'switch' + (loginOn ? ' on' : '')); lsw.append(el('span', 'knob')); lsw.setAttribute('role', 'switch'); lsw.setAttribute('aria-checked', loginOn)
+  lsw.onclick = async () => { loginOn = await notch.invoke('setup-login', !loginOn); lsw.classList.toggle('on', loginOn); lsw.setAttribute('aria-checked', loginOn); tick(loginOn) }
+  lbody.append(el('b', '', 'Start with Windows'), el('span', 'sub', 'Otherwise it starts the first time an agent does something'))
+  login.append(lbody, lsw)
+  // Claude usage limits come through Claude's status line; never offered over a status line you set up yourself
+  const lim = el('div', 'srow'), limBody = el('div', 'sbody'), limSub = el('span', 'sub')
+  let limState = st.agents.limits
+  const limSw = el('button', 'switch'); limSw.append(el('span', 'knob')); limSw.setAttribute('role', 'switch')
+  const paintLim = () => {
+    limSw.classList.toggle('on', limState === 'ours'); limSw.setAttribute('aria-checked', limState === 'ours')
+    limSw.disabled = limState === 'other'
+    limSub.textContent = limState === 'other' ? 'You already have your own Claude status line, so this stays off'
+      : '5-hour and weekly use, read from Claude Code in a terminal (the desktop app doesn\'t report it)'
+  }
+  limSw.onclick = async () => {
+    const res = await notch.invoke('setup-limits', limState !== 'ours')
+    if (res.error) { err.textContent = res.error; layout(); return }
+    limState = res.agents.limits; paintLim(); tick(limState === 'ours')
+  }
+  paintLim()
+  limBody.append(el('b', '', 'Claude usage limits'), limSub)
+  lim.append(limBody, limSw)
+  const tip = el('div', 'srow'), tbody = el('div', 'sbody')
+  tbody.append(el('b', '', 'Ctrl + Alt + N'), el('span', 'sub', 'Opens Notch from anywhere. The ⓘ button lists every shortcut.'))
+  tip.append(tbody)
+  prefs.append(lim, login, tip)
+
+  const finish = el('div', 'finish'), doneBtn = el('button', 'go', first ? 'Get started' : 'Done')
+  doneBtn.onclick = async () => {
+    await notch.invoke('setup-done')
+    closeSetup(true)
+    if (first) { chime(); showToast({ lead: () => badge(true), title: () => el('b', 'ok', "You're all set"), right: '', line: 'Hover the notch any time' }, 2600) }
+  }
+  finish.append(doneBtn)
+
+  const h2 = t => el('h2', '', t)
+  const wrap = el('div', 'setup help'); wrap.append(head, intro, h2('Agents'), agents, h2('Preferences'), prefs, err, finish)
+  panel.replaceChildren(wrap)
+  if (open) { anim(panel, [{ opacity: 0, filter: 'blur(5px)' }, { opacity: 1, filter: 'blur(0px)' }], { duration: 320 }); layout() } else setOpen(true)
+}
+
+function closeSetup(collapse) {
+  if (view !== 'setup') return
+  view = 'list'
+  if (collapse) setOpen(false)
+  render()
+  if (!collapse) anim(panel, [{ opacity: 0, filter: 'blur(5px)' }, { opacity: 1, filter: 'blur(0px)' }], { duration: 320 })
+}
+
+function openHelp() {
+  view = 'help'
+  const head = el('div', 'head'), back = el('button', 'round')
+  back.innerHTML = BACK_ICON; back.title = 'Back (Esc)'; back.onclick = closeHelp
+  head.append(back, el('h1', '', 'Shortcuts'), el('span', 'summary', 'Ctrl+Alt+N to start'))
+  const sections = SHORTCUTS.flatMap(([title, note, rows]) => {
+    const h = el('h2', '', title); if (note) h.append(' ', el('span', '', note))
+    const list = el('div', 'list')
+    for (const [keys, what] of rows) {
+      const r = el('div', 'krow'), combo = el('span', 'combo')
+      for (const k of keys.split(/(?<=.)\+(?=.)| /)) combo.append(el('kbd', '', k))
+      r.append(el('span', '', what), combo)
+      list.append(r)
+    }
+    return [h, list]
+  })
+  const wrap = el('div', 'help'); wrap.append(head, ...sections)
+  panel.replaceChildren(wrap)
+  if (open) { anim(panel, [{ opacity: 0, filter: 'blur(5px)' }, { opacity: 1, filter: 'blur(0px)' }], { duration: 320 }); layout() } else setOpen(true)
+}
+
+function closeHelp() {
+  if (view !== 'help') return
+  view = 'list'; render()
+  anim(panel, [{ opacity: 0, filter: 'blur(5px)' }, { opacity: 1, filter: 'blur(0px)' }], { duration: 320 })
+}
+
+function switchEl(label, get, put, title) {
+  const sw = el('button', 'switch' + (get() ? ' on' : '')); sw.append(label, el('span', 'knob')); sw.title = title
+  sw.setAttribute('role', 'switch'); sw.setAttribute('aria-checked', get())
+  sw.onclick = () => { put(!get()); sw.classList.toggle('on', get()); sw.setAttribute('aria-checked', get()); tick(get()) }
+  return sw
+}
+
+async function openLauncher(dir) {
+  const recent = await notch.invoke('recent')
+  let last = {}
+  try { last = JSON.parse(localStorage.getItem('launch')) || {} } catch {}
+  launcher = { agents: new Set(last.agents?.length ? last.agents : ['claude']), dir: dir || recent[0] || '', recent, auto: !!last.auto, worktree: false, folders: false }
+  view = 'launch'
+  if (!keyboard) notch.send('grab-focus')
+  buildLauncher()
+  if (open) { anim(panel, [{ opacity: 0, filter: 'blur(5px)' }, { opacity: 1, filter: 'blur(0px)' }], { duration: 320 }); layout() } else setOpen(true)
+  setTimeout(() => panel.querySelector('textarea')?.focus(), 60)
+}
+
+function closeLauncher(collapse) {
+  if (view !== 'launch') return
+  view = 'list'; launcher = null
+  if (!keyboard) notch.send('keyboard-closed')
+  if (collapse) setOpen(false)
+  render()
+  if (!collapse) anim(panel, [{ opacity: 0, filter: 'blur(5px)' }, { opacity: 1, filter: 'blur(0px)' }], { duration: 320 })
+}
+
+function buildLauncher() {
+  const L = launcher
+  const head = el('div', 'head'), back = el('button', 'round')
+  back.innerHTML = BACK_ICON; back.title = 'Back (Esc)'; back.onclick = () => closeLauncher(false)
+  head.append(back, el('h1', '', 'New agent'), el('span', 'summary', 'opens in a new terminal'))
+
+  const chips = el('div', 'chips')
+  for (const a of ['claude', 'agy', 'opencode', 'kilo']) { // terminal agents; Copilot lives in VS Code
+    const c = el('button', 'chip' + (L.agents.has(a) ? ' on' : '')); c.append(icon(a), NAMES[a])
+    c.onclick = () => { L.agents.has(a) ? L.agents.delete(a) : L.agents.add(a); c.classList.toggle('on', L.agents.has(a)); tick(L.agents.has(a)); refresh() }
+    chips.append(c)
+  }
+
+  const field = el('button', 'field'), fname = el('b'), fpath = el('span', 'fpath'), folders = el('div', 'folders'), chev = el('span')
+  const folderIcon = el('span'); folderIcon.innerHTML = FOLDER_ICON; chev.innerHTML = CHEV_ICON
+  field.append(folderIcon, fname, fpath, chev)
+  field.onclick = () => { L.folders = !L.folders; refresh(); if (L.folders) anim(folders, [{ opacity: 0, translate: '0 -6px' }, { opacity: 1, translate: '0 0' }], { duration: 300 }) }
+  const pick = d => { L.dir = d; L.folders = false; refresh(); ta.focus() }
+  const fillFolders = () => {
+    const rows = L.recent.map(d => { const b = el('button'); b.append(el('b', '', baseName(d)), el('span', '', d)); b.onclick = () => pick(d); return b })
+    const browse = el('button', 'browse'); browse.append(el('b', '', 'Browse…'))
+    browse.onclick = async () => {
+      browsing = true
+      const d = await notch.invoke('browse')
+      setTimeout(() => (browsing = false), 500) // focus bounces around as the dialog closes; don't read that as "clicked away"
+      if (d) { if (!L.recent.includes(d)) L.recent.unshift(d); pick(d) }
+    }
+    folders.replaceChildren(...rows, browse)
+  }
+
+  const ta = el('textarea'); ta.placeholder = 'What should it do? (optional)'; ta.spellcheck = false
+  ta.onkeydown = e => { if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); go() } }
+  const auto = switchEl('AUTO', () => L.auto, v => (L.auto = v), 'Approve every permission for these agents')
+  const worktree = switchEl('WORKTREE', () => L.worktree, v => (L.worktree = v), "Give each agent its own git worktree and branch, so parallel agents can't overwrite each other")
+  const btn = el('button', 'go'), err = el('div', 'err'), opts = el('div', 'opts')
+  btn.onclick = go
+  opts.append(auto, worktree, btn)
+
+  async function go() {
+    if (btn.disabled) return
+    btn.disabled = true; btn.classList.add('busy'); err.textContent = ''
+    const agents = [...L.agents], res = await notch.invoke('launch', { agents, dir: L.dir, prompt: ta.value, auto: L.auto, worktree: L.worktree })
+    btn.classList.remove('busy'); refresh()
+    if (res.error) { // shake it off
+      err.textContent = res.error; layout()
+      anim(err, [0, -7, 6, -4, 2, 0].map(x => ({ translate: x + 'px 0' })), { duration: 420, easing: 'ease-out' })
+      return
+    }
+    try { localStorage.setItem('launch', JSON.stringify({ agents, auto: L.auto })) } catch {}
+    chime()
+    showToast({
+      lead: () => stack(agents), right: baseName(L.dir), line: ta.value.trim() || (L.worktree ? 'each in its own worktree' : 'in a new terminal'),
+      title: () => el('b', 'ok', 'Launching ' + agents.map(a => NAMES[a]).join(' + ')),
+    }, 2800)
+    closeLauncher(true)
+  }
+
+  function refresh() {
+    fname.textContent = L.dir ? baseName(L.dir) : 'Choose a folder'
+    fpath.textContent = L.dir
+    field.classList.toggle('open', L.folders)
+    folders.hidden = !L.folders
+    if (L.folders) fillFolders()
+    const n = L.agents.size
+    btn.replaceChildren(n > 1 ? `Launch ${n} agents` : 'Launch', el('kbd', '', 'Ctrl ↵'))
+    btn.disabled = !n || !L.dir
+    layout()
+  }
+
+  const wrap = el('div', 'launch')
+  wrap.append(head, chips, field, folders, ta, opts, err)
+  panel.replaceChildren(wrap)
+  refresh()
+}
+
+function layout() {
+  island.classList.toggle('open', open)
+  const dot = welcome === 'drop' || farewell === 'dot'
+  island.style.width = (open ? 460 : dot ? 36 : pill.offsetWidth) + 'px'
+  island.style.height = (open ? Math.min(panel.scrollHeight, 690) : dot ? 36 : pill.offsetHeight) + 'px'
+}
+
+function render() { renderPill(); renderPanel(); layout(); changed = new Set() }
+
+function setOpen(v) {
+  clearTimeout(hoverTimer)
+  if (v === open) return
+  open = v
+  clearTimeout(setOpen.shrink)
+  if (v) notch.send('size', true) // grow the window before the panel animates out
+  else setOpen.shrink = setTimeout(() => open || notch.send('size', false), 750) // shrink once the collapse has finished
+  if (v) {
+    peek = null; welcome = null; renderPill()
+    // Stagger the panel's contents in, top to bottom
+    panel.querySelectorAll('.head, .group > .title, .row, .foot, .keys, .chips, .field, textarea, .opts').forEach((e, i) =>
+      anim(e, [{ opacity: 0, translate: '0 10px', filter: 'blur(3px)' }, { opacity: 1, translate: '0 0', filter: 'blur(0px)' }], { duration: 480, delay: 70 + Math.min(i, 12) * 28, fill: 'backwards' }))
+  }
+  if (!v && view === 'help') { view = 'list'; setTimeout(render, 450) } // after the collapse animation
+  renderPill(); layout()
+}
+
+island.addEventListener('mouseenter', () => {
+  notch.send('mouse', true)
+  if (farewell || keyboard || view === 'launch' || view === 'setup' || editing || pill.classList.contains('request')) return // requests expand on click, so Allow/Deny don't move under the cursor
+  clearTimeout(hoverTimer); hoverTimer = setTimeout(() => setOpen(true), 90)
+})
+island.addEventListener('mouseleave', () => {
+  notch.send('mouse', false)
+  if (keyboard || view === 'launch' || view === 'setup' || editing) return
+  clearTimeout(hoverTimer); hoverTimer = setTimeout(() => setOpen(false), 280)
+})
+pill.addEventListener('click', () => pill.classList.contains('request') && setOpen(true))
+
+function closeKeyboard() {
+  if (!keyboard) return
+  keyboard = false; setOpen(false); render()
+  notch.send('keyboard-closed')
+}
+notch.onKeyboard(on => {
+  if (!on) return closeKeyboard()
+  keyboard = true
+  const r = ordered.findIndex(s => s.request)
+  sel = Math.max(0, r >= 0 ? r : ordered.findIndex(s => s.state === 'waiting'))
+  render(); setOpen(true)
+})
+window.addEventListener('blur', () => {
+  if (browsing || editing) return // the folder picker has focus / the rename input commits on its own blur
+  if (view === 'launch' && !keyboard) return closeLauncher(true)
+  view = 'list'; launcher = null
+  closeKeyboard()
+})
+document.addEventListener('keydown', e => {
+  if (view === 'launch') { if (e.key === 'Escape') { e.preventDefault(); closeLauncher(false) } return }
+  if (view === 'setup') { if (e.key === 'Escape') { e.preventDefault(); closeSetup(false) } return }
+  if (view === 'help') { if (['Escape', 'Backspace', 'i', 'I', '?'].includes(e.key)) { e.preventDefault(); closeHelp() } return }
+  if (!keyboard || editing) return
+  const s = ordered[sel]
+  switch (e.key.toLowerCase()) {
+    case 'arrowdown': sel = Math.min(sel + 1, ordered.length - 1); break
+    case 'arrowup': sel = Math.max(sel - 1, 0); break
+    case 'enter': if (s) notch.send('focus', s.key); return closeKeyboard()
+    case 'y': if (s?.request) decideUI(s, 'allow'); break
+    case 'n': if (s?.request) decideUI(s, 'deny'); break
+    case 'a': if (s) { tick(!s.auto); notch.send('auto', s.key, !s.auto) } break
+    case 'g': notch.send('grid'); return closeKeyboard()
+    case 'r': if (s) { e.preventDefault(); startRename(s, panel.querySelectorAll('.row')[sel].querySelector('.name')) } return
+    case '+': case '=': case 'l': e.preventDefault(); return openLauncher()
+    case 'escape': return closeKeyboard()
+    case 'd': case 'delete': { const r = panel.querySelectorAll('.row')[sel]; if (s && r) leave(r, s.key); sel = Math.max(0, sel - (sel === ordered.length - 1 ? 1 : 0)); return }
+    case 'c': panel.querySelectorAll('.row.done').forEach((r, i) => setTimeout(() => leave(r, r.dataset.key), i * 45)); return
+    case 's': sound = !sound; try { localStorage.setItem('sound', sound ? 'on' : 'off') } catch {}; tick(); break
+    case 'q': return notch.send('quit')
+    case 'i': case '?': e.preventDefault(); return openHelp()
+    case ',': e.preventDefault(); return openSetup(false)
+    default: return
+  }
+  e.preventDefault(); render()
+})
+
+notch.onSessions((list, lim) => {
+  limits = lim || {}
+  for (const s of list) {
+    const was = prevState[s.key]
+    if (was && was !== s.state) {
+      changed.add(s.key)
+      if ((s.state === 'done' || s.state === 'waiting' || s.state === 'error') && !open) { // Live-Activity-style peek
+        peek = s
+        clearTimeout(peekTimer); peekTimer = setTimeout(() => { peek = null; render() }, PEEK_MS)
+      }
+    }
+  }
+  if (peek) peek = list.find(s => s.key === peek.key) || null
+  prevState = Object.fromEntries(list.map(s => [s.key, s.state]))
+  sessions = list
+  render()
+  known = new Set(list.map(s => s.key)) // rows seen from here on animate in when new
+  warnLimits()
+})
+
+// Welcome: a dot drops in, stretches into a pill, agents pop in one by one, then it settles.
+if (welcome) {
+  setTimeout(() => island.classList.remove('intro'), 40) // a timer, not rAF: rAF can stall while hidden and the notch would stay invisible
+  setTimeout(() => { if (welcome) { welcome = 'hello'; render() } }, 380)
+  setTimeout(() => { if (welcome) { welcome = null; render() } firstRun() }, 2700)
+} else { island.classList.remove('intro'); setTimeout(firstRun, 300) }
+async function firstRun() { if (!(await notch.invoke('setup-status')).done) openSetup(true) }
+
+setInterval(() => { if (open) for (const t of document.querySelectorAll('.timer')) t.textContent = duration(+t.dataset.since) }, 1000) // only visible timers
+render()
+notch.send('ready')
+</script>
+</body>
+</html>
