@@ -1,56 +1,124 @@
+<div align="center">
+
 # Agent Notch
 
-A Dynamic-Island-style notch for Windows that tracks your coding agents (Claude Code CLI and desktop app, Antigravity CLI and IDE, OpenCode, Kilo, VS Code Copilot): what each one is doing, which need you, and one-click approve / jump / launch.
+**All your coding agents. One notch.**
+
+A Dynamic-Island-style notch for Windows that shows what every coding agent is doing, which ones need you, and lets you answer them without hunting for the terminal.
+
+[![Agent Notch demo](docs/demo.gif)](https://github.com/KurianJose7586/notch/releases/download/v0.1.0/AgentNotch-promo.mp4)
+
+[**Watch the 46s demo**](https://github.com/KurianJose7586/notch/releases/download/v0.1.0/AgentNotch-promo.mp4) · [**Download for Windows**](https://github.com/KurianJose7586/notch/releases/latest)
+
+</div>
+
+## Works with
+
+| Agent | Where |
+|---|---|
+| Claude Code | terminal and the Claude desktop app |
+| Antigravity | `agy` CLI and the Antigravity IDE |
+| OpenCode | terminal |
+| Kilo | terminal |
+| GitHub Copilot | VS Code agent chat |
+
+## Features
+
+- **One glance**: every agent grouped by project, with its state (working, needs you, done, stopped), current task, last action and progress.
+- **Needs you?** The notch glows and peeks the request. Press **Y** to allow or **N** to deny, or jump straight to that terminal.
+- **AUTO for Antigravity**: presses Enter on `agy`'s permission prompts for you, only when the prompt is actually on screen.
+- **Grid**: one click (or **Ctrl+Alt+G**) tiles every agent window.
+- **Usage limits**: Claude's 5-hour and weekly limits as bars, with a heads-up at 80% and 95%. An agent that hits a limit or an error shows **Stopped**, not "Working".
+- **Launch agents** from the notch, several at once, optionally each in its own git worktree.
+- **Rename** sessions, unread markers, timers, sound, and a full keyboard mode.
+- **Starts itself** when an agent starts, and uses about 0.4% CPU when idle.
 
 ## Install
 
-**Installer:** download `AgentNotch-Setup-<version>.exe` from the [latest release](https://github.com/KurianJose7586/notch/releases/latest) and run it. It installs for your user only (no admin), adds a Start Menu entry, and opens Notch. The first run shows a setup sheet where you pick which agents to connect.
+1. Download `AgentNotch-Setup-<version>.exe` from the [latest release](https://github.com/KurianJose7586/notch/releases/latest) and run it. It installs for your user only; no admin needed.
+2. The first run opens a setup sheet: switch on the agents you use.
+3. Start an agent. It shows up in the notch.
 
-The installer isn't code-signed yet, so Windows SmartScreen may say "Windows protected your PC": click **More info → Run anyway**.
+The installer isn't code-signed yet, so Windows SmartScreen may say "Windows protected your PC". Click **More info → Run anyway**.
 
-**From source** (needs Node 20+):
+Requirements: Windows 10 or 11. Terminal agents are found in Windows Terminal or any console window.
 
-```
-npm run setup
-```
+## Keyboard
 
-This installs dependencies, connects every agent it finds, and starts Notch.
+| Anywhere | |
+|---|---|
+| **Ctrl+Alt+N** | Open the notch with the keyboard |
+| **Ctrl+Alt+J** | Jump to the next agent that needs you |
+| **Ctrl+Alt+G** | Tile all agent windows |
+| **Ctrl+Alt+R** | Reload the notch |
+| **Ctrl+Alt+Q** | Quit (agents won't restart it) |
 
-Requirements: Windows 10/11 with Windows Terminal.
+| In the notch | |
+|---|---|
+| **↑ ↓** | Select an agent |
+| **↵** | Open its terminal |
+| **Y / N** | Allow / deny its request |
+| **A** | Toggle AUTO |
+| **R / D** | Rename / dismiss |
+| **+** | New agent |
+| **G / C** | Tile windows / clear finished |
+| **S / ,** | Sound on or off / Setup |
+| **I** | All shortcuts |
 
-## What "connecting" changes
+## What connecting an agent changes
 
-Each switch in **Setup** adds (or removes) one small hook in that agent's own config. A `.bak` copy of the file is kept the first time:
+Each switch in Setup adds (or removes) one hook in that agent's own config, and keeps a `.bak` copy of the file the first time. Nothing else is touched.
 
 | Agent | File |
 |---|---|
 | Claude Code | `~/.claude/settings.json` |
-| Antigravity | `~/.gemini/config/hooks.json` |
+| Antigravity (CLI and IDE) | `~/.gemini/config/hooks.json` |
 | OpenCode | `~/.config/opencode/plugins/agent-notch.js` |
 | Kilo | `~/.config/kilo/plugins/agent-notch.js` |
 | VS Code Copilot | `~/.copilot/hooks/agent-notch.json` |
 
-Uninstalling removes these hooks before deleting the app. From source: `npm run remove-hooks`.
+**Claude usage limits** is a separate switch in Setup. It uses Claude Code's status line, and is never turned on over a status line you've set up yourself. The desktop app doesn't report limits, so they update from Claude Code in a terminal.
 
-## Using it
+Everything stays on your machine: agents talk to the notch over `127.0.0.1` only.
 
-Hover the notch, or press **Ctrl+Alt+N** anywhere. The ⓘ button lists every shortcut.
+Uninstalling removes all of these hooks before deleting the app.
 
-## Build the installer
+## Run from source
 
+Needs Node 20+.
+
+```bash
+npm run setup          # install dependencies, connect every agent found, start the notch
+npm start              # start it again later
+npm test               # self-tests
+npm run remove-hooks   # disconnect every agent
 ```
-npm run dist
+
+## Build and release
+
+```bash
+npm run dist           # builds dist/AgentNotch-Setup-<version>.exe
 ```
 
-## Release
+To publish a release, push a version tag. GitHub Actions builds the installer on Windows and attaches it to a release for that tag; the tag sets the version.
 
-Push a version tag and GitHub Actions builds the installer and attaches it to a release for that tag:
-
-```
+```bash
 git tag v0.2.0
 git push origin v0.2.0
 ```
 
-The tag sets the version, so `package.json` doesn't need bumping first.
+## Repository layout
 
-Output: `dist/Agent Notch Setup <version>.exe`. It isn't code-signed, so Windows SmartScreen will warn on first run ("More info" → "Run anyway").
+| Path | What |
+|---|---|
+| `main.js` | Electron main process: the notch window, local event server, shortcuts |
+| `index.html`, `preload.js` | The notch UI |
+| `state.js` | Turns each agent's hook events into one session model |
+| `hook.js`, `plugin.js` | What agents run: the hook script, and the OpenCode/Kilo plugin |
+| `setup.js` | Connects and disconnects agents' configs |
+| `launch.js` | Launches agents (and git worktrees) in Windows Terminal |
+| `win.ps1` | Win32 helpers: find, focus, tile, read and press Enter in terminal windows |
+| `boot.js` | Entry point that routes to the app, the hook, or the uninstaller |
+| `build/` | Installer icon, NSIS script and the hook launcher |
+| `promo/` | Source of the demo video, made with [HyperFrames](https://hyperframes.heygen.com) |
+| `docs/` | README media |

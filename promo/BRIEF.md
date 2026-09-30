@@ -21,8 +21,8 @@ then the goodbye animation and an end card.
 
 ## Assets
 
-- ../../build/icon.png — the app icon; end card.
-- ../../index.html — the real notch UI (CSS, agent glyph SVGs, colors); rebuild the notch from it so it matches the app.
+- ../build/icon.png — the app icon; end card.
+- ../index.html — the real notch UI (CSS, agent glyph SVGs, colors); rebuild the notch from it so it matches the app.
 
 ## Customizations
 
