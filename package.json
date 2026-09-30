@@ -47,7 +47,8 @@
       "include": "build/installer.nsh",
       "shortcutName": "Agent Notch",
       "runAfterFinish": true,
-      "deleteAppDataOnUninstall": false
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "AgentNotch-Setup-${version}.${ext}"
     },
     "extraFiles": [
       {
@@ -56,5 +57,9 @@
       }
     ]
   },
-  "author": "Kurian Jose"
+  "author": "Kurian Jose",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KurianJose7586/notch.git"
+  }
 }

@@ -3,3 +3,6 @@ node_modules/
 .quit
 dist/
 *.log
+
+# Microsoft fonts used to render the promo locally; not redistributable
+videos/*/assets/fonts/
