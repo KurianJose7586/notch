@@ -1,10 +1,12 @@
 # Push a version tag (git tag v0.2.0 && git push origin v0.2.0) and this builds the
 # Windows installer and attaches it to a GitHub release for that tag.
+# Run it by hand from the Actions tab to build without publishing.
 name: Release
 
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -21,12 +23,18 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      - run: npm install --no-audit --no-fund
       - run: npm test
       # The tag is the version: v0.2.0 builds AgentNotch-Setup-0.2.0.exe
-      - run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version
+      - if: github.ref_type == 'tag'
+        run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version
       - run: npx electron-builder --win nsis --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer
+          path: dist/AgentNotch-Setup-*.exe
       - name: Publish release
+        if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
