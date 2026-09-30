@@ -338,6 +338,11 @@
   .srow .sub { color: var(--tertiary); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .srow .sub.on { color: var(--green); }
   .srow.missing { opacity: .45; }
+  .pairing { display: flex; gap: 14px; align-items: center; padding: 4px 12px 12px; }
+  .pairing img { width: 136px; height: 136px; flex: none; border-radius: 10px; background: #fff; image-rendering: pixelated; }
+  .pairing .how { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 7px; font-size: 11.5px; color: var(--secondary); }
+  .pairing code { font: 10.5px/1.4 var(--mono); color: var(--label); user-select: text; word-break: break-all; }
+  .pairing button { height: 26px; padding: 0 12px; border-radius: 13px; background: rgba(255,255,255,.12); font-size: 12px; font-weight: 600; }
   .switch:disabled { cursor: default; opacity: .5; }
   .setup .finish { display: flex; justify-content: flex-end; margin-top: 14px; }
 
@@ -842,10 +847,34 @@ async function openSetup(first) {
   paintLim()
   limBody.append(el('b', '', 'Claude usage limits'), limSub)
   lim.append(limBody, limSw)
+  // Approve from your phone: a web page on your Wi-Fi, opened by scanning the QR code. Off until you switch it on.
+  const ph = el('div', 'srow'), phBody = el('div', 'sbody'), phSub = el('span', 'sub'), pair = el('div', 'pairing')
+  const phSw = el('button', 'switch'); phSw.append(el('span', 'knob')); phSw.setAttribute('role', 'switch')
+  const paintPhone = info => {
+    phSw.classList.toggle('on', info.enabled); phSw.setAttribute('aria-checked', info.enabled)
+    phSub.className = 'sub' + (info.enabled && !info.error ? ' on' : '')
+    phSub.textContent = !info.enabled ? 'Allow or deny requests from your phone, on your Wi-Fi'
+      : info.error || 'On · scan the code with your phone camera'
+    pair.hidden = !info.enabled || !!info.error
+    if (!pair.hidden) {
+      const img = el('img'), how = el('div', 'how'), again = el('button', '', 'New link')
+      img.src = info.qr; img.alt = 'QR code to pair your phone'
+      again.title = 'Replace the link: phones paired before stop working'
+      again.onclick = async () => { paintPhone(await notch.invoke('phone-renew')); tick(true) }
+      how.append(el('span', '', 'Same Wi-Fi as this PC. Anyone with this link can approve requests, so keep it to yourself.'), el('code', '', info.url), again)
+      pair.replaceChildren(img, how)
+    }
+    layout()
+  }
+  phSw.onclick = async () => { const info = await notch.invoke('phone-set', !phSw.classList.contains('on')); paintPhone(info); tick(info.enabled) }
+  phBody.append(el('b', '', 'Approve from your phone'), phSub)
+  ph.append(phBody, phSw)
+  pair.hidden = true
+  notch.invoke('phone-info').then(paintPhone)
   const tip = el('div', 'srow'), tbody = el('div', 'sbody')
   tbody.append(el('b', '', 'Ctrl + Alt + N'), el('span', 'sub', 'Opens Notch from anywhere. The ⓘ button lists every shortcut.'))
   tip.append(tbody)
-  prefs.append(lim, login, tip)
+  prefs.append(lim, ph, pair, login, tip)
 
   const finish = el('div', 'finish'), doneBtn = el('button', 'go', first ? 'Get started' : 'Done')
   doneBtn.onclick = async () => {
