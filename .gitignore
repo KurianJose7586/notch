@@ -24,3 +24,6 @@ promo/CLAUDE.md
 promo/assets/fonts/
 promo/assets/bgm/
 promo/assets/sfx/
+
+# Vercel
+.vercel/
