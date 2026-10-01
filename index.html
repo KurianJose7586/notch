@@ -360,6 +360,12 @@
   .mini { flex: none; height: 26px; padding: 0 12px; border-radius: 13px; background: rgba(255,255,255,.12); font-size: 12px; font-weight: 600; }
   .mini:disabled { opacity: .5; }
   .update .mini { background: var(--blue); }
+  /* Sleep, and moving the notch */
+  #island.asleep { opacity: .5; }
+  #pill.asleep { min-height: 26px; padding: 0 13px; }
+  .sleepz { font: italic 700 13px/1 "SF Pro Display", "Segoe UI Variable Display", sans-serif; letter-spacing: .1em; color: var(--secondary); }
+  #pill, .head { cursor: grab; }
+  #island.dragging, #island.dragging * { cursor: grabbing !important; }
   #venom { position: fixed; inset: 0; z-index: 1; display: none; pointer-events: none; }
   #venom svg { position: absolute; inset: 0; width: 100%; height: 100%; }
   #venom path, #venom rect { fill: #000; }
@@ -396,16 +402,16 @@ const INFO_ICON = '<svg viewBox="0 0 16 16"><circle cx="8" cy="4" r="1.35" fill=
 const SHORTCUTS = [
   ['Anywhere', '', [
     ['Ctrl+Alt+N', 'Open the notch with the keyboard'], ['Ctrl+Alt+J', 'Jump to the next agent that needs you'],
-    ['Ctrl+Alt+G', 'Tile all agent windows'], ['Ctrl+Alt+R', 'Reload the notch'], ['Ctrl+Alt+V', 'Play an idle animation (again for the next)'], ['Ctrl+Alt+Q', 'Quit (agents won\'t restart it)'],
+    ['Ctrl+Alt+G', 'Tile all agent windows'], ['Ctrl+Alt+R', 'Reload the notch'], ['Ctrl+Alt+V', 'Play an idle animation (again for the next)'], ['Ctrl+Alt+Z', 'Put the notch to sleep, or wake it'], ['Ctrl+Alt+Q', 'Quit (agents won\'t restart it)'],
   ]],
   ['In the notch', 'after Ctrl+Alt+N', [
     ['↑ ↓', 'Select an agent'], ['↵', 'Open its terminal'], ['Y N', 'Allow / deny its request'], ['A', 'Toggle AUTO'],
     ['R', 'Rename'], ['D', 'Dismiss'], ['+', 'New agent'], ['G', 'Tile windows'], ['C', 'Clear finished'],
-    ['S', 'Sound on / off'], [',', 'Setup'], ['I', 'This sheet'], ['Q', 'Quit'], ['Esc', 'Close'],
+    ['S', 'Sound on / off'], ['Z', 'Sleep / wake'], ['← →', 'Move the notch along the top'], ['Home', 'Back to the centre'], [',', 'Setup'], ['I', 'This sheet'], ['Q', 'Quit'], ['Esc', 'Close'],
   ]],
   ['New agent', '', [['Tab', 'Move between fields'], ['Space', 'Pick an agent / flip a switch'], ['Ctrl+↵', 'Launch'], ['Esc', 'Back']]],
   ['Mouse', '', [
-    ['Hover', 'Expand the notch'], ['Click', 'Open an agent\'s terminal'], ['Double-click', 'Rename an agent'], ['＋', 'New agent (on a project: in that folder)'],
+    ['Hover', 'Expand the notch'], ['Drag', 'Move it along the top (grab the pill or the header)'], ['Click', 'Open an agent\'s terminal'], ['Double-click', 'Rename an agent'], ['＋', 'New agent (on a project: in that folder)'],
   ]],
 ]
 const PLUS_ICON = '<svg viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>'
@@ -430,6 +436,8 @@ let view = 'list', launcher = null, browsing = false, editing = null // view: li
 let welcome = calm ? null : 'drop' // drop -> hello -> null
 let farewell = null // quit | reload -> dot, while the goodbye plays
 let sound = true
+let asleep = false // sleeping: a small dim zzz; quiet unless an agent needs you
+try { asleep = localStorage.getItem('asleep') === 'on' } catch {}
 try { sound = localStorage.getItem('sound') !== 'off' } catch {}
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e }
@@ -491,7 +499,7 @@ function lullaby() { // goodbye: the welcome chime, falling
 }
 
 function chime() { // needs you: soft two-note rise
-  if (!sound) return
+  if (!sound || (asleep && !sessions.some(s => s.state === 'waiting' || s.request))) return
   const ctx = audio(), t = ctx.currentTime
   for (const [f, d] of [[880, 0], [1318.5, .1]]) {
     const o = ctx.createOscillator(), g = ctx.createGain()
@@ -585,6 +593,7 @@ function pillView() {
     mode: 'req', sig: 'req' + req.key + req.request.title + req.request.detail + keyboard, cls: 'card request', build: () =>
       card(icon(req.agent), `${name(req)} · ${req.request.title}`, req.project, null, [el('div', 'code', req.request.detail || req.action), requestActions(req, false)]),
   }
+  if (asleep && !waiting.length) return { mode: 'sleep', sig: 'sleep', cls: 'asleep', build: () => [el('span', 'sleepz', 'zzz')] }
   if (peek) {
     const s = peek, verb = s.state === 'waiting' ? 'needs you' : s.state === 'error' ? 'stopped' : 'finished', line = s.state === 'done' ? (s.task || s.action) : s.action
     return { mode: 'peek', sig: 'peek' + s.key + s.state + line, cls: 'card', build: () => card(icon(s.agent), `${name(s)} ${verb}`, s.project, line) }
@@ -631,6 +640,7 @@ function renderPill() {
   }
   island.classList.toggle('peek', v.mode === 'peek' || v.mode === 'toast')
   island.classList.toggle('req', v.mode === 'req')
+  island.classList.toggle('asleep', v.mode === 'sleep')
   island.classList.toggle('busy', !!v.busy && !open)
 
   const waiting = sessions.filter(s => s.state === 'waiting')
@@ -773,16 +783,18 @@ function renderPanel() {
     content.push(e)
   }
 
-  const foot = el('div', 'foot'), clear = el('button', '', 'Clear finished'), snd = el('button', '', sound ? 'Sound on' : 'Sound off'), quit = el('button', '', 'Quit'), reload = el('button', '', 'Reload'), setupBtn = el('button', '', 'Setup')
+  const foot = el('div', 'foot'), clear = el('button', '', 'Clear finished'), snd = el('button', '', sound ? 'Sound on' : 'Sound off'), quit = el('button', '', 'Quit'), reload = el('button', '', 'Reload'), setupBtn = el('button', '', 'Setup'), sleepBtn = el('button', '', asleep ? 'Wake' : 'Sleep')
   clear.onclick = () => panel.querySelectorAll('.row.done').forEach((r, i) => setTimeout(() => leave(r, r.dataset.key), i * 45))
   snd.onclick = () => { sound = !sound; try { localStorage.setItem('sound', sound ? 'on' : 'off') } catch {}; tick(); render() }
   quit.onclick = () => notch.send('quit')
+  sleepBtn.onclick = () => { const next = !asleep; if (keyboard) closeKeyboard(); setAsleep(next); if (next) setOpen(false) }
+  sleepBtn.title = 'Put the notch to sleep: quiet until an agent needs you (Ctrl+Alt+Z)'
   reload.onclick = () => notch.send('reload')
   setupBtn.onclick = () => openSetup(false); setupBtn.title = 'Connect agents, start with Windows (,)'
   quit.title = 'Quit (Ctrl+Alt+Q). Agents won\'t restart it until you run npm start'
   reload.title = 'Restart the notch (Ctrl+Alt+R)'
   foot.append(el('span', '', sessions.length ? `${plural(sessions.length, 'agent')} · ${plural(sorted.length, 'project')}` : ''),
-    ...(n('done') ? [clear] : []), snd, setupBtn, reload, quit)
+    ...(n('done') ? [clear] : []), snd, sleepBtn, setupBtn, reload, quit)
 
   const extra = []
   if (keyboard) {
@@ -1135,11 +1147,36 @@ island.addEventListener('mouseenter', () => {
   clearTimeout(hoverTimer); hoverTimer = setTimeout(() => setOpen(true), 90)
 })
 island.addEventListener('mouseleave', () => {
+  if (drag) return // the window is moving under the cursor
   notch.send('mouse', false)
   if (keyboard || view === 'launch' || view === 'setup' || editing) return
   clearTimeout(hoverTimer); hoverTimer = setTimeout(() => setOpen(false), 280)
 })
-pill.addEventListener('click', () => pill.classList.contains('request') && setOpen(true))
+// Drag the pill or the panel header to move the notch along the top of the screen (main.js follows the cursor).
+let drag = null, dragEnded = 0, dragRaf = 0
+island.addEventListener('pointerdown', e => {
+  if (e.button !== 0 || farewell || welcome || !(e.target.closest('#pill, .head') || (e.target === panel && e.offsetY < 56)) || e.target.closest('button, input, textarea')) return // the pill, the header, or the strip of panel above it
+  drag = { x: e.clientX, moved: false }
+  island.setPointerCapture(e.pointerId)
+})
+island.addEventListener('pointermove', e => {
+  if (!drag) return
+  if (!drag.moved) {
+    if (Math.abs(e.clientX - drag.x) < 5) return // a click, not a drag
+    drag.moved = true; island.classList.add('dragging'); clearTimeout(hoverTimer); notch.send('drag-start')
+  }
+  dragRaf ||= requestAnimationFrame(() => { dragRaf = 0; notch.send('drag-move') })
+})
+const endDrag = e => {
+  if (!drag) return
+  const moved = drag.moved
+  drag = null; island.classList.remove('dragging')
+  try { island.releasePointerCapture(e.pointerId) } catch {}
+  if (!moved) return
+  dragEnded = performance.now(); notch.send('drag-end'); notch.send('mouse', island.matches(':hover'))
+}
+island.addEventListener('pointerup', endDrag); island.addEventListener('pointercancel', endDrag)
+pill.addEventListener('click', () => performance.now() - dragEnded > 300 && pill.classList.contains('request') && setOpen(true))
 
 function closeKeyboard() {
   if (!keyboard) return
@@ -1180,6 +1217,10 @@ document.addEventListener('keydown', e => {
     case 'c': panel.querySelectorAll('.row.done').forEach((r, i) => setTimeout(() => leave(r, r.dataset.key), i * 45)); return
     case 's': sound = !sound; try { localStorage.setItem('sound', sound ? 'on' : 'off') } catch {}; tick(); break
     case 'q': return notch.send('quit')
+    case 'z': { const next = !asleep; closeKeyboard(); return setAsleep(next) }
+    case 'arrowleft': e.preventDefault(); return notch.send('nudge', -1)
+    case 'arrowright': e.preventDefault(); return notch.send('nudge', 1)
+    case 'home': e.preventDefault(); return notch.send('recenter')
     case 'i': case '?': e.preventDefault(); return openHelp()
     case ',': e.preventDefault(); return openSetup(false)
     default: return
@@ -1227,7 +1268,7 @@ const DOT_COLOR = { claude: '#D97757', agy: '#3DBE6A', opencode: '#EDE8E6', kilo
 const svgEl = (tag, fill) => { const e = document.createElementNS('http://www.w3.org/2000/svg', tag); if (fill) e.style.fill = fill; venomGoo.append(e); return e }
 
 function armVenom() {
-  if (venomTimer || venomRun || calm || !idleAnim || !quiet() || open || welcome || farewell) return
+  if (venomTimer || venomRun || calm || asleep || !idleAnim || !quiet() || open || welcome || farewell) return
   venomTimer = setTimeout(() => playIdle(), IDLE_MS)
 }
 function stopVenom() { clearTimeout(venomTimer); venomTimer = 0; eyesOff(); if (venomRun) venomRun.stop = true }
@@ -1366,7 +1407,7 @@ const SCENES = {
 
 function playIdle(now = false, kind) { // now: you asked for it (Ctrl+Alt+V), so skip the idle and quiet checks
   venomTimer = 0
-  if (venomRun || calm || open || welcome || farewell || view !== 'list' || !now && (!idleAnim || !quiet())) return
+  if (venomRun || calm || asleep || open || welcome || farewell || view !== 'list' || !now && (!idleAnim || !quiet())) return
   eyesOff()
   const names = Object.keys(SCENES)
   kind ||= (idleLast = names.filter(n => n !== idleLast)[Math.floor(Math.random() * (names.length - 1))])
@@ -1392,6 +1433,17 @@ function playIdle(now = false, kind) { // now: you asked for it (Ctrl+Alt+V), so
   }
   job.raf = requestAnimationFrame(frame)
 }
+function setAsleep(v) {
+  if (v === asleep) return
+  asleep = v
+  try { localStorage.setItem('asleep', v ? 'on' : 'off') } catch {}
+  stopVenom()
+  if (v) { peek = null; toast = null }
+  render()
+  anim(island, v ? [{ scale: 1 }, { scale: 1.08 }, { scale: 0.9 }, { scale: 1 }] : [{ scale: 1 }, { scale: 1.12 }, { scale: 0.97 }, { scale: 1 }], { duration: 520 }) // a yawn, or a stretch
+  if (!v) armVenom()
+}
+notch.onSleep(() => { if (keyboard) closeKeyboard(); setAsleep(!asleep) })
 notch.onVenom(() => { // Ctrl+Alt+V: play the next scene; press again for the one after
   clearTimeout(venomTimer); venomTimer = 0
   playIdle(true, Object.keys(SCENES)[idleCycle++ % Object.keys(SCENES).length])
@@ -1410,7 +1462,7 @@ function blink() {
 }
 document.addEventListener('mousemove', e => {
   cursor = { x: e.clientX, y: e.clientY }
-  if (calm || !idleAnim || !quiet() || open || venomRun || welcome || farewell || view !== 'list' || island.matches(':hover')) return eyesOff()
+  if (calm || asleep || !idleAnim || !quiet() || open || venomRun || welcome || farewell || view !== 'list' || island.matches(':hover')) return eyesOff()
   const r = island.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2), dist = Math.hypot(dx, dy)
   if (dist > 150) { if (eyesOn || eyesWait) { clearTimeout(eyesTimer); eyesTimer = setTimeout(eyesOff, 400) } return }
   clearTimeout(eyesTimer); eyesTimer = setTimeout(eyesOff, 1500) // closes when the cursor stops or leaves
@@ -1428,7 +1480,7 @@ document.addEventListener('mousemove', e => {
 
 // Moods: the notch reacts to what happens. Quick one-shots, and one slow timer only while a request is waiting.
 function react(kind) {
-  if (calm || !idleAnim || open || venomRun) return
+  if (calm || asleep || !idleAnim || open || venomRun) return
   if (kind === 'happy') anim(island, [{ scale: '1 1' }, { scale: '1.08 0.88' }, { scale: '0.95 1.14' }, { scale: '1.02 0.98' }, { scale: '1 1' }], { duration: 640 }) // everything's done: a happy squish
   if (kind === 'grumpy') anim(island, [-4, 4, -3, 3, -1, 0].map(x => ({ translate: `calc(-50% + ${x}px) 0` })), { duration: 440, easing: 'ease-in-out' }) // something stopped: a shake
   if (kind === 'nudge') anim(island, [0, -4, 4, -3, 0].map(d => ({ rotate: d + 'deg' })), { duration: 700 }) // you've kept it waiting: ahem

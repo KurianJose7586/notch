@@ -31,6 +31,7 @@ A Dynamic-Island-style notch for Windows that shows what every coding agent is d
 - **Grid**: one click (or **Ctrl+Alt+G**) tiles every agent window.
 - **Usage limits**: Claude's 5-hour and weekly limits as bars, with a heads-up at 80% and 95%. An agent that hits a limit or an error shows **Stopped**, not "Working".
 - **Launch agents** from the notch: several at once, including several of the same one (a − / + stepper per provider, up to 8), optionally each in its own git worktree. Turn on **SPLIT** and every line you type becomes its own agent with its own task.
+- **Sleep and move**: put the notch to sleep and it shrinks to a small dim "zzz", quiet until an agent needs you (then it wakes by itself, and sleeps again afterwards). Drag it along the top of any monitor by its pill or panel header; it snaps to the centre and remembers where you left it.
 - **Updates itself**: it checks GitHub for a new release every few hours, downloads it quietly, tells you when it's ready, and installs it when you quit.
 - **Rename** sessions, unread markers, timers, sound, and a full keyboard mode.
 - **Alive**: after a long quiet spell the notch gets up to mischief: the agents try to escape and black tendrils grab them back, Pac-Man eats their dots, or they juggle. Press **Ctrl+Alt+V** to play the next one. A closed, quiet notch also grows eyes that follow your cursor when it lingers nearby, and reacts to what happens: a happy squish when everything finishes, a grumpy shake when an agent stops or Claude is nearly out, and an impatient nudge if a request waits. All of it stays off while anything is working, stops the moment you touch the notch, and can be turned off in Setup (**Idle animations**).
@@ -59,6 +60,7 @@ Requirements: Windows 10 or 11. Terminal agents are found in Windows Terminal or
 | **Ctrl+Alt+G** | Tile all agent windows |
 | **Ctrl+Alt+R** | Reload the notch |
 | **Ctrl+Alt+V** | Play an idle animation (press again for the next one) |
+| **Ctrl+Alt+Z** | Put the notch to sleep, or wake it |
 | **Ctrl+Alt+Q** | Quit (agents won't restart it) |
 
 | In the notch | |
@@ -71,6 +73,8 @@ Requirements: Windows 10 or 11. Terminal agents are found in Windows Terminal or
 | **+** | New agent |
 | **G / C** | Tile windows / clear finished |
 | **S / ,** | Sound on or off / Setup |
+| **Z** | Sleep / wake |
+| **← →** | Move the notch along the top (**Home**: back to the centre) |
 | **I** | All shortcuts |
 
 ## Approve from your phone

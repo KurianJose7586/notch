@@ -8,6 +8,7 @@ const { AGENTS, launchAgent, makeWorktree, samePath, launchLabels } = require('.
 const setup = require('./setup')
 const createPhone = require('./phone')
 const createUpdater = require('./updater')
+const position = require('./position')
 
 if (!app.requestSingleInstanceLock()) app.exit(0)
 
@@ -365,10 +366,28 @@ ipcMain.on('ready', push)
 // A transparent window is recomposited whole on every animation frame, so it's only full size while the panel is
 // open; collapsed, it just fits the pill and its cards (plus shadow).
 const SIZES = { full: { width: 560, height: 720 }, compact: { width: 520, height: 230 } }
-function size(full) {
-  const { bounds } = screen.getPrimaryDisplay(), s = SIZES[full ? 'full' : 'compact']
-  win.setBounds({ x: Math.round(bounds.x + (bounds.width - s.width) / 2), y: bounds.y, ...s })
+// Where the notch sits along the top of a monitor (position.js). anchorX is the screen x of the pill's centre; you can
+// drag it, nudge it with the arrow keys, and it remembers where you left it.
+const POSITION = path.join(app.getPath('userData'), 'position.json')
+let anchorX = 0, fullNow = false, grab = 0
+const displayAt = x => screen.getDisplayNearestPoint({ x, y: 0 })
+function place(display = displayAt(anchorX)) {
+  anchorX = position.clampAnchor(anchorX, display.bounds)
+  win?.setBounds(position.windowRect(anchorX, display.bounds, SIZES[fullNow ? 'full' : 'compact']))
 }
+function loadPosition() {
+  let saved = null
+  try { saved = JSON.parse(fs.readFileSync(POSITION, 'utf8')) } catch {}
+  anchorX = position.fromSaved(saved, screen.getAllDisplays(), screen.getPrimaryDisplay()).anchor
+}
+const savePosition = () => { const d = displayAt(anchorX); fs.writeFile(POSITION, JSON.stringify(position.toSaved(anchorX, d.bounds, d.id)), () => {}) }
+ipcMain.on('drag-start', () => { grab = screen.getCursorScreenPoint().x - anchorX })
+ipcMain.on('drag-move', () => { const p = screen.getCursorScreenPoint(); anchorX = p.x - grab; place(screen.getDisplayNearestPoint(p)) }) // follows the cursor, onto other monitors too
+ipcMain.on('drag-end', () => { anchorX = position.snapAnchor(anchorX, displayAt(anchorX).bounds); place(); savePosition() })
+ipcMain.on('nudge', (_, dx) => { anchorX += Math.sign(dx) * 40; place(); savePosition() })
+ipcMain.on('recenter', () => { anchorX = position.centre(displayAt(anchorX).bounds); place(); savePosition() })
+
+function size(full) { fullNow = full; place() }
 ipcMain.on('size', (_, full) => size(!!full))
 
 app.whenReady().then(() => {
@@ -376,9 +395,9 @@ app.whenReady().then(() => {
   updates.start()
   // Bring connected agents' hooks up to date with this version and point them at this copy
   try { setup.refresh(hookRunner()) } catch (e) { console.error('hook refresh failed:', e.message) }
-  const { bounds } = screen.getPrimaryDisplay(), { width: W, height: H } = SIZES.compact
+  loadPosition()
   win = new BrowserWindow({
-    width: W, height: H, x: Math.round(bounds.x + (bounds.width - W) / 2), y: bounds.y,
+    ...position.windowRect(anchorX, displayAt(anchorX).bounds, SIZES.compact),
     frame: false, transparent: true, resizable: false, movable: false, skipTaskbar: true,
     hasShadow: false, focusable: false, alwaysOnTop: true, backgroundColor: '#00000000',
     webPreferences: { preload: path.join(__dirname, 'preload.js'), autoplayPolicy: 'no-user-gesture-required' },
@@ -387,8 +406,9 @@ app.whenReady().then(() => {
   win.setIgnoreMouseEvents(true, { forward: true })
   win.loadFile('index.html')
 
-  const keys = { 'Control+Alt+N': toggleKeyboard, 'Control+Alt+J': jumpNext, 'Control+Alt+G': grid, 'Control+Alt+R': reload, 'Control+Alt+V': () => win?.webContents.send('venom'), 'Control+Alt+Q': quit }
+  const keys = { 'Control+Alt+N': toggleKeyboard, 'Control+Alt+J': jumpNext, 'Control+Alt+G': grid, 'Control+Alt+R': reload, 'Control+Alt+V': () => win?.webContents.send('venom'), 'Control+Alt+Z': () => win?.webContents.send('sleep'), 'Control+Alt+Q': quit }
   for (const [accel, fn] of Object.entries(keys)) if (!globalShortcut.register(accel, fn)) console.warn('shortcut taken: ' + accel)
+  screen.on('display-removed', () => place()); screen.on('display-metrics-changed', () => place()) // a monitor came or went: stay on screen
 })
 
 app.on('will-quit', () => { globalShortcut.unregisterAll(); helper.kill() })

@@ -1,11 +1,11 @@
 {
   "name": "agent-notch",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "main": "boot.js",
   "scripts": {
     "start": "electron .",
-    "test": "node state.js && node launch.js && node phone.js && node updater.js",
+    "test": "node state.js && node launch.js && node phone.js && node updater.js && node position.js",
     "setup": "npm install && node setup.js && electron .",
     "install-hooks": "node setup.js",
     "remove-hooks": "node setup.js --remove",
@@ -34,7 +34,8 @@
       "win.ps1",
       "phone.js",
       "phone.html",
-      "updater.js"
+      "updater.js",
+      "position.js"
     ],
     "directories": {
       "output": "dist",
