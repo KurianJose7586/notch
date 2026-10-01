@@ -1,5 +1,6 @@
 # Push a version tag (git tag v0.2.0 && git push origin v0.2.0) and this builds the
-# Windows installer and attaches it to a GitHub release for that tag.
+# Windows installer and attaches it to a GitHub release for that tag, together with latest.yml and the blockmap:
+# installed copies read those to find, verify and download updates.
 # Run it by hand from the Actions tab to build without publishing.
 name: Release
 
@@ -32,14 +33,17 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: installer
-          path: dist/AgentNotch-Setup-*.exe
+          path: |
+            dist/AgentNotch-Setup-*.exe
+            dist/AgentNotch-Setup-*.exe.blockmap
+            dist/latest.yml
       - name: Publish release
         if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" dist/AgentNotch-Setup-*.exe --clobber
+            gh release upload "$GITHUB_REF_NAME" dist/AgentNotch-Setup-*.exe dist/AgentNotch-Setup-*.exe.blockmap dist/latest.yml --clobber
           else
-            gh release create "$GITHUB_REF_NAME" dist/AgentNotch-Setup-*.exe --title "Agent Notch $GITHUB_REF_NAME" --generate-notes
+            gh release create "$GITHUB_REF_NAME" dist/AgentNotch-Setup-*.exe dist/AgentNotch-Setup-*.exe.blockmap dist/latest.yml --title "Agent Notch $GITHUB_REF_NAME" --generate-notes
           fi

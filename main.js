@@ -4,9 +4,10 @@ const fs = require('fs')
 const path = require('path')
 const { spawn } = require('child_process')
 const { apply, tick, set } = require('./state')
-const { AGENTS, launchAgent, makeWorktree, samePath } = require('./launch')
+const { AGENTS, launchAgent, makeWorktree, samePath, launchLabels } = require('./launch')
 const setup = require('./setup')
 const createPhone = require('./phone')
+const createUpdater = require('./updater')
 
 if (!app.requestSingleInstanceLock()) app.exit(0)
 
@@ -51,6 +52,12 @@ const win32 = cmd => new Promise(r => { waiting.push(r); helper.stdin.write(cmd 
 // Usage limits the agents report. Claude's come from its status line: rate_limits.five_hour / seven_day, each
 // { used_percentage, resets_at (epoch s) }, only for Pro/Max plans and after the session's first reply.
 const limits = {}
+// New versions: checked from GitHub Releases, downloaded quietly, installed when you quit. Not when running from source.
+const updates = createUpdater({
+  updater: app.isPackaged ? require('electron-updater').autoUpdater : null,
+  dir: app.getPath('userData'), version: app.getVersion(),
+  onChange: s => win?.webContents.send('update', s),
+})
 const push = () => { win?.webContents.send('sessions', Object.values(sessions), limits); phone.broadcast() }
 const clock = epochS => new Date(epochS * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 
@@ -100,6 +107,7 @@ function claimLaunch(s) {
   const [l] = launched.splice(i, 1)
   if (!s.cwd) { s.cwd = l.dir; s.project = path.basename(l.dir) }
   if (l.auto) s.auto = true
+  if (l.label) rename(s.key, l.label) // "Claude 2", or the task it was given
   // You picked this folder and asked for AUTO, so agy's "trust this folder?" screen gets its Enter too.
   if (l.auto && s.agent === 'agy') pressWhenPrompted(s, PROMPT.trust)
   if (s.hwnd) l.batch.hwnds.push(s.hwnd)
@@ -271,18 +279,24 @@ function toggleKeyboard() { // Ctrl+Alt+N: open the panel with keyboard focus
   win.webContents.send('keyboard', true)
 }
 
-async function launch({ agents, dir, prompt = '', auto = false, worktree = false }) {
-  agents = [...new Set(agents)].filter(a => AGENTS.includes(a))
-  if (!agents.length) return { error: 'Pick an agent' }
+const MAX_AGENTS = 8 // same cap as the launcher
+async function launch({ agents, dir, prompt = '', prompts = null, auto = false, worktree = false }) {
+  agents = Array.isArray(agents) ? agents : [] // the same agent may appear several times
+  if (!agents.length) return { error: prompts ? 'Write at least one task' : 'Pick an agent' }
+  if (agents.length > MAX_AGENTS) return { error: `That's a lot of windows: ${MAX_AGENTS} at most` }
+  if (!agents.every(a => AGENTS.includes(a))) return { error: 'Unknown agent' }
   if (!dir || !fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) return { error: "That folder doesn't exist" }
   prompt = String(prompt).trim().slice(0, 8000)
   const batch = { total: agents.length, hwnds: [], done: false }
   batch.timer = setTimeout(() => tileBatch(batch), 25000) // agents that stay quiet until you type never report in
   try {
-    for (const agent of agents) {
+    const labels = launchLabels(agents, prompts)
+    for (const [i, agent] of agents.entries()) {
+      const task = prompts ? String(prompts[i] ?? '').trim().slice(0, 8000) : prompt
+      const label = labels[i]
       const target = worktree ? await makeWorktree(dir, agent) : dir
-      launched.push({ agent, dir: target, auto, batch })
-      launchAgent(agent, target, prompt)
+      launched.push({ agent, dir: target, auto, batch, label })
+      launchAgent(agent, target, task)
     }
   } catch (e) {
     return { error: /not a git repository/i.test(e.message) ? "Worktrees need a git repo, and this folder isn't one" : e.message }
@@ -336,6 +350,10 @@ ipcMain.handle('setup-limits', (_, on) => {
 })
 ipcMain.handle('setup-login', (_, on) => { app.setLoginItemSettings({ openAtLogin: !!on, ...loginOpts() }); return app.getLoginItemSettings(loginOpts()).openAtLogin })
 ipcMain.handle('setup-done', () => { fs.writeFileSync(SETUP_DONE, ''); return true })
+ipcMain.handle('update-state', () => updates.state())
+ipcMain.handle('update-check', () => updates.check())
+ipcMain.handle('update-auto', (_, on) => updates.setAuto(!!on))
+ipcMain.on('update-restart', () => goodbye('reload', () => updates.restart())) // the goodbye animation, then install and relaunch
 ipcMain.handle('phone-info', () => phone.info())
 ipcMain.handle('phone-set', (_, on) => { phone.set(!!on); return phone.info() })
 ipcMain.handle('phone-renew', () => { phone.renew(); return phone.info() })
@@ -355,6 +373,7 @@ ipcMain.on('size', (_, full) => size(!!full))
 
 app.whenReady().then(() => {
   phone.start()
+  updates.start()
   // Bring connected agents' hooks up to date with this version and point them at this copy
   try { setup.refresh(hookRunner()) } catch (e) { console.error('hook refresh failed:', e.message) }
   const { bounds } = screen.getPrimaryDisplay(), { width: W, height: H } = SIZES.compact
@@ -368,7 +387,7 @@ app.whenReady().then(() => {
   win.setIgnoreMouseEvents(true, { forward: true })
   win.loadFile('index.html')
 
-  const keys = { 'Control+Alt+N': toggleKeyboard, 'Control+Alt+J': jumpNext, 'Control+Alt+G': grid, 'Control+Alt+R': reload, 'Control+Alt+Q': quit }
+  const keys = { 'Control+Alt+N': toggleKeyboard, 'Control+Alt+J': jumpNext, 'Control+Alt+G': grid, 'Control+Alt+R': reload, 'Control+Alt+V': () => win?.webContents.send('venom'), 'Control+Alt+Q': quit }
   for (const [accel, fn] of Object.entries(keys)) if (!globalShortcut.register(accel, fn)) console.warn('shortcut taken: ' + accel)
 })
 

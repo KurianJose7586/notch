@@ -30,8 +30,10 @@ A Dynamic-Island-style notch for Windows that shows what every coding agent is d
 - **Approve from your phone**: switch it on in Setup, scan the QR code, and your phone shows the same request with big **Allow** / **Deny** buttons, buzzing when an agent needs you.
 - **Grid**: one click (or **Ctrl+Alt+G**) tiles every agent window.
 - **Usage limits**: Claude's 5-hour and weekly limits as bars, with a heads-up at 80% and 95%. An agent that hits a limit or an error shows **Stopped**, not "Working".
-- **Launch agents** from the notch, several at once, optionally each in its own git worktree.
+- **Launch agents** from the notch: several at once, including several of the same one (a − / + stepper per provider, up to 8), optionally each in its own git worktree. Turn on **SPLIT** and every line you type becomes its own agent with its own task.
+- **Updates itself**: it checks GitHub for a new release every few hours, downloads it quietly, tells you when it's ready, and installs it when you quit.
 - **Rename** sessions, unread markers, timers, sound, and a full keyboard mode.
+- **Alive**: after a long quiet spell the notch gets up to mischief: the agents try to escape and black tendrils grab them back, Pac-Man eats their dots, or they juggle. Press **Ctrl+Alt+V** to play the next one. A closed, quiet notch also grows eyes that follow your cursor when it lingers nearby, and reacts to what happens: a happy squish when everything finishes, a grumpy shake when an agent stops or Claude is nearly out, and an impatient nudge if a request waits. All of it stays off while anything is working, stops the moment you touch the notch, and can be turned off in Setup (**Idle animations**).
 - **Starts itself** when an agent starts, and uses about 0.4% CPU when idle.
 
 ## Install
@@ -41,6 +43,10 @@ A Dynamic-Island-style notch for Windows that shows what every coding agent is d
 3. Start an agent. It shows up in the notch.
 
 The installer isn't code-signed yet, so Windows SmartScreen may say "Windows protected your PC". Click **More info → Run anyway**.
+
+### Already installed?
+
+Download the latest installer and run it. It updates in place and keeps your settings and connected agents. **Versions before 0.3.0 can't update themselves, so this one manual step is needed once.** From 0.3.0 on, new versions arrive on their own: an "Update ready" notice appears in the notch, and the update installs when you quit (or click **Restart now**). You can turn the automatic check off in **Setup**; **Check now** still works.
 
 Requirements: Windows 10 or 11. Terminal agents are found in Windows Terminal or any console window.
 
@@ -52,6 +58,7 @@ Requirements: Windows 10 or 11. Terminal agents are found in Windows Terminal or
 | **Ctrl+Alt+J** | Jump to the next agent that needs you |
 | **Ctrl+Alt+G** | Tile all agent windows |
 | **Ctrl+Alt+R** | Reload the notch |
+| **Ctrl+Alt+V** | Play an idle animation (press again for the next one) |
 | **Ctrl+Alt+Q** | Quit (agents won't restart it) |
 
 | In the notch | |
@@ -92,7 +99,7 @@ Each switch in Setup adds (or removes) one hook in that agent's own config, and 
 
 **Claude usage limits** is a separate switch in Setup. It uses Claude Code's status line, and is never turned on over a status line you've set up yourself. The desktop app doesn't report limits, so they update from Claude Code in a terminal.
 
-Everything stays on your machine: agents talk to the notch over `127.0.0.1` only.
+Everything stays on your machine: agents talk to the notch over `127.0.0.1` only. The one thing that leaves your PC is the update check, which asks GitHub for the latest release.
 
 Uninstalling removes all of these hooks before deleting the app.
 
@@ -136,3 +143,7 @@ git push origin v0.3.0
 | `build/` | Installer icon, NSIS script and the hook launcher |
 | `promo/` | Source of the demo video, made with [HyperFrames](https://hyperframes.heygen.com) |
 | `docs/` | README media |
+
+## License
+
+[MIT](LICENSE)

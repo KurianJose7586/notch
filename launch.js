@@ -23,17 +23,23 @@ const git = (args, cwd) => new Promise((ok, fail) =>
 
 // <parent>/<repo>.worktrees/<repo>-<agent>-<id> on branch notch/<agent>-<id>, branched from HEAD.
 // ponytail: starts at the worktree root even if you picked a subfolder, and uncommitted changes don't carry over
+let worktrees = 0 // several of the same agent started together must not share a branch
 async function makeWorktree(dir, agent) {
   const root = path.resolve(await git(['rev-parse', '--show-toplevel'], dir))
-  const repo = path.basename(root), id = `${agent}-${Date.now().toString(36).slice(-5)}`
+  const repo = path.basename(root), id = `${agent}-${Date.now().toString(36).slice(-5)}${worktrees++}`
   const target = path.join(path.dirname(root), `${repo}.worktrees`, `${repo}-${id}`)
   await git(['worktree', 'add', '-b', `notch/${id}`, target], root)
   return target
 }
 
+// A name for each launched session: the task it was given, or "Claude 2" when the same agent is started more than once.
+const PRETTY = { claude: 'Claude', agy: 'Antigravity', opencode: 'OpenCode', kilo: 'Kilo' }
+const launchLabels = (agents, prompts) => agents.map((a, i) =>
+  prompts ? String(prompts[i] ?? '').trim().slice(0, 40) : agents.filter(x => x === a).length > 1 ? `${PRETTY[a]} ${agents.slice(0, i + 1).filter(x => x === a).length}` : '')
+
 const samePath = (a, b) => !!a && !!b && path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase()
 
-module.exports = { AGENTS, launchAgent, makeWorktree, samePath, commandFor }
+module.exports = { AGENTS, launchAgent, makeWorktree, samePath, commandFor, launchLabels }
 
 if (require.main === module) {
   const assert = require('assert')
@@ -43,5 +49,19 @@ if (require.main === module) {
   assert.equal(commandFor('claude', 'it’s'), "claude 'it’’s'")
   assert.equal(commandFor('opencode', 'say "hi" $HOME `x`'), `opencode --prompt 'say \\"hi\\" $HOME \`x\`'`)
   assert.ok(samePath('C:/Code/App', 'c:\\code\\app\\'))
-  console.log('launch.js ok')
+  assert.deepEqual(launchLabels(['claude', 'claude', 'agy'], null), ['Claude 1', 'Claude 2', ''])
+  assert.deepEqual(launchLabels(['claude'], null), [''])
+  assert.deepEqual(launchLabels(['claude', 'agy'], ['fix the tests', ' add a README ']), ['fix the tests', 'add a README'])
+  // two of the same agent, started at once, each get their own worktree and branch
+  const fs = require('fs'), os = require('os')
+  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'notch-wt-'))
+  ;(async () => {
+    await git(['init', '-q'], repoDir)
+    await git(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'x'], repoDir)
+    const made = await Promise.all([makeWorktree(repoDir, 'claude'), makeWorktree(repoDir, 'claude'), makeWorktree(repoDir, 'claude')])
+    assert.equal(new Set(made).size, 3, 'distinct worktrees: ' + made.join(', '))
+    made.forEach(d => assert.ok(fs.existsSync(d)))
+    fs.rmSync(repoDir, { recursive: true, force: true }); fs.rmSync(repoDir + '.worktrees', { recursive: true, force: true })
+    console.log('launch.js ok')
+  })().catch(e => { console.error(e); process.exit(1) })
 }

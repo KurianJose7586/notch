@@ -277,6 +277,12 @@
   .stack { display: flex; }
   .stack .icon { box-shadow: 0 0 0 2px #000; }
   .stack .icon + .icon { margin-left: -12px; }
+  .chipcol { display: flex; flex-direction: column; gap: 6px; }
+  .step { display: flex; align-items: center; justify-content: center; gap: 4px; visibility: hidden; }
+  .step.on { visibility: visible; }
+  .step button { width: 24px; height: 22px; border-radius: 11px; background: rgba(255,255,255,.12); font-size: 15px; font-weight: 700; line-height: 1; }
+  .step button:hover { background: rgba(255,255,255,.2); } .step button:active { scale: .9; }
+  .step span { min-width: 20px; text-align: center; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 16px 0 12px; }
   .chip { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 12px 6px 10px; border-radius: 14px; background: var(--fill);
           color: var(--secondary); font-size: 12px; font-weight: 600; transition: background .2s ease, color .2s ease, box-shadow .25s ease, scale .35s var(--spring); }
@@ -346,13 +352,31 @@
   .switch:disabled { cursor: default; opacity: .5; }
   .setup .finish { display: flex; justify-content: flex-end; margin-top: 14px; }
 
+  /* Idle animation: tendrils (black) under the pill, escaping agents under the tendrils */
+  #island { z-index: 2; }
+  .update { display: flex; align-items: center; gap: 12px; margin: 12px 0 0; padding: 10px 12px; border-radius: 14px; background: rgba(10,132,255,.14); box-shadow: 0 0 0 1px rgba(10,132,255,.4) inset; }
+  .update .sbody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .update b { font-size: 13px; font-weight: 600; } .update .sub { color: var(--secondary); font-size: 11.5px; }
+  .mini { flex: none; height: 26px; padding: 0 12px; border-radius: 13px; background: rgba(255,255,255,.12); font-size: 12px; font-weight: 600; }
+  .mini:disabled { opacity: .5; }
+  .update .mini { background: var(--blue); }
+  #venom { position: fixed; inset: 0; z-index: 1; display: none; pointer-events: none; }
+  #venom svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #venom path, #venom rect { fill: #000; }
+  #eyes { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 7px; opacity: 0; pointer-events: none; transition: opacity .25s ease; }
+  #island.eyed #eyes { opacity: 1; }
+  #island.eyed #pill { opacity: 0; }
+  #eyes i { position: relative; width: 12px; height: 16px; border-radius: 50%; background: #fff; overflow: hidden; }
+  #eyes b { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px; border-radius: 50%; background: #000; transform: translate(var(--px, 0px), var(--py, 0px)); transition: transform .08s linear; }
+  #venom .vlogo { position: absolute; left: 0; top: 0; width: 22px; height: 22px; border-radius: 6px; will-change: transform; }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; }
   }
 </style>
 </head>
 <body>
-<div id="island" class="intro"><div id="pill"></div><div id="panel"></div></div>
+<div id="venom"><svg><g></g></svg></div>
+<div id="island" class="intro"><div id="pill"></div><div id="panel"></div><div id="eyes"><i><b></b></i><i><b></b></i></div></div>
 <script>
 const NAMES = { claude: 'Claude', agy: 'Antigravity', opencode: 'OpenCode', kilo: 'Kilo', copilot: 'Copilot' }
 const APP_TAG = { claude: 'Desktop', code: 'VS Code', antigravity: 'IDE' } // which app hosts an agent that isn't in a terminal
@@ -372,7 +396,7 @@ const INFO_ICON = '<svg viewBox="0 0 16 16"><circle cx="8" cy="4" r="1.35" fill=
 const SHORTCUTS = [
   ['Anywhere', '', [
     ['Ctrl+Alt+N', 'Open the notch with the keyboard'], ['Ctrl+Alt+J', 'Jump to the next agent that needs you'],
-    ['Ctrl+Alt+G', 'Tile all agent windows'], ['Ctrl+Alt+R', 'Reload the notch'], ['Ctrl+Alt+Q', 'Quit (agents won\'t restart it)'],
+    ['Ctrl+Alt+G', 'Tile all agent windows'], ['Ctrl+Alt+R', 'Reload the notch'], ['Ctrl+Alt+V', 'Play an idle animation (again for the next)'], ['Ctrl+Alt+Q', 'Quit (agents won\'t restart it)'],
   ]],
   ['In the notch', 'after Ctrl+Alt+N', [
     ['↑ ↓', 'Select an agent'], ['↵', 'Open its terminal'], ['Y N', 'Allow / deny its request'], ['A', 'Toggle AUTO'],
@@ -704,6 +728,7 @@ function warnLimits() {
       warned[id] = level
       const when = new Date(w.resets_at * 1000).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })
       chime()
+      if (level >= 95) setTimeout(() => react('grumpy'), 800) // nearly out of Claude: it shakes with worry
       showToast({ lead: () => icon('claude'), title: () => el('b', level >= 95 ? 'bad' : 'warn', `Claude at ${Math.round(w.used_percentage)}% of your ${label} limit`), right: '', line: 'Resets ' + when }, 5000)
     }
   }
@@ -766,7 +791,7 @@ function renderPanel() {
     extra.push(k)
   }
   const lc = limitsCard()
-  panel.replaceChildren(head, ...(lc ? [lc] : []), ...content, foot, ...extra)
+  panel.replaceChildren(head, ...(lc ? [lc] : []), ...(upd.status === 'ready' ? [updateCard()] : []), ...content, foot, ...extra)
 }
 
 function startRename(s, title) {
@@ -874,7 +899,31 @@ async function openSetup(first) {
   const tip = el('div', 'srow'), tbody = el('div', 'sbody')
   tbody.append(el('b', '', 'Ctrl + Alt + N'), el('span', 'sub', 'Opens Notch from anywhere. The ⓘ button lists every shortcut.'))
   tip.append(tbody)
-  prefs.append(lim, ph, pair, login, tip)
+  const idle = el('div', 'srow'), idleBody = el('div', 'sbody'), idleSw = el('button', 'switch' + (idleAnim ? ' on' : ''))
+  idleSw.append(el('span', 'knob')); idleSw.setAttribute('role', 'switch'); idleSw.setAttribute('aria-checked', idleAnim)
+  idleSw.onclick = () => {
+    idleAnim = !idleAnim; try { localStorage.setItem('idleAnim', idleAnim ? 'on' : 'off') } catch {}
+    idleSw.classList.toggle('on', idleAnim); idleSw.setAttribute('aria-checked', idleAnim); tick(idleAnim)
+    if (!idleAnim) stopVenom()
+  }
+  idleBody.append(el('b', '', 'Idle animations'), el('span', 'sub', 'Eyes, moods, and a little mischief when it is quiet'))
+  idle.append(idleBody, idleSw)
+  // Updates: what version this is, whether a newer one is on the way, and whether to look automatically
+  const upRow = el('div', 'srow'), upBody = el('div', 'sbody'), upSub = el('span', 'sub'), upBtn = el('button', 'mini')
+  const autoRow = el('div', 'srow'), autoBody = el('div', 'sbody'), autoSw = el('button', 'switch'); autoSw.append(el('span', 'knob')); autoSw.setAttribute('role', 'switch')
+  paintUpdate = () => {
+    const s = upd, text = { dev: 'Running from source: updates are for the installed app', checking: 'Checking…', current: 'Up to date', downloading: 'Downloading ' + s.next + '…', ready: s.next + ' is ready. Installs when you quit', error: 'Could not check: ' + s.error }[s.status] || 'Looks for a new version every few hours'
+    upSub.textContent = text; upSub.className = 'sub' + (s.status === 'ready' ? ' on' : '')
+    upBtn.hidden = s.status === 'dev'; upBtn.disabled = s.status === 'checking' || s.status === 'downloading'
+    upBtn.textContent = s.status === 'ready' ? 'Restart now' : 'Check now'
+    autoSw.classList.toggle('on', s.auto); autoSw.setAttribute('aria-checked', s.auto); autoSw.disabled = s.status === 'dev'
+  }
+  upBtn.onclick = () => upd.status === 'ready' ? notch.send('update-restart') : notch.invoke('update-check')
+  autoSw.onclick = async () => { upd = await notch.invoke('update-auto', !upd.auto); paintUpdate(); tick(upd.auto) }
+  upBody.append(el('b', '', 'Agent Notch ' + (upd.version || '')), upSub); upRow.append(upBody, upBtn)
+  autoBody.append(el('b', '', 'Check for updates automatically'), el('span', 'sub', 'Asks GitHub for a new release. Nothing else leaves your PC')); autoRow.append(autoBody, autoSw)
+  paintUpdate()
+  prefs.append(lim, ph, pair, login, idle, upRow, autoRow, tip)
 
   const finish = el('div', 'finish'), doneBtn = el('button', 'go', first ? 'Get started' : 'Done')
   doneBtn.onclick = async () => {
@@ -892,6 +941,7 @@ async function openSetup(first) {
 
 function closeSetup(collapse) {
   if (view !== 'setup') return
+  paintUpdate = null
   view = 'list'
   if (collapse) setOpen(false)
   render()
@@ -932,11 +982,17 @@ function switchEl(label, get, put, title) {
   return sw
 }
 
+const LAUNCHABLE = ['claude', 'agy', 'opencode', 'kilo'] // terminal agents; Copilot lives in VS Code
+const MAX_AGENTS = 8 // windows are heavy; main.js enforces the same cap
+
 async function openLauncher(dir) {
   const recent = await notch.invoke('recent')
   let last = {}
   try { last = JSON.parse(localStorage.getItem('launch')) || {} } catch {}
-  launcher = { agents: new Set(last.agents?.length ? last.agents : ['claude']), dir: dir || recent[0] || '', recent, auto: !!last.auto, worktree: false, folders: false }
+  const saved = Array.isArray(last.agents) ? Object.fromEntries(last.agents.map(a => [a, 1])) : last.agents || {} // older versions saved a list: one of each
+  const agents = new Map(Object.entries(saved).filter(([a, n]) => LAUNCHABLE.includes(a) && n > 0))
+  if (!agents.size) agents.set('claude', 1)
+  launcher = { agents, dir: dir || recent[0] || '', recent, auto: !!last.auto, worktree: false, split: false, folders: false } // agents: provider -> how many
   view = 'launch'
   if (!keyboard) notch.send('grab-focus')
   buildLauncher()
@@ -959,11 +1015,20 @@ function buildLauncher() {
   back.innerHTML = BACK_ICON; back.title = 'Back (Esc)'; back.onclick = () => closeLauncher(false)
   head.append(back, el('h1', '', 'New agent'), el('span', 'summary', 'opens in a new terminal'))
 
-  const chips = el('div', 'chips')
-  for (const a of ['claude', 'agy', 'opencode', 'kilo']) { // terminal agents; Copilot lives in VS Code
-    const c = el('button', 'chip' + (L.agents.has(a) ? ' on' : '')); c.append(icon(a), NAMES[a])
-    c.onclick = () => { L.agents.has(a) ? L.agents.delete(a) : L.agents.add(a); c.classList.toggle('on', L.agents.has(a)); tick(L.agents.has(a)); refresh() }
-    chips.append(c)
+  const total = () => [...L.agents.values()].reduce((a, b) => a + b, 0)
+  const chips = el('div', 'chips'), paintChips = []
+  for (const a of LAUNCHABLE) { // a chip toggles a provider on or off; the stepper under it sets how many
+    const col = el('div', 'chipcol'), c = el('button', 'chip'); c.append(icon(a), NAMES[a])
+    const step = el('div', 'step'), minus = el('button', '', '−'), count = el('span'), plus = el('button', '', '+')
+    minus.title = 'One fewer ' + NAMES[a]; plus.title = 'Another ' + NAMES[a]
+    step.append(minus, count, plus)
+    const paint = () => { const n = L.agents.get(a) || 0; c.classList.toggle('on', n > 0); step.classList.toggle('on', n > 0); count.textContent = n; plus.disabled = total() >= MAX_AGENTS }
+    const set = n => { if (n > 0) L.agents.set(a, n); else L.agents.delete(a); tick(n > 0); paintChips.forEach(p => p()); refresh() }
+    c.onclick = () => set(L.agents.has(a) ? 0 : 1)
+    minus.onclick = () => set((L.agents.get(a) || 0) - 1)
+    plus.onclick = () => total() < MAX_AGENTS && set((L.agents.get(a) || 0) + 1)
+    paintChips.push(paint); paint()
+    col.append(c, step); chips.append(col)
   }
 
   const field = el('button', 'field'), fname = el('b'), fpath = el('span', 'fpath'), folders = el('div', 'folders'), chev = el('span')
@@ -986,26 +1051,35 @@ function buildLauncher() {
   const ta = el('textarea'); ta.placeholder = 'What should it do? (optional)'; ta.spellcheck = false
   ta.onkeydown = e => { if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); go() } }
   const auto = switchEl('AUTO', () => L.auto, v => (L.auto = v), 'Approve every permission for these agents')
+  const split = switchEl('SPLIT', () => L.split, v => { L.split = v; ta.placeholder = v ? 'One task per line: each line starts its own agent' : 'What should it do? (optional)'; refresh() }, 'One task per line: each line becomes its own agent, shared out across the providers you picked')
   const worktree = switchEl('WORKTREE', () => L.worktree, v => (L.worktree = v), "Give each agent its own git worktree and branch, so parallel agents can't overwrite each other")
   const btn = el('button', 'go'), err = el('div', 'err'), opts = el('div', 'opts')
   btn.onclick = go
-  opts.append(auto, worktree, btn)
+  opts.append(auto, worktree, split, btn)
+
+  // What to start: every provider as many times as asked, or in SPLIT mode one agent per line of the box (providers taking turns)
+  function plan() {
+    const slots = [...L.agents].flatMap(([a, n]) => Array(n).fill(a))
+    if (!L.split) return { agents: slots, prompts: null }
+    const tasks = ta.value.split(/\r?\n/).map(s => s.trim()).filter(Boolean).slice(0, MAX_AGENTS)
+    return { agents: slots.length ? tasks.map((_, i) => slots[i % slots.length]) : [], prompts: tasks }
+  }
 
   async function go() {
     if (btn.disabled) return
     btn.disabled = true; btn.classList.add('busy'); err.textContent = ''
-    const agents = [...L.agents], res = await notch.invoke('launch', { agents, dir: L.dir, prompt: ta.value, auto: L.auto, worktree: L.worktree })
+    const { agents, prompts } = plan(), res = await notch.invoke('launch', { agents, prompts, dir: L.dir, prompt: ta.value, auto: L.auto, worktree: L.worktree })
     btn.classList.remove('busy'); refresh()
     if (res.error) { // shake it off
       err.textContent = res.error; layout()
       anim(err, [0, -7, 6, -4, 2, 0].map(x => ({ translate: x + 'px 0' })), { duration: 420, easing: 'ease-out' })
       return
     }
-    try { localStorage.setItem('launch', JSON.stringify({ agents, auto: L.auto })) } catch {}
+    try { localStorage.setItem('launch', JSON.stringify({ agents: Object.fromEntries(L.agents), auto: L.auto })) } catch {}
     chime()
     showToast({
       lead: () => stack(agents), right: baseName(L.dir), line: ta.value.trim() || (L.worktree ? 'each in its own worktree' : 'in a new terminal'),
-      title: () => el('b', 'ok', 'Launching ' + agents.map(a => NAMES[a]).join(' + ')),
+      title: () => el('b', 'ok', 'Launching ' + [...new Set(agents)].map(a => NAMES[a] + (agents.filter(x => x === a).length > 1 ? ' ×' + agents.filter(x => x === a).length : '')).join(' + ')),
     }, 2800)
     closeLauncher(true)
   }
@@ -1016,8 +1090,8 @@ function buildLauncher() {
     field.classList.toggle('open', L.folders)
     folders.hidden = !L.folders
     if (L.folders) fillFolders()
-    const n = L.agents.size
-    btn.replaceChildren(n > 1 ? `Launch ${n} agents` : 'Launch', el('kbd', '', 'Ctrl ↵'))
+    const n = plan().agents.length
+    btn.replaceChildren(n > 1 ? `Launch ${n}` : 'Launch', el('kbd', '', 'Ctrl ↵'))
     btn.disabled = !n || !L.dir
     layout()
   }
@@ -1052,6 +1126,7 @@ function setOpen(v) {
   }
   if (!v && view === 'help') { view = 'list'; setTimeout(render, 450) } // after the collapse animation
   renderPill(); layout()
+  v ? stopVenom() : armVenom()
 }
 
 island.addEventListener('mouseenter', () => {
@@ -1118,6 +1193,7 @@ notch.onSessions((list, lim) => {
     const was = prevState[s.key]
     if (was && was !== s.state) {
       changed.add(s.key)
+      if (s.state === 'error') setTimeout(() => react('grumpy'), 650) // a stopped agent: grumpy shake, after its peek
       if ((s.state === 'done' || s.state === 'waiting' || s.state === 'error') && !open) { // Live-Activity-style peek
         peek = s
         clearTimeout(peekTimer); peekTimer = setTimeout(() => { peek = null; render() }, PEEK_MS)
@@ -1130,18 +1206,272 @@ notch.onSessions((list, lim) => {
   render()
   known = new Set(list.map(s => s.key)) // rows seen from here on animate in when new
   warnLimits()
+  moods(list)
+  quiet() ? armVenom() : stopVenom()
 })
+
+// Idle animations. After a long quiet spell the notch gets up to mischief (escaping agents grabbed back by tendrils, a
+// Pac-Man snack, a juggling act). A closed, quiet notch also grows eyes that follow a cursor lingering near it, and it
+// reacts to what happens (a happy squish, a grumpy shake, an impatient nudge). None of it runs while anything is working
+// or the panel is open, each scene plays at most once per REPEAT_MS, any touch stops it, and between plays it costs
+// nothing: a scene runs one frame loop for a few seconds, everything else is single timeouts.
+const IDLE_MS = 4 * 60e3, REPEAT_MS = 12 * 60e3
+let idleAnim = true, venomTimer = 0, venomRun = null, idleLast = '', idleCycle = 0
+try { idleAnim = localStorage.getItem('idleAnim') !== 'off' } catch {}
+const venomLayer = document.getElementById('venom'), venomSvg = venomLayer.querySelector('svg'), venomGoo = venomSvg.querySelector('g')
+const quiet = () => !sessions.some(s => s.state === 'working' || s.state === 'waiting')
+const clamp01 = x => Math.min(1, Math.max(0, x))
+const ease = x => x * x * (3 - 2 * x), easeOut = x => 1 - (1 - x) ** 3
+const mix = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t })
+const DOT_COLOR = { claude: '#D97757', agy: '#3DBE6A', opencode: '#EDE8E6', kilo: '#F8F675', copilot: '#8B5CF6' }
+const svgEl = (tag, fill) => { const e = document.createElementNS('http://www.w3.org/2000/svg', tag); if (fill) e.style.fill = fill; venomGoo.append(e); return e }
+
+function armVenom() {
+  if (venomTimer || venomRun || calm || !idleAnim || !quiet() || open || welcome || farewell) return
+  venomTimer = setTimeout(() => playIdle(), IDLE_MS)
+}
+function stopVenom() { clearTimeout(venomTimer); venomTimer = 0; eyesOff(); if (venomRun) venomRun.stop = true }
+
+// One smooth curve through the points (Catmull-Rom); u runs 0..1 across all of them.
+function spline(P, u) {
+  const n = P.length - 1, f = clamp01(u) * n, i = Math.min(n - 1, Math.floor(f)), t = f - i
+  const [p0, p1, p2, p3] = [P[Math.max(0, i - 1)], P[i], P[i + 1], P[Math.min(n, i + 2)]]
+  const c = (a, b, c2, d) => 0.5 * (2 * b + (-a + c2) * t + (2 * a - 5 * b + 4 * c2 - d) * t * t + (-a + 3 * b - 3 * c2 + d) * t ** 3)
+  return { x: c(p0.x, p1.x, p2.x, p3.x), y: c(p0.y, p1.y, p2.y, p3.y) }
+}
+
+// A tapered strip along `pts`, as a closed path (width w0 at the start, w1 at the end).
+function ribbon(pts, w0, w1) {
+  const L = [], R = []
+  pts.forEach((p, i) => {
+    const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)]
+    const d = Math.hypot(b.x - a.x, b.y - a.y) || 1, w = (w0 + (w1 - w0) * i / (pts.length - 1)) / 2
+    L.push(`${(p.x - (b.y - a.y) / d * w).toFixed(1)} ${(p.y + (b.x - a.x) / d * w).toFixed(1)}`)
+    R.push(`${(p.x + (b.y - a.y) / d * w).toFixed(1)} ${(p.y - (b.x - a.x) / d * w).toFixed(1)}`)
+  })
+  return `M${L.join('L')}L${R.reverse().join('L')}Z`
+}
+
+// Each scene gets the stage (pill rect r, its centre cx, window size) and returns { END, frame(t), nodes }: the
+// seconds it lasts, a function that draws time t, and everything it added so it can be cleaned up.
+const SCENES = {
+  // The agents try to escape; black tendrils with clawed hands grab each one and drag it back into the notch.
+  venom({ W, H, r, cx, rnd }) {
+    const agents = Object.keys(GLYPH), N = agents.length, nodes = []
+    const keep = x => Math.min(W - 24, Math.max(24, x))
+    const crew = agents.map((a, i) => {
+      const sprite = icon(a); sprite.classList.add('vlogo'); venomLayer.insertBefore(sprite, venomSvg)
+      const arm = svgEl('path'); nodes.push(sprite, arm)
+      const side = i % 2 ? 1 : -1, A = { x: r.left + r.width * (0.2 + 0.15 * i), y: r.bottom - 10 }   // slips out of the pill here
+      const G = { x: keep(cx + (i - (N - 1) / 2) * 64 + rnd(-10, 10)), y: r.bottom + rnd(36, 84) }    // and is caught here
+      // out of the pill, a wide sweep to one side, then in to where it's caught: one flowing path that never doubles back
+      const way = [A, { x: A.x + side * 24, y: r.bottom + 14 }, { x: keep((G.x + cx + side * 150) / 2), y: r.bottom + rnd(44, 74) }, G]
+      return { sprite, arm, A, G, way, t0: 0.1 + 0.16 * i, tg: 1.9 + 0.2 * i, done: false, ph: rnd(0, 6) }
+    })
+    const TRAVEL = 1.5, END = 1.9 + 0.2 * (N - 1) + 0.25 + 0.4 + 0.3
+    const where = (c, t) => { // the escapee's position, tilt, scale and opacity at time t
+      const run = t - c.t0
+      if (run < 0) return { p: c.A, rot: 0, sc: 0, op: 0 }
+      const u = 1 - (1 - clamp01(run / TRAVEL)) ** 1.5, loose = t < c.tg ? 1 : 0
+      let p = spline(c.way, u)
+      p = { x: p.x, y: p.y + Math.sin(u * 9 + c.ph) * 5 * (1 - u) * loose } // a scurrying weave
+      const pull = clamp01((t - c.tg - 0.25) / 0.4)
+      if (pull > 0) p = mix(c.G, c.A, ease(pull) ** 1.5)
+      return { p, rot: Math.sin(t * 8 + c.ph) * 7 * loose * (1 - u * 0.6), sc: ease(clamp01(run / 0.25)) * (1 - 0.1 * ease(clamp01((t - c.tg) / 0.25))) * (1 - 0.75 * pull), op: pull > 0.8 ? 1 - (pull - 0.8) / 0.2 : 1 }
+    }
+    const frame = t => {
+      for (const c of crew) {
+        const s = where(c, t)
+        c.sprite.style.transform = `translate3d(${s.p.x - 11}px, ${s.p.y - 11}px, 0) rotate(${s.rot}deg) scale(${s.sc})`
+        c.sprite.style.opacity = s.op
+        // the tendril: reaches out to its escapee, closes its fingers round it, and drags it home
+        const reach = clamp01((t - (c.tg - 0.5)) / 0.5), pull = clamp01((t - c.tg - 0.25) / 0.4)
+        if (reach <= 0 || pull >= 1) {
+          c.arm.setAttribute('d', '')
+          if (pull >= 1 && !c.done) { c.done = true; anim(island, [{ scale: 1 }, { scale: 1.04 }, { scale: 0.99 }, { scale: 1 }], { duration: 380 }) }
+          continue
+        }
+        const root = c.A, tip = reach < 1 ? mix(root, s.p, easeOut(reach)) : s.p
+        const dx = tip.x - root.x, dy = tip.y - root.y, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len
+        const amp = Math.min(20, len * 0.22) * (reach < 1 ? 1 : 0.5), ph = t * 6 + c.ph
+        const c1 = { x: root.x + dx * 0.33 + nx * amp * Math.sin(ph), y: root.y + dy * 0.33 + ny * amp * Math.sin(ph) }
+        const c2 = { x: root.x + dx * 0.66 - nx * amp * Math.sin(ph + 1.9), y: root.y + dy * 0.66 - ny * amp * Math.sin(ph + 1.9) }
+        const bez = u => { const v = 1 - u; return { x: v ** 3 * root.x + 3 * v * v * u * c1.x + 3 * v * u * u * c2.x + u ** 3 * tip.x, y: v ** 3 * root.y + 3 * v * v * u * c1.y + 3 * v * u * u * c2.y + u ** 3 * tip.y } }
+        const pts = Array.from({ length: 13 }, (_, i) => bez(i / 12))
+        const a = pts[11], th = Math.atan2(tip.y - a.y, tip.x - a.x)
+        const open = 1 - easeOut(clamp01((t - c.tg) / 0.25)), curl = 0.25 + 0.9 * (1 - open)
+        let d = ribbon(pts, 8, 4) + `M${tip.x - 4.8} ${tip.y}a4.8 4.8 0 1 0 9.6 0a4.8 4.8 0 1 0 -9.6 0Z` // the arm, and a palm for the fingers
+        for (const k of [-1.5, -0.5, 0.5, 1.5]) { // four fingers: fanned open while reaching, closed round the logo on the grab
+          const ang0 = th + k * (0.8 * open + 0.15), fin = [{ x: tip.x - Math.cos(th) * 2, y: tip.y - Math.sin(th) * 2 }]
+          for (let j = 1; j <= 5; j++) { const ang = ang0 - Math.sign(k) * curl * (j / 5) * 1.4; fin.push({ x: fin[j - 1].x + Math.cos(ang) * 3.8, y: fin[j - 1].y + Math.sin(ang) * 3.8 }) }
+          d += ribbon(fin, 4.6, 1.8)
+        }
+        c.arm.setAttribute('d', d)
+      }
+    }
+    return { END, frame, nodes, finish: () => anim(island, [{ scale: 1 }, { scale: 1.06 }, { scale: 0.985 }, { scale: 1 }], { duration: 480 }) }
+  },
+
+  // Pac-Man runs along under the notch and eats the agents' dots; they pop back and hurry home.
+  pacman({ r, cx }) {
+    const agents = Object.keys(GLYPH), y = r.bottom + 20, xL = cx - 150, xR = cx + 174, R = 9
+    const RUN0 = 0.45, RUN1 = 2.0, END = 3.55
+    const pac = svgEl('path', '#FFD60A'), nodes = [pac]
+    const pel = agents.map((a, i) => {
+      const dot = svgEl('circle', DOT_COLOR[a]); dot.setAttribute('r', 4.6); nodes.push(dot)
+      const x = cx + (i - (agents.length - 1) / 2) * 52, A = { x: r.left + r.width * (0.2 + 0.15 * i), y: r.bottom - 10 }
+      return { dot, x, A, i, eatenAt: RUN0 + (x - 3 - xL) / (xR - xL) * (RUN1 - RUN0), back: 2.15 + 0.12 * i, home: 2.85 + 0.1 * i }
+    })
+    let gulped = false
+    const frame = t => {
+      const px = xL + (xR - xL) * clamp01((t - RUN0) / (RUN1 - RUN0)), grow = ease(clamp01(t / 0.3)) * (1 - ease(clamp01((t - RUN1 - 0.05) / 0.2)))
+      const m = 0.12 + 0.5 * Math.abs(Math.sin(t * 16)) * (t > RUN0 && t < RUN1 ? 1 : 0.2), k = R * grow
+      pac.setAttribute('d', k < 0.5 ? '' : `M${px} ${y}L${px + k * Math.cos(m)} ${y - k * Math.sin(m)}A${k} ${k} 0 1 0 ${px + k * Math.cos(m)} ${y + k * Math.sin(m)}Z`)
+      for (const p of pel) {
+        let pos = { x: p.x, y }, sc = easeOut(clamp01((t - 0.05 * p.i) / 0.25))
+        if (t >= p.eatenAt && t < p.back) sc = 0                                   // eaten
+        else if (t >= p.back) { sc = 1 + 0.25 * Math.sin(clamp01((t - p.back) / 0.25) * Math.PI) * ease(clamp01((t - p.back) / 0.25)); if (t >= p.home) { const h = clamp01((t - p.home) / 0.45); pos = mix(pos, p.A, ease(h)); sc *= 1 - ease(h) } }
+        p.dot.setAttribute('cx', pos.x); p.dot.setAttribute('cy', pos.y); p.dot.setAttribute('r', 4.6 * sc)
+      }
+      if (!gulped && t >= pel.at(-1).eatenAt) { gulped = true; anim(island, [{ scale: 1 }, { scale: 1.05 }, { scale: 0.99 }, { scale: 1 }], { duration: 380 }) } // the last gulp
+    }
+    return { END, frame, nodes }
+  },
+
+  // The agents' dots hop out of the notch and juggle (a five-ball cascade), then drop back in.
+  juggle({ r, cx }) {
+    const agents = Object.keys(GLYPH), N = agents.length, nodes = []
+    const hand = [{ x: cx - 38, y: r.bottom + 26 }, { x: cx + 38, y: r.bottom + 26 }], APEX = 42, B = 0.15, T = N * B, TSTOP = 2.3
+    const balls = agents.map((a, i) => {
+      const c = svgEl('circle', DOT_COLOR[a]); c.setAttribute("r", 5.5); nodes.push(c)
+      const t0 = 0.3 + i * B, kmax = Math.max(0, Math.ceil((TSTOP - t0) / T) - 1)
+      return { c, i, t0, kmax, A: { x: r.left + r.width * (0.2 + 0.15 * i), y: r.bottom - 10 }, landing: t0 + (kmax + 1) * T }
+    })
+    const END = Math.max(...balls.map(b => b.landing)) + 0.5
+    const frame = t => {
+      for (const b of balls) {
+        let p, sc = 1
+        if (t < b.t0) { const u = ease(clamp01((t - 0.04 * b.i) / (b.t0 - 0.04 * b.i))); p = mix(b.A, hand[b.i % 2], u); sc = ease(clamp01((t - 0.04 * b.i) / 0.2)) } // hops out into its hand
+        else {
+          const k = Math.min(Math.floor((t - b.t0) / T), b.kmax), n = b.i + k * N, u = clamp01((t - b.t0 - k * T) / T), from = hand[n % 2], to = hand[(n + 1) % 2]
+          p = { x: from.x + (to.x - from.x) * u, y: from.y - 4 * APEX * u * (1 - u) } // a throw: thrown from one hand, caught by the other
+          if (t > b.landing) { const h = clamp01((t - b.landing) / 0.4); p = mix(to, b.A, ease(h)); sc = 1 - 0.8 * ease(h) } // and home
+        }
+        b.c.setAttribute('cx', p.x); b.c.setAttribute('cy', p.y); b.c.setAttribute("r", 5.5 * sc)
+      }
+    }
+    return { END, frame, nodes }
+  },
+}
+
+function playIdle(now = false, kind) { // now: you asked for it (Ctrl+Alt+V), so skip the idle and quiet checks
+  venomTimer = 0
+  if (venomRun || calm || open || welcome || farewell || view !== 'list' || !now && (!idleAnim || !quiet())) return
+  eyesOff()
+  const names = Object.keys(SCENES)
+  kind ||= (idleLast = names.filter(n => n !== idleLast)[Math.floor(Math.random() * (names.length - 1))])
+  const W = innerWidth, H = innerHeight, r = island.getBoundingClientRect()
+  venomSvg.setAttribute('viewBox', `0 0 ${W} ${H}`)
+  const scene = SCENES[kind]({ W, H, r, cx: r.left + r.width / 2, rnd: (a, b) => a + Math.random() * (b - a) })
+  const t0 = performance.now(), job = venomRun = { stop: false, raf: 0 }
+  venomLayer.style.display = 'block'
+  const end = () => {
+    cancelAnimationFrame(job.raf)
+    scene.nodes.forEach(n => n.remove())
+    venomLayer.style.display = 'none'; venomLayer.style.opacity = ''
+    venomRun = null
+    clearTimeout(venomTimer); venomTimer = 0
+    if (!job.stop) venomTimer = setTimeout(() => playIdle(), REPEAT_MS)
+  }
+  const frame = now => {
+    const t = (now - t0) / 1000
+    if (job.stop) { anim(venomLayer, [{ opacity: 1 }, { opacity: 0 }], { duration: 160, fill: 'forwards' }); return void setTimeout(end, 170) }
+    scene.frame(t)
+    if (t >= scene.END) { scene.finish?.(); return end() }
+    job.raf = requestAnimationFrame(frame)
+  }
+  job.raf = requestAnimationFrame(frame)
+}
+notch.onVenom(() => { // Ctrl+Alt+V: play the next scene; press again for the one after
+  clearTimeout(venomTimer); venomTimer = 0
+  playIdle(true, Object.keys(SCENES)[idleCycle++ % Object.keys(SCENES).length])
+})
+
+// Eyes: while the notch is closed and quiet, two eyes open in the pill when your cursor lingers close to it, follow it,
+// blink now and then, and close when you move on. Hovering the notch itself still opens it as usual.
+const eyes = document.getElementById('eyes'), pupils = eyes.querySelectorAll('b')
+let eyesTimer = 0, eyesWait = 0, blinkTimer = 0, eyesOn = false, cursor = { x: 0, y: 0 }
+function eyesOff() {
+  clearTimeout(eyesTimer); clearTimeout(eyesWait); clearTimeout(blinkTimer); eyesWait = 0
+  if (eyesOn) { eyesOn = false; island.classList.remove('eyed') }
+}
+function blink() {
+  blinkTimer = setTimeout(() => { anim(eyes, [{ scale: '1 1' }, { scale: '1 0.1' }, { scale: '1 1' }], { duration: 170 }); blink() }, 2200 + Math.random() * 2800)
+}
+document.addEventListener('mousemove', e => {
+  cursor = { x: e.clientX, y: e.clientY }
+  if (calm || !idleAnim || !quiet() || open || venomRun || welcome || farewell || view !== 'list' || island.matches(':hover')) return eyesOff()
+  const r = island.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2), dist = Math.hypot(dx, dy)
+  if (dist > 150) { if (eyesOn || eyesWait) { clearTimeout(eyesTimer); eyesTimer = setTimeout(eyesOff, 400) } return }
+  clearTimeout(eyesTimer); eyesTimer = setTimeout(eyesOff, 1500) // closes when the cursor stops or leaves
+  if (!eyesOn && !eyesWait) eyesWait = setTimeout(() => { // only once it has lingered
+    eyesWait = 0
+    const rr = island.getBoundingClientRect()
+    if (!quiet() || open || venomRun || Math.hypot(cursor.x - (rr.left + rr.width / 2), cursor.y - (rr.top + rr.height / 2)) > 150) return
+    eyesOn = true; island.classList.add('eyed'); clearTimeout(blinkTimer); blink()
+  }, 700)
+  if (eyesOn) pupils.forEach(p => {
+    const k = Math.min(1, dist / 60)
+    p.style.setProperty('--px', (dx / (dist || 1)) * 3 * k + 'px'); p.style.setProperty('--py', (dy / (dist || 1)) * 4.5 * k + 'px')
+  })
+})
+
+// Moods: the notch reacts to what happens. Quick one-shots, and one slow timer only while a request is waiting.
+function react(kind) {
+  if (calm || !idleAnim || open || venomRun) return
+  if (kind === 'happy') anim(island, [{ scale: '1 1' }, { scale: '1.08 0.88' }, { scale: '0.95 1.14' }, { scale: '1.02 0.98' }, { scale: '1 1' }], { duration: 640 }) // everything's done: a happy squish
+  if (kind === 'grumpy') anim(island, [-4, 4, -3, 3, -1, 0].map(x => ({ translate: `calc(-50% + ${x}px) 0` })), { duration: 440, easing: 'ease-in-out' }) // something stopped: a shake
+  if (kind === 'nudge') anim(island, [0, -4, 4, -3, 0].map(d => ({ rotate: d + 'deg' })), { duration: 700 }) // you've kept it waiting: ahem
+}
+let workingBefore = 0, nudgeTimer = 0
+function moods(list) {
+  const working = list.filter(s => s.state === 'working').length, waiting = list.some(s => s.state === 'waiting')
+  if (workingBefore > 0 && !working && !waiting && list.some(s => s.state === 'done')) setTimeout(() => react('happy'), PEEK_MS + 250) // after the "finished" peek
+  workingBefore = working
+  if (waiting && !nudgeTimer) nudgeTimer = setInterval(() => react('nudge'), 60e3)
+  else if (!waiting && nudgeTimer) { clearInterval(nudgeTimer); nudgeTimer = 0 }
+}
+
+// Updates: the notch downloads a new version quietly and installs it when you quit. Tell the user once it's ready.
+let upd = { status: 'idle', version: '', next: '', error: '', auto: true }
+let paintUpdate = null // set while Setup is open, so its Updates row follows along
+function updateCard() {
+  const c = el('div', 'update'), body = el('div', 'sbody'), go = el('button', 'mini', 'Restart now')
+  body.append(el('b', '', 'Update ready: ' + upd.next), el('span', 'sub', 'Installs when you quit'))
+  go.onclick = () => { notch.send('update-restart'); go.disabled = true; go.textContent = 'Restarting…' }
+  c.append(body, go)
+  return c
+}
+notch.onUpdate(s => {
+  const was = upd.status
+  upd = s
+  if (s.status === 'ready' && was !== 'ready') { chime(); showToast({ lead: () => badge(true), title: () => el('b', 'ok', 'Update ready'), right: 'v' + s.next, line: 'Installs when you quit, or restart now' }, 6000) }
+  paintUpdate?.()
+  if (view === 'list') render()
+})
+notch.invoke('update-state').then(s => { upd = s; paintUpdate?.() })
 
 // Welcome: a dot drops in, stretches into a pill, agents pop in one by one, then it settles.
 if (welcome) {
   setTimeout(() => island.classList.remove('intro'), 40) // a timer, not rAF: rAF can stall while hidden and the notch would stay invisible
   setTimeout(() => { if (welcome) { welcome = 'hello'; render() } }, 380)
-  setTimeout(() => { if (welcome) { welcome = null; render() } firstRun() }, 2700)
+  setTimeout(() => { if (welcome) { welcome = null; render() } firstRun(); armVenom() }, 2700)
 } else { island.classList.remove('intro'); setTimeout(firstRun, 300) }
 async function firstRun() { if (!(await notch.invoke('setup-status')).done) openSetup(true) }
 
 setInterval(() => { if (open) for (const t of document.querySelectorAll('.timer')) t.textContent = duration(+t.dataset.since) }, 1000) // only visible timers
 render()
+armVenom()
 notch.send('ready')
 </script>
 </body>
