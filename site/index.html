@@ -244,6 +244,8 @@ kbd,.key{font:700 12px var(--mono);background:#26262a;color:#e8e4d8;border-radiu
 .win.open .arrow{opacity:1}
 .win .arrow b{display:inline-block;font-size:40px;rotate:-30deg;translate:10px -14px;animation:bob 1s infinite}
 @keyframes bob{50%{translate:10px -24px}}
+.dlbox{position:fixed;left:50%;bottom:24px;translate:-50% 140%;z-index:120;background:var(--bone);color:#000;border-radius:20px;padding:16px 22px;width:min(460px,calc(100vw - 32px));font-size:15px;line-height:1.4;box-shadow:0 20px 60px #000c;transition:translate .7s var(--spring)}
+.dlbox.on{translate:-50% 0}.dlbox b:first-child{display:block;font-size:17px;margin-bottom:2px}
 footer{background:var(--bone);color:#0a0a0a;padding:0 24px 40px;overflow:hidden}
 footer .big{font:800 clamp(80px,22vw,340px)/.8 var(--display);letter-spacing:-.07em;text-align:center;white-space:nowrap;margin:40px 0 30px;user-select:none}
 footer .big span{display:inline-block;transition:transform .5s var(--spring)}
@@ -285,7 +287,7 @@ footer a{text-underline-offset:4px}
     </h1>
     <p class="sub">A Dynamic-Island-style notch for Windows. See what every coding agent is doing, which ones need you, and answer them without hunting for the terminal.</p>
     <div class="cta">
-      <a class="btn" href="https://github.com/KurianJose7586/notch/releases/latest">Download for Windows</a>
+      <a class="btn" data-dl href="https://github.com/KurianJose7586/notch/releases/latest">Download for Windows</a>
       <button class="btn ghost" id="tidy" type="button"><span id="tidyL">Make it chaos</span> <span><kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd data-k="g">G</kbd></span></button>
     </div>
   </div>
@@ -446,7 +448,7 @@ footer a{text-underline-offset:4px}
         <li>Switch on the agents you use in the setup sheet.</li>
         <li>Start an agent. It shows up in the notch.</li>
       </ol>
-      <a class="btn" href="https://github.com/KurianJose7586/notch/releases/latest">Download AgentNotch-Setup.exe</a>
+      <a class="btn" data-dl href="https://github.com/KurianJose7586/notch/releases/latest">Download for Windows</a>
       <p class="note">Not code-signed yet, so SmartScreen will make a face. →<br>By installing you agree to the <a href="legal.html#terms">Terms</a> and <a href="legal.html#privacy">Privacy Policy</a>.</p>
     </div>
     <div class="rv" style="--i:2">
@@ -465,10 +467,11 @@ footer a{text-underline-offset:4px}
   <div class="big" id="big" aria-label="One notch."></div>
   <div class="fl">
     <span>Made for people who run five agents at once.</span>
-    <span><a href="https://github.com/KurianJose7586/notch">GitHub</a> · <a href="https://github.com/KurianJose7586/notch/releases/download/v0.1.0/AgentNotch-promo.mp4">46s demo</a> · <a href="https://github.com/KurianJose7586/notch/releases/latest">Releases</a> · <a href="legal.html#terms">Terms</a> · <a href="legal.html#privacy">Privacy</a></span>
+    <span><a href="https://github.com/KurianJose7586/notch">GitHub</a> · <a href="https://github.com/KurianJose7586/notch/releases/download/v0.3.1/AgentNotch-promo.mp4">51s demo</a> · <a href="https://github.com/KurianJose7586/notch/releases/latest">Releases</a> · <a href="legal.html#terms">Terms</a> · <a href="legal.html#privacy">Privacy</a></span>
   </div>
 </footer>
 
+<div class="dlbox" id="dlbox" role="status"><b>Your download has started ✓</b>Open the file from your Downloads folder. If Windows says “protected your PC”, click <b>More info → Run anyway</b>.</div>
 <script>
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const still=matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -571,6 +574,14 @@ if(!still)$$('.bc').forEach(c=>{c.addEventListener('pointermove',e=>{const r=c.g
 
 /* in-page links: scroll ourselves so they work even where hash navigation is blocked (file previews) */
 document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#"]');const t=a&&$(a.getAttribute('href'));if(t){e.preventDefault();t.scrollIntoView({behavior:still?'auto':'smooth'});nt.classList.remove('open')}});
+
+/* one-click download: point the buttons straight at the latest installer (falls back to the releases page) */
+fetch('https://api.github.com/repos/KurianJose7586/notch/releases/latest').then(r=>r.json()).then(r=>{
+  const a=r.assets.find(a=>a.name.endsWith('.exe'));if(!a)return;
+  const meta=` <small style="opacity:.6;font-weight:500">${r.tag_name} · ${Math.round(a.size/1e6)} MB</small>`;
+  $$('[data-dl]').forEach(b=>{b.href=a.browser_download_url;b.innerHTML+=meta;
+    b.addEventListener('click',()=>{const d=$('#dlbox');d.classList.add('on');setTimeout(()=>d.classList.remove('on'),14000)})});
+}).catch(()=>{});
 
 /* smartscreen */
 $('#win .mi').onclick=()=>$('#win').classList.add('open');

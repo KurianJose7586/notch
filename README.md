@@ -6,9 +6,9 @@
 
 A Dynamic-Island-style notch for Windows that shows what every coding agent is doing, which ones need you, and lets you answer them without hunting for the terminal.
 
-[![Agent Notch demo](docs/demo.gif)](https://github.com/KurianJose7586/notch/releases/download/v0.2.0/AgentNotch-promo.mp4)
+[![Agent Notch demo](docs/demo.gif)](https://github.com/KurianJose7586/notch/releases/download/v0.3.1/AgentNotch-promo.mp4)
 
-[**Watch the 51s demo**](https://github.com/KurianJose7586/notch/releases/download/v0.2.0/AgentNotch-promo.mp4) · [**Download for Windows**](https://github.com/KurianJose7586/notch/releases/latest)
+[**Watch the 51s demo**](https://github.com/KurianJose7586/notch/releases/download/v0.3.1/AgentNotch-promo.mp4) · [**Download for Windows**](https://github.com/KurianJose7586/notch/releases/latest)
 
 </div>
 
