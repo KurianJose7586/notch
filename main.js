@@ -24,7 +24,7 @@ function goodbye(kind, then) {
   setTimeout(then, 3000)
 }
 const quit = () => { fs.writeFileSync(QUIT_MARK, ''); goodbye('quit', () => app.quit()) }
-const reload = () => goodbye('reload', () => { app.relaunch(); app.exit(0) }) // full restart: picks up code changes and replays the welcome
+const reload = () => goodbye('reload', () => { win = null; app.relaunch(); app.exit(0) }) // exit skips 'closed', so drop win first: late IPC and the 700ms tick must not touch a dead window // full restart: picks up code changes and replays the welcome
 
 // How long a permission waits in the notch before falling back to the agent's own prompt. Longer with a phone paired,
 // since you may have walked away; the hooks give up at 58s (hook.js, plugin.js), Claude and agy at 60s (setup.js).
@@ -356,7 +356,7 @@ ipcMain.handle('setup-done', () => { fs.writeFileSync(SETUP_DONE, ''); return tr
 ipcMain.handle('update-state', () => updates.state())
 ipcMain.handle('update-check', () => updates.check())
 ipcMain.handle('update-auto', (_, on) => updates.setAuto(!!on))
-ipcMain.on('update-restart', () => goodbye('reload', () => updates.restart())) // the goodbye animation, then install and relaunch
+ipcMain.on('update-restart', () => goodbye('reload', () => { win = null; updates.restart() })) // the goodbye animation, then install and relaunch
 ipcMain.handle('phone-info', () => phone.info())
 ipcMain.handle('phone-set', (_, on) => { phone.set(!!on); return phone.info() })
 ipcMain.handle('phone-renew', () => { phone.renew(); return phone.info() })
