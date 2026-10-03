@@ -830,12 +830,18 @@ function startRename(s, title) {
 // Setup: connect agents (each switch adds or removes the notch's hook in that agent's own config), start with Windows.
 async function openSetup(first) {
   const st = await notch.invoke('setup-status')
+  let firstErr = ''
+  if (first) for (const a of Object.keys(GLYPH)) { // new users forgetting a switch means agents that never show up: start with every installed one on
+    if (!st.agents[a].installed || st.agents[a].connected) continue
+    const res = await notch.invoke('setup-connect', a, true)
+    if (res.error) firstErr = res.error; else st.agents[a] = res.agents[a]
+  }
   view = 'setup'
   const head = el('div', 'head')
   if (!first) { const back = el('button', 'round'); back.innerHTML = BACK_ICON; back.title = 'Back (Esc)'; back.onclick = () => closeSetup(); head.append(back) }
   head.append(el('h1', '', first ? 'Welcome to Notch' : 'Setup'), el('span', 'summary', ''))
-  const intro = el('div', 'intro', 'Notch follows your agents through a small hook in each one\'s own settings. Turn on the ones you use; you can change this any time from Setup.')
-  const err = el('div', 'err')
+  const intro = el('div', 'intro', 'Notch follows your agents through a small hook in each one\'s own settings. The ones it found are already on; turn off any you don\'t want. Restart a running agent so it picks the hook up.')
+  const err = el('div', 'err', firstErr)
 
   const agents = el('div', 'list')
   for (const a of Object.keys(GLYPH)) {

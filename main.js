@@ -206,6 +206,8 @@ async function handleEvent(agent, event, body, url, res) {
   if (event === 'StatusLine') return res.end(statusText(s)) // Claude prints this in its own status line
   if (s && s.auto && agent === 'agy' && event === 'PreToolUse') { res.end(answer(agent, 'ask')); return pressWhenPrompted(s) } // any agy tool can prompt
   if (!s || !isGate(agent, event, p)) return res.end('')
+  // The Antigravity IDE has no console to press Enter in, so the notch can't answer its prompt: leave it to the IDE.
+  if (agent === 'agy' && s.app) return res.end(answer(agent, 'ask'))
   if (s.auto) return res.end(answer(agent, 'allow'))
   // Already looking at that agent (or another request is open)? Let its own prompt handle it.
   if ((s.hwnd && s.hwnd === foreground) || held[s.key]) return res.end(answer(agent, 'ask'))
@@ -268,10 +270,10 @@ function grid(only) { // tile agent windows (all, or just `only`) on the monitor
 
 function grabFocus() { // the notch is normally click-through and unfocusable; typing needs both off
   keyboard = true
-  win.setIgnoreMouseEvents(false)
-  win.setFocusable(true)
-  win.setSkipTaskbar(true) // setFocusable resets window styles on Windows, which brings back a taskbar button
-  win.focus()
+  win?.setIgnoreMouseEvents(false)
+  win?.setFocusable(true)
+  win?.setSkipTaskbar(true) // setFocusable resets window styles on Windows, which brings back a taskbar button
+  win?.focus()
 }
 
 function toggleKeyboard() { // Ctrl+Alt+N: open the panel with keyboard focus
@@ -308,11 +310,11 @@ async function launch({ agents, dir, prompt = '', prompts = null, auto = false, 
 
 ipcMain.on('keyboard-closed', () => {
   keyboard = false
-  win.setFocusable(false)
-  win.setSkipTaskbar(true)
-  win.setIgnoreMouseEvents(true, { forward: true })
+  win?.setFocusable(false)
+  win?.setSkipTaskbar(true)
+  win?.setIgnoreMouseEvents(true, { forward: true })
 })
-ipcMain.on('mouse', (_, over) => keyboard || win.setIgnoreMouseEvents(!over, { forward: true }))
+ipcMain.on('mouse', (_, over) => keyboard || win?.setIgnoreMouseEvents(!over, { forward: true }))
 ipcMain.on('focus', (_, key) => focus(key))
 ipcMain.on('decide', (_, key, choice) => decide(key, choice))
 ipcMain.on('auto', (_, key, on) => {
@@ -405,6 +407,7 @@ app.whenReady().then(() => {
   win.setAlwaysOnTop(true, 'screen-saver')
   win.setIgnoreMouseEvents(true, { forward: true })
   win.loadFile('index.html')
+  win.on('closed', () => { win = null }) // quit/update destroys it; late IPC from the page must not touch a dead window
 
   const keys = { 'Control+Alt+N': toggleKeyboard, 'Control+Alt+J': jumpNext, 'Control+Alt+G': grid, 'Control+Alt+R': reload, 'Control+Alt+V': () => win?.webContents.send('venom'), 'Control+Alt+Z': () => win?.webContents.send('sleep'), 'Control+Alt+Q': quit }
   for (const [accel, fn] of Object.entries(keys)) if (!globalShortcut.register(accel, fn)) console.warn('shortcut taken: ' + accel)
