@@ -386,8 +386,10 @@ const savePosition = () => { const d = displayAt(anchorX); fs.writeFile(POSITION
 ipcMain.on('drag-start', () => { grab = screen.getCursorScreenPoint().x - anchorX })
 ipcMain.on('drag-move', () => { const p = screen.getCursorScreenPoint(); anchorX = p.x - grab; place(screen.getDisplayNearestPoint(p)) }) // follows the cursor, onto other monitors too
 ipcMain.on('drag-end', () => { anchorX = position.snapAnchor(anchorX, displayAt(anchorX).bounds); place(); savePosition() })
-ipcMain.on('nudge', (_, dx) => { anchorX += Math.sign(dx) * 40; place(); savePosition() })
-ipcMain.on('recenter', () => { anchorX = position.centre(displayAt(anchorX).bounds); place(); savePosition() })
+const nudge = dx => { anchorX += Math.sign(dx) * 40; place(); savePosition() }
+const recenter = () => { anchorX = position.centre(displayAt(anchorX).bounds); place(); savePosition() }
+ipcMain.on('nudge', (_, dx) => nudge(dx))
+ipcMain.on('recenter', recenter)
 
 function size(full) { fullNow = full; place() }
 ipcMain.on('size', (_, full) => size(!!full))
@@ -409,7 +411,8 @@ app.whenReady().then(() => {
   win.loadFile('index.html')
   win.on('closed', () => { win = null }) // quit/update destroys it; late IPC from the page must not touch a dead window
 
-  const keys = { 'Control+Alt+N': toggleKeyboard, 'Control+Alt+J': jumpNext, 'Control+Alt+G': grid, 'Control+Alt+R': reload, 'Control+Alt+V': () => win?.webContents.send('venom'), 'Control+Alt+Z': () => win?.webContents.send('sleep'), 'Control+Alt+Q': quit }
+  const keys = { 'Control+Alt+N': toggleKeyboard, 'Control+Alt+J': jumpNext, 'Control+Alt+G': grid, 'Control+Alt+R': reload, 'Control+Alt+V': () => win?.webContents.send('venom'), 'Control+Alt+Z': () => win?.webContents.send('sleep'), 'Control+Alt+Q': quit,
+    'Control+Alt+Shift+Left': () => nudge(-1), 'Control+Alt+Shift+Right': () => nudge(1), 'Control+Alt+Shift+Home': recenter } // not plain Ctrl+Alt+arrows: Intel graphics drivers use those to rotate the screen
   for (const [accel, fn] of Object.entries(keys)) if (!globalShortcut.register(accel, fn)) console.warn('shortcut taken: ' + accel)
   screen.on('display-removed', () => place()); screen.on('display-metrics-changed', () => place()) // a monitor came or went: stay on screen
 })
