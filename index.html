@@ -28,10 +28,10 @@
   #island {
     position: absolute; top: 8px; left: 50%; translate: -50% 0;
     width: 150px; height: 36px; border-radius: 18px; overflow: hidden;
-    background: #000;
+    background: #000; transform-origin: 50% 0; /* hangs from the screen's top edge: it scales and swings from there */
     box-shadow: 0 0 0 .5px rgba(255,255,255,.09) inset, 0 12px 32px rgba(0,0,0,.32), 0 2px 6px rgba(0,0,0,.2);
     transition: width .62s var(--spring), height .62s var(--spring), border-radius .5s var(--ease), box-shadow .4s ease,
-                scale .45s var(--spring), transform .9s var(--spring), opacity .35s ease;
+                scale .45s var(--spring), rotate .6s var(--spring), transform .9s var(--spring), opacity .35s ease;
   }
   #island.intro { opacity: 0; transform: translateY(-72px) scale(.45); }
   #pill.bye { padding: 0 18px 0 7px; gap: 12px; }
@@ -373,6 +373,8 @@
   .sleepz { font: italic 700 13px/1 "SF Pro Display", "Segoe UI Variable Display", sans-serif; letter-spacing: .1em; color: var(--secondary); }
   #pill, .head { cursor: grab; }
   #island.dragging, #island.dragging * { cursor: grabbing !important; }
+  /* Picked up: it lifts a little, its shadow deepens and a faint blue edge shows; the swing is set from the pointer's speed */
+  #island.dragging, #island.dragging:not(.open):hover { scale: 1.05; box-shadow: 0 0 0 1px rgba(10,132,255,.4) inset, 0 22px 54px rgba(0,0,0,.5), 0 4px 10px rgba(0,0,0,.25); }
   #venom { position: fixed; inset: 0; z-index: 1; display: none; pointer-events: none; }
   #venom svg { position: absolute; inset: 0; width: 100%; height: 100%; }
   #venom path, #venom rect { fill: #000; }
@@ -759,7 +761,7 @@ function renderPanel() {
   const add = el('button', 'round'); add.innerHTML = PLUS_ICON; add.title = 'New agent'
   add.onclick = () => openLauncher()
   const more = el('button', 'round'); more.innerHTML = MORE_ICON; more.title = 'More'
-  more.onclick = e => { e.stopPropagation(); menuOpen = !menuOpen; renderPanel() }
+  more.onclick = e => { e.stopPropagation(); setMenu(!menuOpen) }
   const summary = [n('waiting') && `${n('waiting')} need you`, n('error') && `${n('error')} stopped`, n('working') && `${n('working')} working`, n('done') && `${n('done')} done`].filter(Boolean).join(' · ')
   head.append(el('h1', '', 'Agents'), el('span', 'summary', summary), add, more)
 
@@ -798,7 +800,7 @@ function renderPanel() {
   const menu = el('div', 'menu')
   const item = (label, keys, fn, cls = '') => {
     const b = el('button', cls, label); if (keys) b.append(el('kbd', '', keys))
-    b.onclick = e => { e.stopPropagation(); menuOpen = false; renderPanel(); fn() }
+    b.onclick = e => { e.stopPropagation(); setMenu(false); fn() }
     return b
   }
   menu.append(
@@ -818,9 +820,12 @@ function renderPanel() {
     extra.push(k)
   }
   const lc = limitsCard()
+  panel.style.minHeight = menuOpen ? '340px' : '' // a short list still has to fit the menu, which hangs below the header
   panel.replaceChildren(head, ...(lc ? [lc] : []), ...(upd.status === 'ready' ? [updateCard()] : []), ...content, foot, ...extra, ...(menuOpen ? [menu] : []))
 }
-panel.addEventListener('click', e => { if (menuOpen && !e.target.closest('.menu')) { menuOpen = false; renderPanel() } }) // click anywhere else closes the menu
+function setMenu(v) { menuOpen = v; renderPanel(); layout() }
+panel.addEventListener('click', e => { if (menuOpen && !e.target.closest('.menu')) setMenu(false) }) // click anywhere else closes the menu
+panel.addEventListener('scroll', () => { if (menuOpen) setMenu(false) }) // it hangs off the header, so it can't follow the list
 
 function startRename(s, title) {
   if (editing) return
@@ -1149,7 +1154,7 @@ function setOpen(v) {
   clearTimeout(hoverTimer)
   if (v === open) return
   open = v
-  if (!v) menuOpen = false
+  if (!v) { menuOpen = false; panel.style.minHeight = '' }
   clearTimeout(setOpen.shrink)
   if (v) notch.send('size', true) // grow the window before the panel animates out
   else setOpen.shrink = setTimeout(() => open || notch.send('size', false), 750) // shrink once the collapse has finished
@@ -1179,21 +1184,27 @@ island.addEventListener('mouseleave', () => {
 let drag = null, dragEnded = 0, dragRaf = 0
 island.addEventListener('pointerdown', e => {
   if (e.button !== 0 || farewell || welcome || !(e.target.closest('#pill, .head') || (e.target === panel && e.offsetY < 56)) || e.target.closest('button, input, textarea')) return // the pill, the header, or the strip of panel above it
-  drag = { x: e.clientX, moved: false }
+  drag = { x: e.clientX, sx: e.screenX, moved: false }
   island.setPointerCapture(e.pointerId)
 })
+let tiltTimer = 0
 island.addEventListener('pointermove', e => {
   if (!drag) return
   if (!drag.moved) {
     if (Math.abs(e.clientX - drag.x) < 5) return // a click, not a drag
     drag.moved = true; island.classList.add('dragging'); clearTimeout(hoverTimer); notch.send('drag-start')
   }
+  // It hangs from the top edge: moving sideways swings it the way a pendulum lags, and it settles when you stop
+  const swing = open ? 2 : 7 // the open panel is tall and the window only a little wider, so it swings less
+  island.style.rotate = Math.max(-swing, Math.min(swing, (e.screenX - drag.sx) * .6)) + 'deg'
+  drag.sx = e.screenX
+  clearTimeout(tiltTimer); tiltTimer = setTimeout(() => { island.style.rotate = '' }, 70)
   dragRaf ||= requestAnimationFrame(() => { dragRaf = 0; notch.send('drag-move') })
 })
 const endDrag = e => {
   if (!drag) return
   const moved = drag.moved
-  drag = null; island.classList.remove('dragging')
+  drag = null; island.classList.remove('dragging'); clearTimeout(tiltTimer); island.style.rotate = ''
   try { island.releasePointerCapture(e.pointerId) } catch {}
   if (!moved) return
   dragEnded = performance.now(); notch.send('drag-end'); notch.send('mouse', island.matches(':hover'))
@@ -1223,7 +1234,7 @@ document.addEventListener('keydown', e => {
   if (view === 'launch') { if (e.key === 'Escape') { e.preventDefault(); closeLauncher(false) } return }
   if (view === 'setup') { if (e.key === 'Escape') { e.preventDefault(); closeSetup(false) } return }
   if (view === 'help') { if (['Escape', 'Backspace', 'i', 'I', '?'].includes(e.key)) { e.preventDefault(); closeHelp() } return }
-  if (menuOpen && e.key === 'Escape') { e.preventDefault(); menuOpen = false; return renderPanel() }
+  if (menuOpen && e.key === 'Escape') { e.preventDefault(); return setMenu(false) }
   if (!keyboard || editing) return
   const s = ordered[sel]
   switch (e.key.toLowerCase()) {
