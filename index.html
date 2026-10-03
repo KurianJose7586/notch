@@ -208,14 +208,13 @@
   .name .meta.warn { color: var(--orange); } .name .meta.bad { color: #FF6961; }
 
   /* Usage limits card */
-  .limits { display: flex; gap: 16px; margin: 12px 0 0; padding: 10px 12px; border-radius: 14px; background: var(--fill); }
+  .limits { display: flex; align-items: center; gap: 18px; margin: 10px 0 0; padding: 7px 12px; border-radius: 12px; background: var(--fill); }
   .limits .who { flex: none; display: flex; align-items: center; }
-  .limits .who .icon { width: 24px; height: 24px; border-radius: 7px; }
-  .lim { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-  .lim .top { display: flex; justify-content: space-between; gap: 6px; font-size: 11.5px; color: var(--secondary); }
-  .lim .top b { color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .lim .when { color: var(--tertiary); font-size: 11px; }
-  .lim .track { flex: none; height: 5px; } /* .track grows along its row elsewhere; in this column that collapsed it */
+  .limits .who .icon { width: 20px; height: 20px; border-radius: 6px; }
+  .lim { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--secondary); }
+  .lim b { color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; min-width: 30px; text-align: right; }
+  .lim .when { color: var(--tertiary); font-size: 11px; white-space: nowrap; }
+  .lim .track { flex: 1; height: 4px; }
   .lim .track i { transition: none; }
   .lim.warn .track i { background: var(--orange); } .lim.bad .track i { background: var(--red); }
   .controls { display: flex; align-items: center; gap: 10px; }
@@ -260,10 +259,6 @@
   .keys kbd { font: 600 10px var(--mono); color: var(--secondary); background: rgba(255,255,255,.08); border-radius: 4px; padding: 1px 4px; }
 
   /* Rename */
-  .name .agent-sub { margin-left: 7px; color: var(--tertiary); font-size: 12px; font-weight: 500; }
-  .name .pen { margin-left: 6px; padding: 0 4px; border-radius: 5px; background: none; color: var(--tertiary); font-size: 12px; opacity: 0; transition: opacity .2s ease, color .15s ease, background .15s ease; }
-  .row:hover .name .pen { opacity: 1; }
-  .name .pen:hover { color: #fff; background: rgba(255,255,255,.1); }
   .name input { width: 230px; margin-left: -6px; padding: 1px 6px; border: 0; outline: 0; border-radius: 6px; font: inherit; color: #fff;
                 background: rgba(255,255,255,.1); box-shadow: 0 0 0 1.5px rgba(10,132,255,.75) inset; user-select: text; }
   .name input::placeholder { color: var(--tertiary); }
@@ -322,6 +317,18 @@
   .go kbd { font: 600 10px var(--mono); opacity: .6; margin-left: 7px; }
   .err { margin-top: 10px; padding: 8px 12px; border-radius: 10px; background: rgba(255,69,58,.14); color: #FF6961; font-size: 12px; }
   .err:empty { display: none; }
+
+  /* Quiet list: the AUTO switch shows when you hover, when it's on, or when the agent needs you; the rest lives in the ⋯ menu */
+  .controls .switch:not(.on) { opacity: 0; transition: opacity .2s ease, color .25s ease; }
+  .row:hover .controls .switch, .row.waiting .controls .switch, .row.sel .controls .switch { opacity: 1; }
+  .menu { position: absolute; top: 50px; right: 16px; z-index: 5; min-width: 232px; padding: 5px; border-radius: 14px; background: #2c2c2e;
+          box-shadow: 0 0 0 .5px rgba(255,255,255,.12) inset, 0 14px 36px rgba(0,0,0,.5); animation: rise .25s var(--ease) both; }
+  .menu button { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 8px 10px; border-radius: 9px; background: none; text-align: left; }
+  .menu button:hover { background: rgba(255,255,255,.08); }
+  .menu button.danger { color: #FF6961; }
+  .menu kbd { font: 600 10px var(--mono); color: var(--tertiary); }
+  .menu hr { border: 0; height: .5px; background: var(--sep); margin: 4px 6px; }
+  .foot .clear { color: var(--secondary); }
 
   button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
   .chip:focus-visible, .field:focus-visible, .folders button:focus-visible { outline-offset: -2px; }
@@ -396,8 +403,6 @@ const GLYPH = { // Claude + OpenCode: official marks (simple-icons). Antigravity
   copilot: '<svg viewBox="0 0 24 24"><path fill="#fff" d="M23.922 16.997C23.061 18.492 18.063 22.02 12 22.02 5.937 22.02.939 18.492.078 16.997A.641.641 0 0 1 0 16.741v-2.869a.883.883 0 0 1 .053-.22c.372-.935 1.347-2.292 2.605-2.656.167-.429.414-1.055.644-1.517a10.098 10.098 0 0 1-.052-1.086c0-1.331.282-2.499 1.132-3.368.397-.406.89-.717 1.474-.952C7.255 2.937 9.248 1.98 11.978 1.98c2.731 0 4.767.957 6.166 2.093.584.235 1.077.546 1.474.952.85.869 1.132 2.037 1.132 3.368 0 .368-.014.733-.052 1.086.23.462.477 1.088.644 1.517 1.258.364 2.233 1.721 2.605 2.656a.841.841 0 0 1 .053.22v2.869a.641.641 0 0 1-.078.256Zm-11.75-5.992h-.344a4.359 4.359 0 0 1-.355.508c-.77.947-1.918 1.492-3.508 1.492-1.725 0-2.989-.359-3.782-1.259a2.137 2.137 0 0 1-.085-.104L4 11.746v6.585c1.435.779 4.514 2.179 8 2.179 3.486 0 6.565-1.4 8-2.179v-6.585l-.098-.104s-.033.045-.085.104c-.793.9-2.057 1.259-3.782 1.259-1.59 0-2.738-.545-3.508-1.492a4.359 4.359 0 0 1-.355-.508Zm2.328 3.25c.549 0 1 .451 1 1v2c0 .549-.451 1-1 1-.549 0-1-.451-1-1v-2c0-.549.451-1 1-1Zm-5 0c.549 0 1 .451 1 1v2c0 .549-.451 1-1 1-.549 0-1-.451-1-1v-2c0-.549.451-1 1-1Zm3.313-6.185c.136 1.057.403 1.913.878 2.497.442.544 1.134.938 2.344.938 1.573 0 2.292-.337 2.657-.751.384-.435.558-1.15.558-2.361 0-1.14-.243-1.847-.705-2.319-.477-.488-1.319-.862-2.824-1.025-1.487-.161-2.192.138-2.533.529-.269.307-.437.808-.438 1.578v.021c0 .265.021.562.063.893Zm-1.626 0c.042-.331.063-.628.063-.894v-.02c-.001-.77-.169-1.271-.438-1.578-.341-.391-1.046-.69-2.533-.529-1.505.163-2.347.537-2.824 1.025-.462.472-.705 1.179-.705 2.319 0 1.211.175 1.926.558 2.361.365.414 1.084.751 2.657.751 1.21 0 1.902-.394 2.344-.938.475-.584.742-1.44.878-2.497Z"/></svg>',
 }
 const DOT = { copilot: '#8B5CF6', claude: '#D97757', agy: 'linear-gradient(180deg,#F9C22E,#3DBE6A 50%,#3B82F6)', opencode: '#EDE8E6', kilo: '#F8F675' }
-const GRID_ICON = '<svg viewBox="0 0 16 16" fill="#fff"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.5"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.5"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.5"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.5"/></svg>'
-const INFO_ICON = '<svg viewBox="0 0 16 16"><circle cx="8" cy="4" r="1.35" fill="#fff"/><path d="M8 7.2v5.4" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/></svg>'
 // Every shortcut, one place. [keys, what it does]; keys joined by + render as separate keycaps.
 const SHORTCUTS = [
   ['Anywhere', '', [
@@ -415,7 +420,8 @@ const SHORTCUTS = [
     ['Hover', 'Expand the notch'], ['Drag', 'Move it along the top (grab the pill or the header)'], ['Click', 'Open an agent\'s terminal'], ['Double-click', 'Rename an agent'], ['＋', 'New agent (on a project: in that folder)'],
   ]],
 ]
-const PLUS_ICON = '<svg viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>'
+const MORE_ICON = '<svg viewBox="0 0 16 16" fill="#fff"><circle cx="3" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="13" cy="8" r="1.4"/></svg>'
+const PLUS_ICON ='<svg viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>'
 const BACK_ICON = '<svg viewBox="0 0 16 16"><path d="M10 3 5 8l5 5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 const FOLDER_ICON = '<svg viewBox="0 0 16 16"><path d="M1.5 4.5a1.5 1.5 0 0 1 1.5-1.5h3l1.5 1.5H13a1.5 1.5 0 0 1 1.5 1.5v5.5A1.5 1.5 0 0 1 13 13H3a1.5 1.5 0 0 1-1.5-1.5z" fill="#64D2FF"/></svg>'
 const CHEV_ICON = '<svg class="chev" viewBox="0 0 16 16" style="width:12px;height:12px"><path d="M4 6l4 4 4-4" fill="none" stroke="rgba(235,235,245,.5)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
@@ -437,6 +443,7 @@ let view = 'list', launcher = null, browsing = false, editing = null // view: li
 let welcome = calm ? null : 'drop' // drop -> hello -> null
 let farewell = null // quit | reload -> dot, while the goodbye plays
 let sound = true
+let menuOpen = false // the ⋯ menu in the list's header
 let asleep = false // sleeping: a small dim zzz; quiet unless an agent needs you
 try { asleep = localStorage.getItem('asleep') === 'on' } catch {}
 try { sound = localStorage.getItem('sound') !== 'off' } catch {}
@@ -662,19 +669,18 @@ function row(s, index) {
   r.title = s.app ? `Open ${agentName(s)} app` : s.hwnd ? 'Open terminal' : 'No window (background session)'
   r.onclick = () => s.hwnd && notch.send('focus', s.key)
 
-  const body = el('div', 'body'), title = el('div', 'name', name(s)), pen = el('button', 'pen', '✎')
-  if (s.label) title.append(el('span', 'agent-sub', agentName(s)))
-  if (s.app) title.append(el('span', 'tag', APP_TAG[s.appName] || 'App'))
-  if (typeof s.context === 'number') title.append(Object.assign(el('span', 'meta' + (s.context >= 90 ? ' bad' : s.context >= 70 ? ' warn' : ''), s.context + '% context'), { title: 'How full this session\'s context window is' }))
-  pen.title = 'Rename (or double-click the name)'
-  pen.onclick = e => { e.stopPropagation(); startRename(s, title) }
+  const body = el('div', 'body'), title = el('div', 'name', name(s))
+  if (s.app) r.title += ` (${APP_TAG[s.appName] || 'App'})`
+  // Only what needs a look: context shows up once it's filling, and rename is a double-click (or R)
+  if (typeof s.context === 'number' && s.context >= 70) title.append(Object.assign(el('span', 'meta' + (s.context >= 90 ? ' bad' : ' warn'), s.context + '% context'), { title: 'How full this session\'s context window is' }))
+  title.title = 'Double-click to rename'
   title.ondblclick = e => { e.stopPropagation(); startRename(s, title) }
-  title.append(pen)
   body.append(title)
-  if (s.task) body.append(el('div', 'task', s.task))
-  if (s.action) body.append(el('div', 'action', s.action))
+  // One line: what it's doing while it works or has stopped, what you asked once it's finished
+  const line = s.state === 'done' || s.state === 'idle' ? s.task || s.action : s.action || s.task
+  if (line && !s.request) body.append(el('div', 'action', line)) // a pending request already says what it wants
   if (s.request) body.append(el('div', 'code', s.request.detail || s.request.title), requestActions(s, true))
-  if (s.todos && s.todos.total) {
+  if (s.state === 'working' && s.todos && s.todos.total) {
     const p = el('div', 'progress'), t = el('div', 'track'), fill = synced(el('i'), 2200)
     const pct = 100 * s.todos.done / s.todos.total, from = prevPct[s.key] ?? pct
     fill.style.width = pct + '%'
@@ -715,13 +721,14 @@ function limitsCard() {
   const card = el('div', 'limits'), who = el('div', 'who'); who.append(icon('claude')); card.append(who)
   const clock = s => new Date(s * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
   const day = s => new Date(s * 1000).toLocaleDateString([], { weekday: 'short' })
-  for (const [label, w, when] of [['5-hour', c.five, w => 'resets ' + clock(w.resets_at)], ['Weekly', c.week, w => 'resets ' + day(w.resets_at)]]) {
+  for (const [label, w, when] of [['5h', c.five, w => 'resets ' + clock(w.resets_at)], ['Week', c.week, w => 'resets ' + day(w.resets_at)]]) {
     if (!w) continue
     const pct = Math.round(w.used_percentage), lim = el('div', 'lim' + (pct >= 90 ? ' bad' : pct >= 70 ? ' warn' : ''))
-    const top = el('div', 'top'), track = el('div', 'track'), fill = el('i')
-    top.append(el('span', '', label), el('b', '', pct + '%'))
+    const track = el('div', 'track'), fill = el('i')
     fill.style.width = Math.min(100, pct) + '%'; track.append(fill)
-    lim.append(top, track, el('span', 'when', when(w)))
+    lim.title = label + ' limit, ' + when(w)
+    lim.append(el('span', '', label), track, el('b', '', pct + '%'))
+    if (pct >= 70) lim.append(el('span', 'when', when(w))) // the reset time only matters once you're close
     card.append(lim)
   }
   return card
@@ -748,15 +755,13 @@ function warnLimits() {
 function renderPanel() {
   if (view !== 'list' || editing) return // built once and updated in place, so typing survives agent updates
   const n = st => sessions.filter(s => s.state === st).length
-  const head = el('div', 'head'), tile = el('button', 'round')
-  tile.innerHTML = GRID_ICON; tile.title = 'Lay out all agent windows in a grid (Ctrl+Alt+G)'
+  const head = el('div', 'head')
   const add = el('button', 'round'); add.innerHTML = PLUS_ICON; add.title = 'New agent'
   add.onclick = () => openLauncher()
-  tile.onclick = () => { anim(tile.firstChild, [{ rotate: '0deg', scale: 1 }, { rotate: '90deg', scale: .8 }, { rotate: '180deg', scale: 1 }], { duration: 600, easing: SPRING }); notch.send('grid') }
+  const more = el('button', 'round'); more.innerHTML = MORE_ICON; more.title = 'More'
+  more.onclick = e => { e.stopPropagation(); menuOpen = !menuOpen; renderPanel() }
   const summary = [n('waiting') && `${n('waiting')} need you`, n('error') && `${n('error')} stopped`, n('working') && `${n('working')} working`, n('done') && `${n('done')} done`].filter(Boolean).join(' · ')
-  const info = el('button', 'round'); info.innerHTML = INFO_ICON; info.title = 'Shortcuts (I)'
-  info.onclick = () => openHelp()
-  head.append(el('h1', '', 'Agents'), el('span', 'summary', summary), info, add, tile)
+  head.append(el('h1', '', 'Agents'), el('span', 'summary', summary), add, more)
 
   const groups = {}
   for (const s of sessions) (groups[s.cwd || s.project] ||= []).push(s)
@@ -774,7 +779,8 @@ function renderPanel() {
     right.append(el('span', '', g.length > 1 ? plural(g.length, 'agent') : ''), plus)
     title.append(el('span', '', g[0].project), right)
     list.append(...g.map(s => row(s, i++)))
-    group.append(title, list)
+    group.append(...(sorted.length > 1 ? [title] : []), list) // a project heading only helps when there's more than one
+    if (sorted.length === 1) group.style.marginTop = '12px'
     return group
   })
   if (!sessions.length) {
@@ -784,18 +790,26 @@ function renderPanel() {
     content.push(e)
   }
 
-  const foot = el('div', 'foot'), clear = el('button', '', 'Clear finished'), snd = el('button', '', sound ? 'Sound on' : 'Sound off'), quit = el('button', '', 'Quit'), reload = el('button', '', 'Reload'), setupBtn = el('button', '', 'Setup'), sleepBtn = el('button', '', asleep ? 'Wake' : 'Sleep')
+  // The footer is just a count and, when there's something to clear, one button; everything else is in the ⋯ menu
+  const foot = el('div', 'foot'), clear = el('button', 'clear', 'Clear finished')
   clear.onclick = () => panel.querySelectorAll('.row.done').forEach((r, i) => setTimeout(() => leave(r, r.dataset.key), i * 45))
-  snd.onclick = () => { sound = !sound; try { localStorage.setItem('sound', sound ? 'on' : 'off') } catch {}; tick(); render() }
-  quit.onclick = () => notch.send('quit')
-  sleepBtn.onclick = () => { const next = !asleep; if (keyboard) closeKeyboard(); setAsleep(next); if (next) setOpen(false) }
-  sleepBtn.title = 'Put the notch to sleep: quiet until an agent needs you (Ctrl+Alt+Z)'
-  reload.onclick = () => notch.send('reload')
-  setupBtn.onclick = () => openSetup(false); setupBtn.title = 'Connect agents, start with Windows (,)'
-  quit.title = 'Quit (Ctrl+Alt+Q). Agents won\'t restart it until you run npm start'
-  reload.title = 'Restart the notch (Ctrl+Alt+R)'
-  foot.append(el('span', '', sessions.length ? `${plural(sessions.length, 'agent')} · ${plural(sorted.length, 'project')}` : ''),
-    ...(n('done') ? [clear] : []), snd, sleepBtn, setupBtn, reload, quit)
+  foot.append(el('span', '', sessions.length ? `${plural(sessions.length, 'agent')}${sorted.length > 1 ? ' · ' + plural(sorted.length, 'project') : ''}` : ''), ...(n('done') ? [clear] : []))
+
+  const menu = el('div', 'menu')
+  const item = (label, keys, fn, cls = '') => {
+    const b = el('button', cls, label); if (keys) b.append(el('kbd', '', keys))
+    b.onclick = e => { e.stopPropagation(); menuOpen = false; renderPanel(); fn() }
+    return b
+  }
+  menu.append(
+    item('Tile agent windows', 'Ctrl+Alt+G', () => notch.send('grid')),
+    item(sound ? 'Sound: on' : 'Sound: off', 'S', () => { sound = !sound; try { localStorage.setItem('sound', sound ? 'on' : 'off') } catch {}; tick(); render() }),
+    item(asleep ? 'Wake' : 'Sleep', 'Ctrl+Alt+Z', () => { const next = !asleep; if (keyboard) closeKeyboard(); setAsleep(next); if (next) setOpen(false) }),
+    item('Shortcuts', 'I', () => openHelp()),
+    item('Setup', ',', () => openSetup(false)),
+    el('hr'),
+    item('Reload', 'Ctrl+Alt+R', () => notch.send('reload')),
+    item('Quit', 'Ctrl+Alt+Q', () => notch.send('quit'), 'danger'))
 
   const extra = []
   if (keyboard) {
@@ -804,8 +818,9 @@ function renderPanel() {
     extra.push(k)
   }
   const lc = limitsCard()
-  panel.replaceChildren(head, ...(lc ? [lc] : []), ...(upd.status === 'ready' ? [updateCard()] : []), ...content, foot, ...extra)
+  panel.replaceChildren(head, ...(lc ? [lc] : []), ...(upd.status === 'ready' ? [updateCard()] : []), ...content, foot, ...extra, ...(menuOpen ? [menu] : []))
 }
+panel.addEventListener('click', e => { if (menuOpen && !e.target.closest('.menu')) { menuOpen = false; renderPanel() } }) // click anywhere else closes the menu
 
 function startRename(s, title) {
   if (editing) return
@@ -1134,6 +1149,7 @@ function setOpen(v) {
   clearTimeout(hoverTimer)
   if (v === open) return
   open = v
+  if (!v) menuOpen = false
   clearTimeout(setOpen.shrink)
   if (v) notch.send('size', true) // grow the window before the panel animates out
   else setOpen.shrink = setTimeout(() => open || notch.send('size', false), 750) // shrink once the collapse has finished
@@ -1207,6 +1223,7 @@ document.addEventListener('keydown', e => {
   if (view === 'launch') { if (e.key === 'Escape') { e.preventDefault(); closeLauncher(false) } return }
   if (view === 'setup') { if (e.key === 'Escape') { e.preventDefault(); closeSetup(false) } return }
   if (view === 'help') { if (['Escape', 'Backspace', 'i', 'I', '?'].includes(e.key)) { e.preventDefault(); closeHelp() } return }
+  if (menuOpen && e.key === 'Escape') { e.preventDefault(); menuOpen = false; return renderPanel() }
   if (!keyboard || editing) return
   const s = ordered[sel]
   switch (e.key.toLowerCase()) {
