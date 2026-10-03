@@ -1156,7 +1156,7 @@ function setOpen(v) {
   clearTimeout(hoverTimer)
   if (v === open) return
   open = v
-  if (!v) { menuOpen = false; panel.style.minHeight = '' }
+  if (!v) { menuOpen = false; panel.style.minHeight = ''; panel.querySelector('.menu')?.remove() } // collapsing mid-menu must not leave it behind for the next open
   clearTimeout(setOpen.shrink)
   if (v) notch.send('size', true) // grow the window before the panel animates out
   else setOpen.shrink = setTimeout(() => open || notch.send('size', false), 750) // shrink once the collapse has finished
