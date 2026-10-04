@@ -114,8 +114,10 @@ function set(agent, on, run) {
     const hooks = Object.fromEntries(COPILOT_EVENTS.map(ev => [ev, [{ type: 'command', command: `${run.bare} copilot ${ev}`, windows: `${run.bare} copilot ${ev}`, timeout: 30 }]]))
     return writeIfChanged(file, JSON.stringify({ hooks }, null, 2) + '\n')
   }
-  // OpenCode / Kilo: a one-line plugin that re-exports plugin.js, so updates to the app apply without reconnecting
-  writeIfChanged(file, `export { AgentNotch } from ${JSON.stringify(path.join(__dirname, 'plugin.js').replace(/\\/g, '/'))}\n`)
+  // OpenCode / Kilo: a one-line plugin that re-exports plugin.js, so updates to the app apply without reconnecting.
+  // OpenCode wants the default { id, server } module (newer versions refuse a bare named export, and exporting both
+  // breaks it); Kilo keeps the named export it has always loaded.
+  writeIfChanged(file, `export ${agent === 'kilo' ? '{ AgentNotch }' : '{ default }'} from ${JSON.stringify(path.join(__dirname, 'plugin.js').replace(/\\/g, '/'))}\n`)
 }
 
 // Claude usage limits on/off. Never touches a status line that isn't ours.

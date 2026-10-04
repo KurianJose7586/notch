@@ -21,7 +21,7 @@ function launch() { // the notch's single-instance lock makes duplicate launches
   spawn(cmd, args, { detached: true, stdio: 'ignore', env }).unref()
 }
 
-export const AgentNotch = async ({ directory }) => {
+const AgentNotch = async ({ directory }) => {
   const send = async (event, body, ms = 3000) => {
     for (;;) {
       try {
@@ -53,3 +53,8 @@ export const AgentNotch = async ({ directory }) => {
     },
   }
 }
+
+// OpenCode loads a plugin as a default-exported module { id, server } (newer versions reject a bare named export); the
+// named export stays for older versions.
+export { AgentNotch }
+export default { id: "agent-notch", server: AgentNotch }
