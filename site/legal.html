@@ -42,7 +42,7 @@ footer{max-width:760px;margin:0 auto;padding:0 24px 50px;font:400 13px "JetBrain
 <main>
   <h1>Terms &amp;<br>privacy.</h1>
   <div class="tl"><b>The short version:</b> Agent Notch runs on your PC, talks only to itself on <code>127.0.0.1</code>, and has no accounts, analytics or telemetry. It's free, it's provided as-is, and it edits your agents' config files only when you flip a switch.</div>
-  <p class="d">Last updated 30 September 2026</p>
+  <p class="d">Last updated 4 October 2026</p>
 
   <h2 id="terms">Terms of use</h2>
   <p>By downloading, installing or using Agent Notch ("the app") or this website, you agree to these terms. If you don't, please don't use them.</p>
@@ -75,11 +75,13 @@ footer{max-width:760px;margin:0 auto;padding:0 24px 50px;font:400 13px "JetBrain
   <h2 id="privacy">Privacy policy</h2>
   <h3>The app</h3>
   <ul>
-    <li><b>No data leaves your computer.</b> The app has no accounts, no analytics, no crash reporting, no ads and no auto-updater. I receive nothing from you.</li>
-    <li><b>Local-only communication.</b> Agent hooks report to the app over <code>http://127.0.0.1:47800</code>, a loopback address that other machines can't reach.</li>
+    <li><b>I collect nothing.</b> The app has no accounts, no analytics, no crash reporting and no ads, and I receive nothing from you.</li>
+    <li><b>Update checks.</b> Every few hours the app asks GitHub whether a newer release exists, and downloads it if so. GitHub sees your IP address and the app version, as with any download, under <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub's privacy statement</a>. You can turn this off in Setup. Nothing else leaves your computer.</li>
+    <li><b>Agent hooks stay local.</b> Agents report to the app over <code>http://127.0.0.1:47800</code>, a loopback address that other machines can't reach.</li>
+    <li><b>Phone approval (off until you turn it on).</b> If you enable it, the app serves a page on your local Wi-Fi so you can allow or deny requests from your phone. Anyone on that network who has the pairing link can use it, so keep the link private; "New link" in Setup replaces it. It never goes over the internet.</li>
     <li><b>What it reads.</b> Events from your agents: project name, session, task, tool being used, permission requests, progress, and (for Claude Code, via its status line) usage-limit percentages. It also reads your agents' config files to add or remove its hooks.</li>
     <li><b>What it stores.</b> Small files in the app's own data folder on your PC: recently used projects, session names you chose, and a flag that setup finished. Uninstalling removes the app; delete its data folder to remove these.</li>
-    <li><b>Nothing is shared</b> with anyone, because nothing is collected.</li>
+    <li><b>Nothing is shared by me</b> with anyone, because I collect nothing.</li>
   </ul>
   <p>Your agents themselves (Claude Code, Antigravity, etc.) send data to their own providers under their own policies. Agent Notch doesn't change that and isn't part of it.</p>
 
