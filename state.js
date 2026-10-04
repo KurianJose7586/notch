@@ -9,7 +9,7 @@ const short = (s, n = 90) => (s || '').toString().replace(/\s+/g, ' ').trim().sl
 // Claude uses `Edit` + file_path, OpenCode/Kilo use `edit` + filePath.
 function describe(tool = '', i = {}) {
   const t = tool.toLowerCase(), name = tool[0]?.toUpperCase() + tool.slice(1), file = i.file_path || i.filePath
-  if (t === 'bash') return '$ ' + short(i.command, 70)
+  if (t === 'bash' || t === 'shell') return '$ ' + short(i.command, 70) // OpenCode 2 calls it shell
   if (file) return `${name} ${path.basename(file)}`
   if (t === 'grep' || t === 'glob') return `Search ${short(i.pattern, 50)}`
   if (t === 'webfetch') return 'Fetch ' + short(i.url, 60)
@@ -164,6 +164,7 @@ if (require.main === module) {
   const oc = (ev, p) => apply(S, 'kilo', ev, { sessionID: 'k', cwd: 'C:/x/Buildethon', ...p })
   oc('prompt', { text: 'add dark mode' }); assert.equal(S['kilo:k'].task, 'add dark mode')
   oc('tool', { tool: 'edit', args: { filePath: 'C:/x/src/theme.css' } }); assert.equal(S['kilo:k'].action, 'Edit theme.css')
+  oc('tool', { tool: 'shell', args: { command: 'echo hi' } }); assert.equal(S['kilo:k'].action, '$ echo hi') // OpenCode 2's name for bash
   oc('todo.updated', { todos: [{ status: 'completed' }, { status: 'in_progress' }, { status: 'pending' }] }); assert.deepEqual(S['kilo:k'].todos, { done: 1, total: 3 })
   oc('permission.updated', { title: 'Run npm install' }); assert.equal(S['kilo:k'].state, 'waiting')
   oc('permission.replied'); assert.equal(S['kilo:k'].state, 'working')
