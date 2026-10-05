@@ -134,7 +134,9 @@ function setLimits(on, run) {
 // and ones pointing at another copy of Agent Notch (e.g. the source folder before installing) move to this one, so
 // removing that copy can't leave them calling a hook that's gone. Files that wouldn't change aren't touched.
 function refresh(run) {
-  for (const agent of AGENTS) if (connected(agent)) set(agent, true, run)
+  for (const agent of AGENTS) {
+    try { if (connected(agent)) set(agent, true, run) } catch (e) { console.error(`hook refresh failed for ${agent}:`, e.message) } // one unparseable config mustn't block the rest
+  }
 }
 
 module.exports = { AGENTS, status, runner, set, setLimits, refresh }
