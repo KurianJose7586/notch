@@ -9,7 +9,8 @@ const homeOf = cwd => cwd.match(/^(.*?)\.worktrees[\\/]/)?.[1] || cwd
 const short = (s, n = 90) => (s || '').toString().replace(/\s+/g, ' ').trim().slice(0, n)
 
 // Claude uses `Edit` + file_path, OpenCode/Kilo use `edit` + filePath.
-function describe(tool = '', i = {}) {
+function describe(tool, i) {
+  tool ||= 'Tool'; i ||= {}
   const t = tool.toLowerCase(), name = tool[0]?.toUpperCase() + tool.slice(1), file = i.file_path || i.filePath
   if (t === 'bash' || t === 'shell') return '$ ' + short(i.command, 70) // OpenCode 2 calls it shell
   if (file) return `${name} ${path.basename(file)}`
@@ -108,6 +109,7 @@ function apply(sessions, agent, event, p, now = Date.now()) {
     state: 'idle', since: now, action: '', task: '', log: [], todos: null, auto: false, unread: false, request: null, pendingSince: 0, seq: 0, started: now,
   }
   s.updated = now
+  if (!s.cwd && e.cwd) { s.cwd = e.cwd; s.project = path.basename(e.cwd) } // agy reports no folder until you've trusted it
   switch (e.kind) {
     case 'idle': break
     case 'turn': set(s, 'working', now); s.action = 'Thinking…'; s.todos = null; s.unread = false; s.error = null; if (e.task) s.task = e.task; break
@@ -188,5 +190,9 @@ if (require.main === module) {
   assert.equal(S['kilo:K2'].action, 'Usage limit reached')
   apply(S, 'copilot', 'PreToolUse', { sessionId: 'V', cwd: 'C:/x/web', toolName: 'editFiles', toolArgs: { filePath: 'C:/x/web/a.ts' } }, 16)
   assert.equal(S['copilot:V'].action, 'EditFiles a.ts'); assert.equal(S['copilot:V'].project, 'web')
+  apply(S, 'agy', 'PreInvocation', { conversationId: 'F', invocationNum: 0 }, 17); assert.equal(S['agy:F'].project, 'unknown')
+  apply(S, 'agy', 'PostToolUse', { conversationId: 'F', workspacePaths: ['C:/x/late'] }, 18); assert.equal(S['agy:F'].project, 'late')
+  apply(S, 'claude', 'PreToolUse', { session_id: 'N', tool_name: 'Edit', tool_input: null }, 19); assert.equal(S['claude:N'].action, 'Edit')
+  apply(S, 'copilot', 'PreToolUse', { sessionId: 'M', cwd: 'C:/x' }, 20); assert.equal(S['copilot:M'].action, 'Tool')
   console.log('state.js ok')
 }
