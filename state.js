@@ -4,6 +4,8 @@ const path = require('path')
 const WAIT_AFTER_MS = 1500 // agy has no "needs permission" event: a tool that hasn't finished by now is assumed to be on a prompt
 const STALE_MS = 2 * 3600e3
 
+// A worktree the launcher made (<repo>.worktrees/<repo>-<id>) belongs with its repo
+const homeOf = cwd => cwd.match(/^(.*?)\.worktrees[\\/]/)?.[1] || cwd
 const short = (s, n = 90) => (s || '').toString().replace(/\s+/g, ' ').trim().slice(0, n)
 
 // Claude uses `Edit` + file_path, OpenCode/Kilo use `edit` + filePath.
@@ -38,7 +40,8 @@ function normalize(agent, event, p) {
       case 'PreToolUse': return { ...base, kind: 'tool', action: describe(p.tool_name, p.tool_input), todos: p.tool_input && p.tool_input.todos }
       case 'PostToolUse': return { ...base, kind: 'toolDone' }
       case 'PermissionRequest': return { ...base, kind: 'idle' } // permission gate: main.js decides and sets state
-      case 'Notification': return { ...base, kind: 'wait', action: short(p.message) }
+      // "Claude is waiting for your input" only comes once a finished turn has sat idle a minute: it's still done, not asking
+      case 'Notification': return p.notification_type === 'idle_prompt' || /waiting for your input/i.test(p.message || '') ? { ...base, kind: 'idle' } : { ...base, kind: 'wait', action: short(p.message) }
       case 'Stop': return { ...base, kind: 'stop' }
       case 'StopFailure': return { ...base, kind: 'fail', action: CLAUDE_ERRORS[p.error_type] || 'Stopped with an error', error: p.error_type || 'unknown' }
       case 'StatusLine': return { id: p.session_id, cwd: p.workspace?.current_dir || p.cwd, kind: 'meta', context: p.context_window?.used_percentage }
@@ -101,7 +104,7 @@ function apply(sessions, agent, event, p, now = Date.now()) {
   const key = `${agent}:${e.id}`
   if (e.kind === 'end') { delete sessions[key]; return null }
   const s = sessions[key] ||= {
-    key, agent, cwd: e.cwd || '', project: e.cwd ? path.basename(e.cwd) : 'unknown',
+    key, agent, cwd: e.cwd || '', project: e.cwd ? path.basename(homeOf(e.cwd)) : 'unknown',
     state: 'idle', since: now, action: '', task: '', log: [], todos: null, auto: false, unread: false, request: null, pendingSince: 0, seq: 0, started: now,
   }
   s.updated = now
@@ -135,13 +138,15 @@ function tick(sessions, now, isAlive) {
   return changed
 }
 
-module.exports = { apply, tick, set }
+module.exports = { apply, tick, set, homeOf }
 
 if (require.main === module) {
   const assert = require('assert')
   const S = {}
   apply(S, 'claude', 'UserPromptSubmit', { session_id: 'a', cwd: 'C:/x/LRNAI', prompt: 'fix login' }, 0)
   assert.equal(S['claude:a'].state, 'working'); assert.equal(S['claude:a'].project, 'LRNAI')
+  apply(S, 'claude', 'UserPromptSubmit', { session_id: 'w', cwd: 'C:\\x\\LRNAI.worktrees\\LRNAI-claude-ab1', prompt: 'x' }, 0)
+  assert.equal(S['claude:w'].project, 'LRNAI'); delete S['claude:w']
   apply(S, 'claude', 'PreToolUse', { session_id: 'a', tool_name: 'TodoWrite', tool_input: { todos: [{ status: 'completed' }, { status: 'pending' }] } }, 1)
   assert.deepEqual(S['claude:a'].todos, { done: 1, total: 2 })
   apply(S, 'claude', 'PreToolUse', { session_id: 'a', tool_name: 'Edit', tool_input: { file_path: 'C:/x/src/auth.ts' } }, 2)
@@ -149,6 +154,8 @@ if (require.main === module) {
   apply(S, 'claude', 'Notification', { session_id: 'a', message: 'Claude needs your permission' }, 3)
   assert.equal(S['claude:a'].state, 'waiting')
   apply(S, 'claude', 'Stop', { session_id: 'a' }, 4); assert.equal(S['claude:a'].state, 'done'); assert.equal(S['claude:a'].since, 4); assert.ok(S['claude:a'].unread)
+  apply(S, 'claude', 'Notification', { session_id: 'a', message: 'Claude is waiting for your input', notification_type: 'idle_prompt' }, 5)
+  assert.equal(S['claude:a'].state, 'done'); assert.equal(S['claude:a'].action, 'Finished')
   apply(S, 'claude', 'UserPromptSubmit', { session_id: 'a', prompt: 'next' }, 5); assert.ok(!S['claude:a'].unread)
 
   apply(S, 'agy', 'PreToolUse', { conversationId: 'b', workspacePaths: ['C:/x/enestock'], toolCall: { name: 'run_command', args: { toolSummary: 'Run npm test' } } }, 1000)

@@ -331,6 +331,27 @@
   .menu hr { border: 0; height: .5px; background: var(--sep); margin: 4px 6px; }
   .foot .clear { color: var(--secondary); }
 
+  /* Bring it home */
+  .ghome { padding: 2px 9px; border-radius: 10px; background: rgba(10,132,255,.2); color: #fff; font-size: 11px; font-weight: 600; transition: background .15s ease, scale .35s var(--spring); }
+  .ghome:hover { background: rgba(10,132,255,.4); } .ghome:active { scale: .92; }
+  .home .list { margin-top: 14px; }
+  .hrow { display: flex; align-items: center; gap: 10px; padding: 9px 12px; }
+  .hrow + .hrow { box-shadow: 0 -.5px 0 var(--sep); }
+  .hrow input { flex: none; width: 15px; height: 15px; margin: 0; accent-color: var(--blue); }
+  .hrow .icon { width: 26px; height: 26px; border-radius: 7px; }
+  .hrow .what { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .hrow .what b { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hrow .what span { font-size: 11.5px; color: var(--tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hrow .act { flex: none; padding: 4px 9px; border-radius: 10px; background: rgba(255,255,255,.08); color: var(--secondary); font-size: 11.5px; font-weight: 600; transition: background .15s ease, color .15s ease; }
+  .hrow .act:hover { background: rgba(255,255,255,.15); color: #fff; }
+  .hrow .act.danger { color: #FF6961; } .hrow .act.danger.sure { background: rgba(255,69,58,.25); color: #fff; }
+  .hrow .act.fix { background: rgba(10,132,255,.2); color: #fff; }
+  .hrow .ok { flex: none; color: var(--green); font-size: 12px; font-weight: 600; } .hrow .warn { flex: none; color: var(--orange); font-size: 12px; font-weight: 600; }
+  .home .note { flex: 1; color: var(--secondary); font-size: 12px; }
+  .err.ask { display: flex; align-items: center; gap: 10px; }
+  .err .act { margin-left: auto; flex: none; padding: 5px 10px; border-radius: 10px; background: rgba(10,132,255,.25); color: #fff; font-size: 11.5px; font-weight: 600; }
+  .err .act:hover { background: rgba(10,132,255,.45); }
+
   button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
   .chip:focus-visible, .field:focus-visible, .folders button:focus-visible { outline-offset: -2px; }
 
@@ -458,6 +479,8 @@ const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`
 const agentName = s => NAMES[s.agent] || s.agent
 const name = s => s.label || agentName(s) // your name for the session, else the agent's
 const baseName = d => d.split(/[\\/]/).filter(Boolean).pop() || d
+const homeOf = cwd => cwd.match(/^(.*?)\.worktrees[\\/]/)?.[1] || cwd // a launched worktree belongs with its repo (same as state.js)
+const samePath = (a, b) => !!a && !!b && a.replace(/\//g, '\\').replace(/\\+$/, '').toLowerCase() === b.replace(/\//g, '\\').replace(/\\+$/, '').toLowerCase()
 const duration = t => { const s = Math.max(0, (Date.now() - t) / 1000); return s < 60 ? `${s | 0}s` : s < 3600 ? `${s / 60 | 0}m` : `${s / 3600 | 0}h` }
 function timerEl(t) { const e = el('span', 'timer', duration(t)); e.dataset.since = t; return e }
 
@@ -767,23 +790,26 @@ function renderPanel() {
   head.append(el('h1', '', 'Agents'), el('span', 'summary', summary), add, more)
 
   const groups = {}
-  for (const s of sessions) (groups[s.cwd || s.project] ||= []).push(s)
+  for (const s of sessions) (groups[homeOf(s.cwd) || s.project] ||= []).push(s)
   const sorted = Object.values(groups).map(g => g.sort(byRank)).sort((a, b) => byRank(a[0], b[0]))
   ordered = sorted.flat()
   sel = Math.min(sel, Math.max(0, ordered.length - 1))
 
   let i = 0
   const content = sorted.map(g => {
-    const group = el('div', 'group'), title = el('div', 'title'), list = el('div', 'list')
-    title.title = g[0].cwd
+    const group = el('div', 'group'), title = el('div', 'title'), list = el('div', 'list'), home = homeOf(g[0].cwd)
+    title.title = home
     const right = el('span', 'right'), plus = el('button', 'gplus', '+')
     plus.title = 'New agent in ' + g[0].project
-    plus.onclick = () => openLauncher(g[0].cwd)
+    plus.onclick = () => openLauncher(home)
     right.append(el('span', '', g.length > 1 ? plural(g.length, 'agent') : ''), plus)
+    // Worktree agents that have all stopped working: offer to merge their branches back
+    const crew = g.filter(s => s.cwd && s.cwd !== homeOf(s.cwd)), ready = crew.length > 0 && !crew.some(s => s.state === 'working' || s.state === 'waiting')
+    if (ready) { const b = el('button', 'ghome', 'Bring it home'); b.title = 'Merge what the worktree agents did back into ' + g[0].project; b.onclick = () => openHome(home); right.prepend(b) }
     title.append(el('span', '', g[0].project), right)
     list.append(...g.map(s => row(s, i++)))
-    group.append(...(sorted.length > 1 ? [title] : []), list) // a project heading only helps when there's more than one
-    if (sorted.length === 1) group.style.marginTop = '12px'
+    group.append(...(sorted.length > 1 || ready ? [title] : []), list) // a project heading only helps when there's more than one
+    if (sorted.length === 1 && !ready) group.style.marginTop = '12px'
     return group
   })
   if (!sessions.length) {
@@ -806,6 +832,7 @@ function renderPanel() {
   }
   menu.append(
     item('Tile agent windows', 'Ctrl+Alt+G', () => notch.send('grid')),
+    item('Bring agent branches home', '', async () => openHome((await notch.invoke('recent'))[0])), // the last folder you launched into
     item(sound ? 'Sound: on' : 'Sound: off', 'S', () => { sound = !sound; try { localStorage.setItem('sound', sound ? 'on' : 'off') } catch {}; tick(); render() }),
     item(asleep ? 'Wake' : 'Sleep', 'Ctrl+Alt+Z', () => { const next = !asleep; if (keyboard) closeKeyboard(); setAsleep(next); if (next) setOpen(false) }),
     item('Shortcuts', 'I', () => openHelp()),
@@ -1143,6 +1170,114 @@ function buildLauncher() {
   refresh()
 }
 
+// Bring it home: merge each worktree agent's branch into the repo's current branch, then tidy its worktree away.
+let home = null // { dir, data: { into, list } | { error }, picked: branches to merge, result: branch -> merged | tidy | conflict, sure: branch the Discard was clicked on once }
+const shortStat = s => { const n = k => +(s.match(new RegExp(`(\\d+) ${k}`))?.[1] || 0); return [[n('insertion') && '+' + n('insertion'), n('deletion') && '−' + n('deletion')].filter(Boolean).join(' '), plural(n('file'), 'file')].filter(Boolean).join(' · ') }
+
+async function openHome(dir) {
+  if (!dir) return
+  const H = home = { dir, data: null, picked: new Set(), result: {}, sure: '', busy: false, error: '' }
+  view = 'home'; menuOpen = false
+  if (!keyboard) notch.send('grab-focus')
+  buildHome()
+  if (open) { anim(panel, [{ opacity: 0, filter: 'blur(5px)' }, { opacity: 1, filter: 'blur(0px)' }], { duration: 320 }); layout() } else setOpen(true)
+  // what each agent was asked becomes the commit message for the work it left uncommitted
+  const names = Object.fromEntries(sessions.filter(s => s.cwd && (s.task || s.label)).map(s => [s.cwd, s.task || s.label]))
+  const data = await notch.invoke('branches', dir, names)
+  if (home !== H) return // closed while git was busy
+  H.data = data
+  for (const b of data.list || []) if (b.stat) H.picked.add(b.branch)
+  buildHome()
+}
+
+function closeHome(collapse) {
+  if (view !== 'home') return
+  view = 'list'; home = null
+  if (!keyboard) notch.send('keyboard-closed')
+  if (collapse) setOpen(false)
+  render()
+  if (!collapse) anim(panel, [{ opacity: 0, filter: 'blur(5px)' }, { opacity: 1, filter: 'blur(0px)' }], { duration: 320 })
+}
+
+function buildHome() {
+  const H = home, d = H.data, done = Object.keys(H.result).length > 0
+  const head = el('div', 'head'), back = el('button', 'round')
+  back.innerHTML = BACK_ICON; back.title = 'Back (Esc)'; back.onclick = () => closeHome(false)
+  head.append(back, el('h1', '', 'Bring it home'), el('span', 'summary', baseName(H.dir) + (d?.into ? ' · into ' + d.into : '')))
+  const wrap = el('div', 'home'); wrap.append(head)
+
+  if (!d) wrap.append(el('div', 'empty', 'Looking at the branches…'))
+  else if (!d.error && !d.list.length) wrap.append(el('div', 'empty', 'No agent branches here. Launch agents with WORKTREE on and their work shows up here to merge.'))
+  else if (d.list) { const list = el('div', 'list'); list.append(...d.list.map(homeRow)); wrap.append(list) }
+
+  const opts = el('div', 'opts'), btn = el('button', 'go'), err = el('div', 'err', d?.error || H.error)
+  const n = H.picked.size, res = Object.values(H.result), conflicts = res.filter(r => r === 'conflict').length
+  const merged = res.length - conflicts
+  const busy = d?.list?.filter(b => b.busy).length || 0
+  const who = busy === d?.list?.length ? (busy === 1 ? 'This agent is' : 'These agents are') : busy === 1 ? '1 agent is' : `${busy} agents are`
+  const note = done ? `${merged} ${merged === 1 ? 'branch' : 'branches'} merged` + (conflicts ? ` · ${conflicts} clashed` : '')
+    : busy ? `${who} still busy; ${busy === 1 ? 'its' : 'their'} work is left alone until done.`
+    : d?.list?.length ? 'Each branch is merged in turn; a clash is left untouched.' : ''
+  btn.textContent = done ? 'Done' : H.busy ? 'Merging…' : n > 1 ? `Merge ${n}` : 'Merge'
+  btn.disabled = !done && (!n || H.busy)
+  btn.classList.toggle('busy', H.busy)
+  btn.onclick = done ? () => closeHome(false) : mergeHome
+  opts.append(el('span', 'note', note), btn)
+  if (H.dirty) {
+    err.textContent = `You have changes in ${baseName(H.dir)} that aren't committed.`
+    const save = el('button', 'act fix', 'Commit them, then merge'); save.title = 'Commits your changes as "Save my work before merging agent branches", then merges'
+    save.onclick = () => mergeHome(true); err.append(save); err.classList.add('ask')
+  }
+  wrap.append(opts, err)
+  panel.replaceChildren(wrap)
+  layout()
+}
+
+function homeRow(b) {
+  const H = home, r = el('div', 'hrow'), res = H.result[b.branch]
+  const s = sessions.find(s => samePath(s.cwd, b.path)), agent = b.branch.split('/')[1].split('-')[0]
+  const box = el('input'); box.type = 'checkbox'; box.checked = H.picked.has(b.branch); box.disabled = !b.stat || !!res || H.busy
+  box.title = b.stat ? 'Merge this branch' : 'Nothing to merge'
+  box.onchange = () => { box.checked ? H.picked.add(b.branch) : H.picked.delete(b.branch); tick(box.checked); buildHome() }
+  const sub = b.busy ? 'Still working' : b.error ? b.error : res === 'tidy' ? 'Merged · close its terminal, then Remove' : res === 'conflict' ? 'Clashes with your branch' : b.stat ? shortStat(b.stat) : 'No changes'
+  const what = el('div', 'what'); what.append(el('b', '', s ? name(s) : b.subject || b.branch), el('span', '', sub)); what.title = b.branch
+  r.append(box, icon(agent), what)
+
+  const act = (label, cls, fn) => { const a = el('button', 'act ' + cls, label); a.onclick = fn; r.append(a); return a }
+  const drop = async () => {
+    const out = await notch.invoke('discard', H.dir, b.branch)
+    if (home !== H) return
+    if (out.error) H.error = out.error; else { H.data.list = H.data.list.filter(x => x !== b); H.picked.delete(b.branch); tick(false) }
+    H.sure = ''; buildHome()
+  }
+  if (res === 'merged') r.append(el('span', 'ok', '✓ Merged'))
+  else if (res === 'conflict') act('Fix with Claude', 'fix', async e => {
+    const out = await notch.invoke('fix-conflict', H.dir, b.branch)
+    if (out.error) { H.error = out.error; return buildHome() }
+    e.target.replaceWith(el('span', 'warn', 'Claude is on it'))
+  })
+  else if (b.busy || H.busy) {}
+  else {
+    act('Open', '', () => { browsing = true; setTimeout(() => (browsing = false), 1500); notch.send('open-path', b.path) }) // Explorer takes focus; that isn't a click away
+    // with nothing unmerged there's nothing to lose; otherwise it takes two clicks
+    if (!b.stat || res === 'tidy') act('Remove', 'danger', drop)
+    else act(H.sure === b.branch ? 'Delete its work?' : 'Discard', 'danger' + (H.sure === b.branch ? ' sure' : ''), () => H.sure === b.branch ? drop() : (H.sure = b.branch, buildHome()))
+  }
+  return r
+}
+
+async function mergeHome(saveMine) {
+  const H = home
+  H.busy = true; H.error = ''; H.dirty = false; buildHome()
+  const res = await notch.invoke('bring-home', H.dir, [...H.picked], saveMine === true)
+  if (home !== H) return
+  H.busy = false
+  if (res.error) H.error = res.error
+  else if (res.dirty) H.dirty = true // your own uncommitted changes are in the way: offer to commit them
+  else { H.result = res; H.picked.clear(); chime() }
+  buildHome()
+}
+
 function layout() {
   island.classList.toggle('open', open)
   const dot = welcome === 'drop' || farewell === 'dot'
@@ -1173,13 +1308,13 @@ function setOpen(v) {
 
 island.addEventListener('mouseenter', () => {
   notch.send('mouse', true)
-  if (farewell || keyboard || view === 'launch' || view === 'setup' || editing || pill.classList.contains('request')) return // requests expand on click, so Allow/Deny don't move under the cursor
+  if (farewell || keyboard || view === 'launch' || view === 'setup' || view === 'home' || editing || pill.classList.contains('request')) return // requests expand on click, so Allow/Deny don't move under the cursor
   clearTimeout(hoverTimer); hoverTimer = setTimeout(() => setOpen(true), 90)
 })
 island.addEventListener('mouseleave', () => {
   if (drag) return // the window is moving under the cursor
   notch.send('mouse', false)
-  if (keyboard || view === 'launch' || view === 'setup' || editing) return
+  if (keyboard || view === 'launch' || view === 'setup' || view === 'home' || editing) return
   clearTimeout(hoverTimer); hoverTimer = setTimeout(() => setOpen(false), 280)
 })
 // Drag the pill or the panel header to move the notch along the top of the screen (main.js follows the cursor).
@@ -1229,11 +1364,13 @@ notch.onKeyboard(on => {
 window.addEventListener('blur', () => {
   if (browsing || editing) return // the folder picker has focus / the rename input commits on its own blur
   if (view === 'launch' && !keyboard) return closeLauncher(true)
-  view = 'list'; launcher = null
+  if (view === 'home' && !keyboard) return closeHome(true)
+  view = 'list'; launcher = null; home = null
   closeKeyboard()
 })
 document.addEventListener('keydown', e => {
   if (view === 'launch') { if (e.key === 'Escape') { e.preventDefault(); closeLauncher(false) } return }
+  if (view === 'home') { if (e.key === 'Escape') { e.preventDefault(); closeHome(false) } return }
   if (view === 'setup') { if (e.key === 'Escape') { e.preventDefault(); closeSetup(false) } return }
   if (view === 'help') { if (['Escape', 'Backspace', 'i', 'I', '?'].includes(e.key)) { e.preventDefault(); closeHelp() } return }
   if (menuOpen && e.key === 'Escape') { e.preventDefault(); return setMenu(false) }

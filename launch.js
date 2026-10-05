@@ -23,13 +23,66 @@ const git = (args, cwd) => new Promise((ok, fail) =>
 
 // <parent>/<repo>.worktrees/<repo>-<agent>-<id> on branch notch/<agent>-<id>, branched from HEAD.
 // ponytail: starts at the worktree root even if you picked a subfolder, and uncommitted changes don't carry over
-let worktrees = 0 // several of the same agent started together must not share a branch
+let nextWorktree = 0 // several of the same agent started together must not share a branch
 async function makeWorktree(dir, agent) {
   const root = path.resolve(await git(['rev-parse', '--show-toplevel'], dir))
-  const repo = path.basename(root), id = `${agent}-${Date.now().toString(36).slice(-5)}${worktrees++}`
+  const repo = path.basename(root), id = `${agent}-${Date.now().toString(36).slice(-5)}${nextWorktree++}`
   const target = path.join(path.dirname(root), `${repo}.worktrees`, `${repo}-${id}`)
   await git(['worktree', 'add', '-b', `notch/${id}`, target], root)
   return target
+}
+
+// Bringing worktree agents' work home. The main checkout is always listed first.
+async function worktrees(dir) {
+  const blocks = (await git(['worktree', 'list', '--porcelain'], dir)).split(/\r?\n\r?\n/)
+  const all = blocks.map(b => ({ path: path.resolve(b.match(/^worktree (.*)$/m)[1]), branch: b.match(/^branch refs\/heads\/(.*)$/m)?.[1] }))
+  return { main: all[0].path, notch: all.filter(w => w.branch?.startsWith('notch/')) }
+}
+
+// Each launched branch and how big it is. Agents rarely commit, so what they left is committed to their own branch first,
+// except in `busy` worktrees whose agent is still at it. names: worktree path -> commit message (the session's name).
+async function branches(dir, busy = [], names = {}) {
+  const { main, notch } = await worktrees(dir)
+  const into = await git(['rev-parse', '--abbrev-ref', 'HEAD'], main)
+  const list = await Promise.all(notch.map(async w => {
+    if (busy.some(b => samePath(b, w.path))) return { ...w, busy: true }
+    try {
+      if (await git(['status', '--porcelain'], w.path)) {
+        const name = Object.entries(names).find(([p]) => samePath(p, w.path))?.[1]
+        await git(['add', '-A'], w.path)
+        await git(['commit', '-q', '-m', String(name || `Agent work on ${w.branch}`).slice(0, 200)], w.path)
+      }
+      const stat = await git(['diff', '--shortstat', `HEAD...${w.branch}`], main)
+      return { ...w, stat, subject: stat && await git(['log', '-1', '--format=%s', w.branch], main) }
+    } catch (e) { return { ...w, error: e.message } }
+  }))
+  return { main, into, list }
+}
+
+// Merges one at a time, so a branch that clashes with one merged before it is caught too. A conflict is aborted and left for later.
+// Your own uncommitted changes stop it ({ dirty: true }) unless saveMine commits them first.
+async function bringHome(dir, pick, saveMine = false) {
+  const { main, notch } = await worktrees(dir)
+  if (await git(['status', '--porcelain', '--untracked-files=no'], main)) {
+    if (!saveMine) return { dirty: true }
+    await git(['commit', '-q', '-a', '-m', 'Save my work before merging agent branches'], main)
+  }
+  const out = {}
+  for (const w of notch.filter(w => pick.includes(w.branch))) {
+    try { await git(['merge', '--no-edit', w.branch], main) }
+    catch { await git(['merge', '--abort'], main).catch(() => {}); out[w.branch] = 'conflict'; continue }
+    out[w.branch] = 'merged'
+    try { await git(['worktree', 'remove', '--force', w.path], main); await git(['branch', '-d', w.branch], main) }
+    catch { out[w.branch] = 'tidy' } // Windows won't delete a folder a terminal is still sitting in
+  }
+  return out
+}
+
+async function discard(dir, branch) {
+  const { main, notch } = await worktrees(dir), w = notch.find(w => w.branch === branch)
+  if (!w) return
+  await git(['worktree', 'remove', '--force', w.path], main)
+  await git(['branch', '-D', branch], main)
 }
 
 // A name for each launched session: the task it was given, or "Claude 2" when the same agent is started more than once.
@@ -39,7 +92,7 @@ const launchLabels = (agents, prompts) => agents.map((a, i) =>
 
 const samePath = (a, b) => !!a && !!b && path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase()
 
-module.exports = { AGENTS, launchAgent, makeWorktree, samePath, commandFor, launchLabels }
+module.exports = { AGENTS, launchAgent, makeWorktree, worktrees, branches, bringHome, discard, samePath, commandFor, launchLabels }
 
 if (require.main === module) {
   const assert = require('assert')
@@ -61,6 +114,25 @@ if (require.main === module) {
     const made = await Promise.all([makeWorktree(repoDir, 'claude'), makeWorktree(repoDir, 'claude'), makeWorktree(repoDir, 'claude')])
     assert.equal(new Set(made).size, 3, 'distinct worktrees: ' + made.join(', '))
     made.forEach(d => assert.ok(fs.existsSync(d)))
+    // bring them home: the first adds a file, the other two edit the same line, so the third clashes once the second is in
+    await git(['config', 'user.name', 't'], repoDir); await git(['config', 'user.email', 't@t'], repoDir)
+    fs.writeFileSync(path.join(made[0], 'new.txt'), 'hi\n')
+    fs.writeFileSync(path.join(made[1], 'a.txt'), 'one\n')
+    fs.writeFileSync(path.join(made[2], 'a.txt'), 'two\n')
+    const { list } = await branches(repoDir, [], { [made[0]]: 'add new.txt' })
+    assert.ok(list.every(b => b.stat.startsWith('1 file changed')), JSON.stringify(list))
+    assert.equal(await git(['log', '-1', '--format=%s', list[0].branch], repoDir), 'add new.txt')
+    // your own uncommitted edit blocks the merge, unless you say to commit it first
+    fs.writeFileSync(path.join(repoDir, 'mine.txt'), 'v1\n'); await git(['add', 'mine.txt'], repoDir); await git(['commit', '-q', '-m', 'mine'], repoDir)
+    fs.writeFileSync(path.join(repoDir, 'mine.txt'), 'v2\n')
+    assert.deepEqual(await bringHome(repoDir, list.map(b => b.branch)), { dirty: true })
+    const res = await bringHome(repoDir, list.map(b => b.branch), true)
+    assert.equal(fs.readFileSync(path.join(repoDir, 'mine.txt'), 'utf8'), 'v2\n')
+    assert.ok((await git(['log', '--format=%s'], repoDir)).includes('Save my work before merging agent branches'))
+    assert.deepEqual(Object.values(res), ['merged', 'merged', 'conflict'])
+    assert.equal(await git(['status', '--porcelain'], repoDir), '', 'an aborted merge leaves the checkout clean')
+    await discard(repoDir, list[2].branch)
+    assert.equal((await worktrees(repoDir)).notch.length, 0)
     fs.rmSync(repoDir, { recursive: true, force: true }); fs.rmSync(repoDir + '.worktrees', { recursive: true, force: true })
     console.log('launch.js ok')
   })().catch(e => { console.error(e); process.exit(1) })

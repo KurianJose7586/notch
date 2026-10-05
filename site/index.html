@@ -253,11 +253,34 @@ footer .big span:hover{transform:translateY(-.12em) rotate(-6deg)}
 footer .fl{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font:500 13px var(--mono);max-width:1180px;margin:0 auto}
 footer a{text-underline-offset:4px}
 
+/* ───────── film ───────── */
+.film{padding-bottom:clamp(40px,6vw,80px)}
+.film-head{display:flex;justify-content:space-between;align-items:flex-end;gap:40px;flex-wrap:wrap}
+.film-head .lede{margin-top:0;max-width:36ch}
+.screen{position:relative;margin-top:clamp(32px,5vw,56px);aspect-ratio:16/9;border-radius:24px;overflow:hidden;background:#000;border:1px solid var(--line);
+  box-shadow:0 50px 120px #000,0 0 140px #409cff14}
+.screen.rv{transform:translateY(60px) scale(.94)}.screen.rv.in{transform:none}
+.screen video{display:block;width:100%;height:100%;object-fit:cover}
+.snd{position:absolute;right:16px;bottom:18px;z-index:2;display:flex;align-items:center;gap:8px;border:1px solid #ffffff26;border-radius:99px;padding:8px 14px;
+  background:#000000a6;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:var(--bone);font:500 12px var(--mono);letter-spacing:.04em;transition:background .3s,border-color .3s}
+.snd:hover{background:#000d;border-color:#ffffff55}
+.snd i{width:7px;height:7px;border-radius:50%;background:var(--mute);transition:background .3s}
+.snd[aria-pressed=true] i{background:var(--green);box-shadow:0 0 10px var(--green)}
+.fbar{position:absolute;left:0;right:0;bottom:0;height:3px;background:#ffffff14}
+.fbar i{display:block;height:100%;width:100%;background:var(--blue);transform-origin:left;transform:scaleX(var(--p,0))}
+.tapfs{display:none}
+
 @media (max-width:900px){
   .demo .wrap,.receipt-s .wrap,.inst .wrap{grid-template-columns:1fr}
   .bento{grid-template-columns:1fr 1fr}.s2,.s3,.s4{grid-column:span 2}
   .panel{rotate:0deg}.rc{font-size:11px;padding:28px 18px 46px}.rc p{flex-wrap:wrap}
   .scroll-hint{display:none}
+}
+/* phones: the film runs edge to edge, and a tap opens it full screen with sound */
+@media (max-width:600px){
+  .screen{margin-inline:-24px;border-radius:0;border-inline:0}
+  .snd{display:none}
+  .tapfs{display:flex;justify-content:center;gap:8px;margin-top:14px;font:500 12px var(--mono);color:var(--mute)}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
@@ -298,6 +321,29 @@ footer a{text-underline-offset:4px}
 <div class="marq" aria-label="Works with Claude Code, Antigravity, OpenCode, Kilo, GitHub Copilot" data-n="work|5 agents · 1 notch">
   <div class="tr" id="mq"></div>
 </div>
+
+<!-- FILM -->
+<section class="film" id="watch" data-n="work|Now playing · 30s">
+  <div class="wrap">
+    <div class="film-head">
+      <div>
+        <div class="eyebrow rv">30-second tour</div>
+        <h2 class="rv" style="--i:1">Watch it <em>run.</em></h2>
+      </div>
+      <p class="lede rv" style="--i:2">Nine agents, one desk. Answer them, launch more, tile the lot, and watch them finish, without leaving your editor.</p>
+    </div>
+    <figure class="screen rv" style="--i:2">
+      <video id="film" muted loop playsinline preload="none" poster="assets/demo-poster.jpg"
+        aria-label="30-second tour of Agent Notch: approving requests with Y and N, approving from a phone, launching agents, tiling windows, and usage limits">
+        <source src="assets/demo-720.mp4" type="video/mp4" media="(max-width: 900px)">
+        <source src="assets/demo-1080.mp4" type="video/mp4">
+      </video>
+      <button class="snd" id="snd" type="button" aria-pressed="false"><i></i><span>Sound off</span></button>
+      <span class="fbar" aria-hidden="true"><i id="fbar"></i></span>
+    </figure>
+    <p class="tapfs">Tap the video for full screen with sound</p>
+  </div>
+</section>
 
 <!-- DEMO -->
 <section class="demo" id="demo" data-n="needs|It's your turn">
@@ -467,7 +513,7 @@ footer a{text-underline-offset:4px}
   <div class="big" id="big" aria-label="One notch."></div>
   <div class="fl">
     <span>Made for people who run five agents at once.</span>
-    <span><a href="https://github.com/KurianJose7586/notch">GitHub</a> · <a href="https://github.com/KurianJose7586/notch/releases/download/v0.3.1/AgentNotch-promo.mp4">51s demo</a> · <a href="https://github.com/KurianJose7586/notch/releases/latest">Releases</a> · <a href="legal.html#terms">Terms</a> · <a href="legal.html#privacy">Privacy</a></span>
+    <span><a href="https://github.com/KurianJose7586/notch">GitHub</a> · <a href="#watch">30s demo</a> · <a href="https://github.com/KurianJose7586/notch/releases/latest">Releases</a> · <a href="legal.html#terms">Terms</a> · <a href="legal.html#privacy">Privacy</a></span>
   </div>
 </footer>
 
@@ -481,7 +527,7 @@ const L={claude:"assets/logo-claude.svg",agy:"assets/logo-agy.svg",oc:"assets/lo
 const cur=$('.cur');let cx=0,cy=0,tx=0,ty=0;
 addEventListener('pointermove',e=>{tx=e.clientX;ty=e.clientY});
 (function f(){cx+=(tx-cx)*.22;cy+=(ty-cy)*.22;cur.style.transform=`translate(${cx}px,${cy}px)`;requestAnimationFrame(f)})();
-document.addEventListener('pointerover',e=>cur.classList.toggle('big',!!e.target.closest('a,button,.tog,input')));
+document.addEventListener('pointerover',e=>cur.classList.toggle('big',!!e.target.closest('a,button,.tog,input,video')));
 
 /* reveal */
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.15});
@@ -571,6 +617,18 @@ $('#wt').onclick=()=>$('#chips').classList.toggle('wt');
 /* card tilt + spotlight */
 if(!still)$$('.bc').forEach(c=>{c.addEventListener('pointermove',e=>{const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;
   c.style.setProperty('--mx',x*100+'%');c.style.setProperty('--my',y*100+'%');c.style.setProperty('--ry',(x-.5)*5+'deg');c.style.setProperty('--rx',(.5-y)*5+'deg')});c.addEventListener('pointerleave',()=>{c.style.setProperty('--rx','0deg');c.style.setProperty('--ry','0deg')})});
+
+/* film: plays only while on screen (and never on its own under reduced motion); sound is opt-in */
+const film=$('#film'),snd=$('#snd'),fbar=$('#fbar'),phone=matchMedia('(max-width:600px)');
+if(still)film.controls=true;
+else new IntersectionObserver(es=>es.forEach(e=>e.isIntersecting?film.play().catch(()=>{}):film.pause()),{threshold:.35}).observe(film);
+function sound(on){film.muted=!on;snd.setAttribute('aria-pressed',on);snd.lastChild.textContent=on?'Sound on':'Sound off';if(on)film.play().catch(()=>{})}
+snd.onclick=()=>sound(film.muted);
+film.addEventListener('click',()=>{
+  if(!phone.matches)return sound(film.muted);
+  sound(true);(film.webkitEnterFullscreen?film.webkitEnterFullscreen():film.requestFullscreen?.())?.catch?.(()=>{});
+});
+(function tick(){fbar.style.setProperty('--p',film.duration?film.currentTime/film.duration:0);requestAnimationFrame(tick)})();
 
 /* in-page links: scroll ourselves so they work even where hash navigation is blocked (file previews) */
 document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#"]');const t=a&&$(a.getAttribute('href'));if(t){e.preventDefault();t.scrollIntoView({behavior:still?'auto':'smooth'});nt.classList.remove('open')}});

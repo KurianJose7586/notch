@@ -1,10 +1,10 @@
-const { app, BrowserWindow, ipcMain, screen, globalShortcut, dialog } = require('electron')
+const { app, BrowserWindow, ipcMain, screen, globalShortcut, dialog, shell } = require('electron')
 const http = require('http')
 const fs = require('fs')
 const path = require('path')
 const { spawn } = require('child_process')
-const { apply, tick, set } = require('./state')
-const { AGENTS, launchAgent, makeWorktree, samePath, launchLabels } = require('./launch')
+const { apply, tick, set, homeOf } = require('./state')
+const { AGENTS, launchAgent, makeWorktree, worktrees, branches, bringHome, discard, samePath, launchLabels } = require('./launch')
 const setup = require('./setup')
 const createPhone = require('./phone')
 const createUpdater = require('./updater')
@@ -106,7 +106,7 @@ function claimLaunch(s) {
   const i = launched.findIndex(l => l.agent === s.agent && (samePath(l.dir, s.cwd) || !s.cwd))
   if (i < 0) return
   const [l] = launched.splice(i, 1)
-  if (!s.cwd) { s.cwd = l.dir; s.project = path.basename(l.dir) }
+  if (!s.cwd) { s.cwd = l.dir; s.project = path.basename(homeOf(l.dir)) }
   if (l.auto) s.auto = true
   if (l.label) rename(s.key, l.label) // "Claude 2", or the task it was given
   // You picked this folder and asked for AUTO, so agy's "trust this folder?" screen gets its Enter too.
@@ -336,6 +336,18 @@ ipcMain.handle('browse', async () => {
   return r.filePaths[0] || null
 })
 ipcMain.handle('launch', (_, opts) => launch(opts))
+// Bring it home: merge worktree agents' branches back. Only branches git lists as notch/* worktrees are ever touched.
+const gitError = e => ({ error: /not a git repository/i.test(e.message) ? "This folder isn't a git repo" : e.message })
+const busyPaths = () => Object.values(sessions).filter(s => s.state === 'working' || s.state === 'waiting').map(s => s.cwd)
+ipcMain.handle('branches', (_, dir, names) => branches(dir, busyPaths(), names || {}).catch(gitError))
+ipcMain.handle('bring-home', (_, dir, pick, saveMine) => bringHome(dir, Array.isArray(pick) ? pick : [], saveMine === true).catch(gitError))
+ipcMain.handle('discard', (_, dir, branch) => discard(dir, String(branch)).then(() => ({ ok: true }), gitError))
+ipcMain.handle('fix-conflict', (_, dir, branch) => worktrees(dir).then(({ main, notch }) => {
+  if (!notch.some(w => w.branch === branch)) return { error: 'That branch is gone' }
+  launchAgent('claude', main, `Merge the git branch ${branch} into the current branch, resolve the merge conflicts so both changes work, and commit the merge.`)
+  return { ok: true }
+}, gitError))
+ipcMain.on('open-path', (_, p) => typeof p === 'string' && /\.worktrees[\\/]/.test(p) && shell.openPath(p))
 
 // Setup sheet: which agents are connected, start with Windows, and whether first-run setup was finished.
 const SETUP_DONE = path.join(app.getPath('userData'), 'setup-done')
