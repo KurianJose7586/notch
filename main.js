@@ -10,7 +10,7 @@ const createPhone = require('./phone')
 const createUpdater = require('./updater')
 const position = require('./position')
 
-if (!app.requestSingleInstanceLock()) app.exit(0)
+if (!app.requestSingleInstanceLock()) process.exit(0) // app.exit doesn't stop this script; a duplicate must not clear .quit or spawn the helper
 
 // Quitting leaves this marker so agent hooks don't start the notch straight back up; starting it clears it.
 const QUIT_MARK = path.join(__dirname, '.quit')
@@ -48,7 +48,13 @@ helper.stdout.on('data', d => {
   buf += d
   for (let i; (i = buf.indexOf('\n')) >= 0; buf = buf.slice(i + 1)) waiting.shift()?.(buf.slice(0, i).trim())
 })
-const win32 = cmd => new Promise(r => { waiting.push(r); helper.stdin.write(cmd + '\n') })
+// If the helper dies or never starts, answer everything queued with '' and every later call at once, so nothing hangs.
+let helperDead = false
+const helperGone = () => { helperDead = true; for (const r of waiting.splice(0)) r('') }
+helper.on('exit', helperGone)
+helper.on('error', helperGone)
+helper.stdin.on('error', helperGone)
+const win32 = cmd => helperDead ? Promise.resolve('') : new Promise(r => { waiting.push(r); helper.stdin.write(cmd + '\n') })
 
 // Usage limits the agents report. Claude's come from its status line: rate_limits.five_hour / seven_day, each
 // { used_percentage, resets_at (epoch s) }, only for Pro/Max plans and after the session's first reply.
