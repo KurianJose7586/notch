@@ -33,7 +33,7 @@ function send(body, tries = 0) {
   req.on('timeout', () => { req.destroy(); done() })
   req.on('error', e => {
     if (e.code !== 'ECONNREFUSED' || tries >= 16 || quitByUser) return done()
-    if (!tries) launch()
+    if (!tries) try { launch() } catch { return done() } // e.g. node_modules missing: fall back instead of crashing
     setTimeout(() => send(body, tries + 1), 250)
   })
   req.end(body)
