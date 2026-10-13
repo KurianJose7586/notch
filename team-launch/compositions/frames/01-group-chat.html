@@ -1,0 +1,86 @@
+<template>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+@font-face { font-family: "Segoe UI Variable Display"; src: url("assets/fonts/SegUIVar.ttf"); font-weight: 100 900; }
+@font-face { font-family: "Cascadia Mono"; src: url("assets/fonts/CascadiaMono.ttf"); }
+#root { position: absolute; inset: 0; overflow: hidden; }
+
+[data-composition-id="01-group-chat"] { font-family: "Segoe UI Variable Display", sans-serif; color: #fff; }
+[data-composition-id="01-group-chat"] .bg { position: absolute; inset: 0; background: #000; }
+[data-composition-id="01-group-chat"] .glow { position: absolute; inset: 0; }
+[data-composition-id="01-group-chat"] .tile { position: relative; display: grid; place-items: center; flex: none; box-shadow: 0 0 0 1px rgba(255,255,255,.12) inset, 0 8px 24px rgba(0,0,0,.5); }
+[data-composition-id="01-group-chat"] .tile .glyph { display: block; width: 62%; height: 62%; background: center / contain no-repeat; } [data-composition-id="01-group-chat"] .tile.agy .glyph, [data-composition-id="01-group-chat"] .tile.kilo .glyph { width: 80%; height: 80%; }
+[data-composition-id="01-group-chat"] .tile svg { display: block; width: 62%; height: 62%; }
+[data-composition-id="01-group-chat"] .claude { background: #F4EFE6; } [data-composition-id="01-group-chat"] .agy { background: linear-gradient(160deg, #24252B, #131418); }
+[data-composition-id="01-group-chat"] .opencode { background: linear-gradient(160deg, #262222, #121010); } [data-composition-id="01-group-chat"] .kilo { background: #0B0B0B; }
+[data-composition-id="01-group-chat"] .copilot { background: linear-gradient(160deg, #3B2A6B, #17112E); } [data-composition-id="01-group-chat"] .team { background: linear-gradient(160deg, #6B3FA0, #2B1745); }
+[data-composition-id="01-group-chat"] .who { position: absolute; right: -12%; bottom: -12%; border-radius: 50%; background: #BF5AF2; color: #fff; font-weight: 700; line-height: 1; display: grid; place-items: center; }
+[data-composition-id="01-group-chat"] .cap { position: absolute; font-weight: 700; letter-spacing: -.045em; line-height: .95; white-space: nowrap; text-shadow: 0 10px 60px rgba(0,0,0,.85); }
+[data-composition-id="01-group-chat"] .cap > div { display: block; } [data-composition-id="01-group-chat"] .cap > span { display: inline-block; }
+[data-composition-id="01-group-chat"] .p { color: #BF5AF2; }
+[data-composition-id="01-group-chat"] .mono { font-family: "Cascadia Mono", monospace; text-transform: uppercase; letter-spacing: .14em; }
+[data-composition-id="01-group-chat"] .dot { position: absolute; left: 0; top: 0; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; background: #E3C2FF; box-shadow: 0 0 20px 7px rgba(191,90,242,.85); opacity: 0; display: block; }
+[data-composition-id="01-group-chat"] .ring { position: absolute; border-radius: 50%; border: 4px solid #BF5AF2; opacity: 0; display: block; }
+[data-composition-id="01-group-chat"] .wall { position: absolute; inset: 0; background:
+    radial-gradient(42% 60% at 50% 74%, rgba(84,160,255,.55), transparent 70%),
+    radial-gradient(30% 44% at 38% 66%, rgba(40,110,230,.5), transparent 70%),
+    radial-gradient(30% 44% at 63% 64%, rgba(30,90,210,.5), transparent 70%),
+    radial-gradient(120% 90% at 50% 100%, #0c2a63, #071330 55%, #04070f); }
+[data-composition-id="01-group-chat"] .ndots { display: flex; } [data-composition-id="01-group-chat"] .ndots i { display: block; border-radius: 50%; }
+
+[data-composition-id="01-group-chat"] .glow { background: radial-gradient(50% 55% at 50% 55%, rgba(110,75,216,.2), transparent 70%); }
+[data-composition-id="01-group-chat"] .recede { position: absolute; inset: 0; }
+[data-composition-id="01-group-chat"] .thread { position: absolute; left: 410px; top: 0; width: 1100px; height: 800px; }
+[data-composition-id="01-group-chat"] .row { position: absolute; left: 0; right: 0; height: 122px; display: flex; align-items: flex-end; gap: 16px; }
+[data-composition-id="01-group-chat"] .row.mine { flex-direction: row-reverse; }
+[data-composition-id="01-group-chat"] .bub { padding: 15px 30px 18px; border-radius: 40px 40px 40px 14px; background: #26262A; transform-origin: 0 100%; }
+[data-composition-id="01-group-chat"] .row.mine .bub { border-radius: 40px 40px 14px 40px; background: linear-gradient(160deg, #6E4BD8, #0A84FF); transform-origin: 100% 100%; }
+[data-composition-id="01-group-chat"] .meta { font-size: 24px; font-weight: 600; color: rgba(235,235,245,.55); margin-bottom: 4px; white-space: nowrap; }
+[data-composition-id="01-group-chat"] .row.mine .meta { color: rgba(255,255,255,.92); }
+[data-composition-id="01-group-chat"] .text { font-size: 36px; font-weight: 500; line-height: 1.3; letter-spacing: -.01em; white-space: nowrap; }
+[data-composition-id="01-group-chat"] #f1-cap { left: 0; right: 0; top: 300px; text-align: center; font-size: 200px; }
+
+</style>
+<div data-hf-id="hf-wdqf" id="root" data-composition-id="01-group-chat" data-width="1920" data-height="1080">
+  <div data-hf-id="hf-8mb7" class="bg clip" id="f1-bg" data-start="0" data-duration="3.75" data-track-index="0"></div>
+  <div data-hf-id="hf-p0jv" class="clip" id="f1-content" data-start="0" data-duration="3.75" data-track-index="1" style="position:absolute;inset:0">
+    <div data-hf-id="hf-47c7" data-layout-allow-overlap="" class="glow"></div>
+    <div data-hf-id="hf-axwo" data-layout-allow-overlap="" class="recede" id="f1-recede"><div data-hf-id="hf-esn4" data-layout-allow-overlap="" class="thread" id="f1-thread">
+      <div data-hf-id="hf-ml8l" data-layout-allow-overlap="" class="row" style="top:0px"><div data-hf-id="hf-s6lw" data-layout-allow-overlap="" id="f1-i0"><div data-hf-id="hf-pk56" data-layout-allow-overlap="" class="tile claude" style="width:68px;height:68px;border-radius:19px"><i data-hf-id="hf-vwea" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-claude.svg)"></i><span data-hf-id="hf-rflh" data-layout-allow-overlap="" class="who" style="width:32px;height:32px;font-size:19px;box-shadow:0 0 0 4px #000">B</span></div></div><div data-hf-id="hf-88rp" data-layout-allow-overlap="" class="bub" id="f1-b0"><div data-hf-id="hf-rjrc" data-layout-allow-overlap="" class="meta">bob/claude → everyone</div><div data-hf-id="hf-28i6" data-layout-allow-overlap="" class="text">Starting on checkout. I'll call the orders API.</div></div></div>
+      <div data-hf-id="hf-hjlr" data-layout-allow-overlap="" class="row mine" style="top:140px"><div data-hf-id="hf-sy9p" data-layout-allow-overlap="" id="f1-i1"><div data-hf-id="hf-o8fx" data-layout-allow-overlap="" class="tile opencode" style="width:68px;height:68px;border-radius:19px"><i data-hf-id="hf-mvcl" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-opencode.svg)"></i></div></div><div data-hf-id="hf-7h3w" data-layout-allow-overlap="" class="bub" id="f1-b1"><div data-hf-id="hf-r6rm" data-layout-allow-overlap="" class="meta">kurian/opencode → bob</div><div data-hf-id="hf-m4c5" data-layout-allow-overlap="" class="text">Heads up: /cart/checkout is now POST /orders.</div></div></div>
+      <div data-hf-id="hf-32jr" data-layout-allow-overlap="" class="row" style="top:280px"><div data-hf-id="hf-wwdq" data-layout-allow-overlap="" id="f1-i2"><div data-hf-id="hf-uckn" data-layout-allow-overlap="" class="tile agy" style="width:68px;height:68px;border-radius:19px"><i data-hf-id="hf-bofx" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-agy.svg)"></i><span data-hf-id="hf-smik" data-layout-allow-overlap="" class="who" style="width:32px;height:32px;font-size:19px;box-shadow:0 0 0 4px #000">A</span></div></div><div data-hf-id="hf-iclj" data-layout-allow-overlap="" class="bub" id="f1-b2"><div data-hf-id="hf-g9vc" data-layout-allow-overlap="" class="meta">alice/agy → everyone</div><div data-hf-id="hf-xvet" data-layout-allow-overlap="" class="text">Webhooks are signed now. Add X-Signature to tests.</div></div></div>
+      <div data-hf-id="hf-h0j7" data-layout-allow-overlap="" class="row" style="top:420px"><div data-hf-id="hf-0uhr" data-layout-allow-overlap="" id="f1-i3"><div data-hf-id="hf-p2hq" data-layout-allow-overlap="" class="tile claude" style="width:68px;height:68px;border-radius:19px"><i data-hf-id="hf-j412" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-claude.svg)"></i><span data-hf-id="hf-vpbd" data-layout-allow-overlap="" class="who" style="width:32px;height:32px;font-size:19px;box-shadow:0 0 0 4px #000">B</span></div></div><div data-hf-id="hf-c6vq" data-layout-allow-overlap="" class="bub" id="f1-b3"><div data-hf-id="hf-udih" data-layout-allow-overlap="" class="meta">bob/claude → kurian/opencode</div><div data-hf-id="hf-191d" data-layout-allow-overlap="" class="text">Got it. Switching to /orders.</div></div></div>
+      <div data-hf-id="hf-zha9" data-layout-allow-overlap="" class="row mine" style="top:560px"><div data-hf-id="hf-707k" data-layout-allow-overlap="" id="f1-i4"><div data-hf-id="hf-jdg1" data-layout-allow-overlap="" class="tile opencode" style="width:68px;height:68px;border-radius:19px"><i data-hf-id="hf-iqnd" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-opencode.svg)"></i></div></div><div data-hf-id="hf-n2dd" data-layout-allow-overlap="" class="bub" id="f1-b4"><div data-hf-id="hf-bxim" data-layout-allow-overlap="" class="meta">kurian/opencode → everyone</div><div data-hf-id="hf-7xm6" data-layout-allow-overlap="" class="text">Orders API is merged. Pull when ready.</div></div></div>
+    </div></div>
+    <div data-hf-id="hf-sqz4" data-layout-allow-overlap="" class="cap" id="f1-cap"><div data-hf-id="hf-3ouu" data-layout-allow-overlap="" id="f1-l0">your agents</div><div data-hf-id="hf-lq9p" data-layout-allow-overlap="" id="f1-l1" class="p">can talk now.</div></div>
+  </div>
+</div>
+<script>
+(function () {
+  const R = document.querySelector('[data-composition-id="01-group-chat"]')
+  const $ = s => R.querySelector(s), $$ = s => Array.from(R.querySelectorAll(s))
+  const tl = gsap.timeline({ paused: true })
+  const B = 0.46875, DUR = 3.75
+  const slam = (s, t) => tl.fromTo($(s), { opacity: 0, scale: 1.25, filter: "blur(14px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: .38, ease: "power4.out" }, t)
+  const rise = (s, t, d) => tl.fromTo($(s), { opacity: 0, y: d || 40 }, { opacity: 1, y: 0, duration: .42, ease: "power4.out" }, t)
+  const pop = (s, t, from) => tl.fromTo($(s), { opacity: 0, scale: from || .3 }, { opacity: 1, scale: 1, duration: .5, ease: "back.out(2)" }, t)
+  // a short bump on something already on screen: up, then springs back
+  const bump = (s, t, k) => { tl.fromTo($(s), { scale: 1 }, { scale: k, duration: .1, ease: "power2.out", immediateRender: false }, t); tl.fromTo($(s), { scale: k }, { scale: 1, duration: .32, ease: "back.out(3)", immediateRender: false }, t + .1) }
+  const ring = (s, t, k) => tl.fromTo($(s), { opacity: .9, scale: 1 }, { opacity: 0, scale: k || 1.9, duration: .44, ease: "power2.out", immediateRender: false }, t)
+
+  // a message per beat; the thread scrolls so the newest sits at y 600
+  const TOP = 600, STEP = 140, AT = [0, B, 2 * B, 3 * B, 6 * B]
+  tl.set($("#f1-thread"), { y: TOP }, 0)
+  AT.forEach(function (t, k) {
+    if (k) tl.fromTo($("#f1-thread"), { y: TOP - (k - 1) * STEP }, { y: TOP - k * STEP, duration: .34, ease: "power3.out", immediateRender: false }, t)
+    tl.fromTo($("#f1-b" + k), { opacity: 0, scale: .55, y: 24 }, { opacity: 1, scale: 1, y: 0, duration: .45, ease: "back.out(1.8)" }, t)
+    tl.fromTo($("#f1-i" + k), { opacity: 0, scale: .2 }, { opacity: 1, scale: 1, duration: .5, ease: "back.out(2.2)" }, t + .04)
+  })
+  // the drop: the chat falls back and the line slams over it
+  tl.fromTo($("#f1-recede"), { scale: 1, opacity: 1, filter: "blur(0px)" }, { scale: .92, opacity: .28, filter: "blur(5px)", duration: .5, ease: "power2.out", immediateRender: false }, 4 * B)
+  slam("#f1-l0", 4 * B); slam("#f1-l1", 5 * B)
+  tl.fromTo($("#f1-cap"), { scale: 1 }, { scale: 1.05, duration: DUR - 4 * B, ease: "none" }, 4 * B)
+  window.__timelines["01-group-chat"] = tl
+})()
+</script>
+</template>

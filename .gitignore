@@ -27,3 +27,15 @@ promo/assets/sfx/
 
 # Vercel
 .vercel/
+
+# Team messages launch video: same rules as the promo
+team-launch/renders/
+team-launch/capture/
+team-launch/.hyperframes/
+team-launch/.thumbnails/
+team-launch/.waveform-cache/
+team-launch/AGENTS.md
+team-launch/CLAUDE.md
+team-launch/assets/fonts/
+team-launch/assets/bgm/
+team-launch/assets/sfx/

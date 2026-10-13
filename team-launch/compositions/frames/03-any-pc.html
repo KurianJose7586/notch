@@ -1,0 +1,149 @@
+<template>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+@font-face { font-family: "Segoe UI Variable Display"; src: url("assets/fonts/SegUIVar.ttf"); font-weight: 100 900; }
+@font-face { font-family: "Cascadia Mono"; src: url("assets/fonts/CascadiaMono.ttf"); }
+#root { position: absolute; inset: 0; overflow: hidden; }
+
+[data-composition-id="03-any-pc"] { font-family: "Segoe UI Variable Display", sans-serif; color: #fff; }
+[data-composition-id="03-any-pc"] .bg { position: absolute; inset: 0; background: #000; }
+[data-composition-id="03-any-pc"] .glow { position: absolute; inset: 0; }
+[data-composition-id="03-any-pc"] .tile { position: relative; display: grid; place-items: center; flex: none; box-shadow: 0 0 0 1px rgba(255,255,255,.12) inset, 0 8px 24px rgba(0,0,0,.5); }
+[data-composition-id="03-any-pc"] .tile .glyph { display: block; width: 62%; height: 62%; background: center / contain no-repeat; } [data-composition-id="03-any-pc"] .tile.agy .glyph, [data-composition-id="03-any-pc"] .tile.kilo .glyph { width: 80%; height: 80%; }
+[data-composition-id="03-any-pc"] .tile svg { display: block; width: 62%; height: 62%; }
+[data-composition-id="03-any-pc"] .claude { background: #F4EFE6; } [data-composition-id="03-any-pc"] .agy { background: linear-gradient(160deg, #24252B, #131418); }
+[data-composition-id="03-any-pc"] .opencode { background: linear-gradient(160deg, #262222, #121010); } [data-composition-id="03-any-pc"] .kilo { background: #0B0B0B; }
+[data-composition-id="03-any-pc"] .copilot { background: linear-gradient(160deg, #3B2A6B, #17112E); } [data-composition-id="03-any-pc"] .team { background: linear-gradient(160deg, #6B3FA0, #2B1745); }
+[data-composition-id="03-any-pc"] .who { position: absolute; right: -12%; bottom: -12%; border-radius: 50%; background: #BF5AF2; color: #fff; font-weight: 700; line-height: 1; display: grid; place-items: center; }
+[data-composition-id="03-any-pc"] .cap { position: absolute; font-weight: 700; letter-spacing: -.045em; line-height: .95; white-space: nowrap; text-shadow: 0 10px 60px rgba(0,0,0,.85); }
+[data-composition-id="03-any-pc"] .cap > div { display: block; } [data-composition-id="03-any-pc"] .cap > span { display: inline-block; }
+[data-composition-id="03-any-pc"] .p { color: #BF5AF2; }
+[data-composition-id="03-any-pc"] .mono { font-family: "Cascadia Mono", monospace; text-transform: uppercase; letter-spacing: .14em; }
+[data-composition-id="03-any-pc"] .dot { position: absolute; left: 0; top: 0; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; background: #E3C2FF; box-shadow: 0 0 20px 7px rgba(191,90,242,.85); opacity: 0; display: block; }
+[data-composition-id="03-any-pc"] .ring { position: absolute; border-radius: 50%; border: 4px solid #BF5AF2; opacity: 0; display: block; }
+[data-composition-id="03-any-pc"] .wall { position: absolute; inset: 0; background:
+    radial-gradient(42% 60% at 50% 74%, rgba(84,160,255,.55), transparent 70%),
+    radial-gradient(30% 44% at 38% 66%, rgba(40,110,230,.5), transparent 70%),
+    radial-gradient(30% 44% at 63% 64%, rgba(30,90,210,.5), transparent 70%),
+    radial-gradient(120% 90% at 50% 100%, #0c2a63, #071330 55%, #04070f); }
+[data-composition-id="03-any-pc"] .ndots { display: flex; } [data-composition-id="03-any-pc"] .ndots i { display: block; border-radius: 50%; }
+
+[data-composition-id="03-any-pc"] .glow { background: radial-gradient(30% 50% at 18% 60%, rgba(10,132,255,.16), transparent 70%), radial-gradient(30% 50% at 82% 60%, rgba(191,90,242,.16), transparent 70%); }
+[data-composition-id="03-any-pc"] .all { position: absolute; inset: 0; }
+[data-composition-id="03-any-pc"] .arcs { position: absolute; left: 0; top: 0; }
+[data-composition-id="03-any-pc"] .arcs path { fill: none; stroke: rgba(227,194,255,.45); stroke-width: 3; stroke-dasharray: 10 12; }
+[data-composition-id="03-any-pc"] .stage { position: absolute; inset: 0; perspective: 1800px; }
+[data-composition-id="03-any-pc"] .dev { position: absolute; top: 270px; width: 660px; height: 380px; border-radius: 26px; overflow: hidden; box-shadow: 0 0 0 1px rgba(255,255,255,.14) inset, 0 30px 80px rgba(0,0,0,.6); }
+[data-composition-id="03-any-pc"] #f3-left .wall { opacity: .9; }
+[data-composition-id="03-any-pc"] #f3-right .wall { filter: hue-rotate(48deg); opacity: .9; }
+[data-composition-id="03-any-pc"] .tbar { position: absolute; left: 0; right: 0; bottom: 0; height: 32px; background: rgba(22,22,26,.92); border-top: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; justify-content: center; gap: 10px; }
+[data-composition-id="03-any-pc"] .tbar i { display: block; width: 17px; height: 17px; border-radius: 4px; background: rgba(255,255,255,.2); }
+[data-composition-id="03-any-pc"] .wlogo { display: grid; grid-template-columns: 7px 7px; gap: 2px; } [data-composition-id="03-any-pc"] .wlogo b { display: block; width: 7px; height: 7px; background: #4cc2ff; }
+[data-composition-id="03-any-pc"] .npill { position: absolute; left: 0; right: 0; top: 12px; margin: 0 auto; width: 250px; height: 60px; border-radius: 30px; background: #000; overflow: hidden; box-shadow: 0 0 0 1px rgba(255,255,255,.1) inset, 0 12px 30px rgba(0,0,0,.5); }
+[data-composition-id="03-any-pc"] .pst { position: absolute; left: 0; right: 0; top: 0; height: 60px; display: flex; align-items: center; justify-content: center; gap: 14px; font-size: 22px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap; }
+[data-composition-id="03-any-pc"] .sbub { position: absolute; left: 0; right: 0; top: 110px; margin: 0 auto; width: max-content; padding: 12px 22px 14px; border-radius: 28px 28px 10px 28px; background: linear-gradient(160deg, #6E4BD8, #0A84FF); transform-origin: 50% 0; }
+[data-composition-id="03-any-pc"] .sbub .m { font-size: 18px; font-weight: 600; color: rgba(255,255,255,.95); margin-bottom: 2px; white-space: nowrap; }
+[data-composition-id="03-any-pc"] .sbub .t { font-size: 26px; font-weight: 500; white-space: nowrap; }
+[data-composition-id="03-any-pc"] .peek { position: absolute; left: 0; top: 0; width: 600px; padding: 18px 22px; display: flex; gap: 16px; align-items: flex-start; }
+[data-composition-id="03-any-pc"] .relay { flex: none; display: flex; align-items: center; padding-top: 3px; }
+[data-composition-id="03-any-pc"] .wire { position: relative; width: 60px; height: 3px; margin: 0 8px; background: repeating-linear-gradient(90deg, rgba(235,235,245,.3) 0 6px, transparent 6px 12px); display: block; }
+[data-composition-id="03-any-pc"] .wire b { position: absolute; top: -6px; left: -8px; width: 15px; height: 15px; border-radius: 50%; background: #E3C2FF; box-shadow: 0 0 14px 4px rgba(191,90,242,.85); opacity: 0; display: block; }
+[data-composition-id="03-any-pc"] .pbody { flex: 1; min-width: 0; }
+[data-composition-id="03-any-pc"] .ptop { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 20px; white-space: nowrap; }
+[data-composition-id="03-any-pc"] .ptop b { font-weight: 600; } [data-composition-id="03-any-pc"] .ptop span { color: rgba(235,235,245,.6); font-size: 18px; }
+[data-composition-id="03-any-pc"] .pline { margin-top: 4px; font-size: 20px; line-height: 1.35; color: rgba(235,235,245,.72); }
+[data-composition-id="03-any-pc"] .origin { position: absolute; left: 908px; top: 68px; width: 104px; height: 104px; border-radius: 50%; background: #18191A; display: grid; place-items: center; box-shadow: 0 0 0 2px rgba(191,90,242,.75) inset, 0 0 44px rgba(191,90,242,.35); }
+[data-composition-id="03-any-pc"] .origin svg { width: 52px; height: 52px; }
+[data-composition-id="03-any-pc"] .olab { position: absolute; left: 860px; top: 184px; width: 200px; text-align: center; font-size: 22px; color: rgba(235,235,245,.62); }
+[data-composition-id="03-any-pc"] .badge { position: absolute; top: 128px; padding: 10px 22px; border-radius: 999px; background: rgba(191,90,242,.16); box-shadow: 0 0 0 2px #BF5AF2 inset; color: #E3C2FF; font-size: 24px; white-space: nowrap; }
+[data-composition-id="03-any-pc"] .dlab { position: absolute; top: 672px; width: 660px; text-align: center; font-size: 24px; color: rgba(235,235,245,.62); }
+[data-composition-id="03-any-pc"] #f3-cap { left: 0; right: 0; top: 790px; text-align: center; font-size: 104px; }
+
+</style>
+<div data-hf-id="hf-cop5" id="root" data-composition-id="03-any-pc" data-width="1920" data-height="1080">
+  <div data-hf-id="hf-yedd" class="bg clip" id="f3-bg" data-start="0" data-duration="3.75" data-track-index="0"></div>
+  <div data-hf-id="hf-rbmh" class="clip" id="f3-content" data-start="0" data-duration="3.75" data-track-index="1" style="position:absolute;inset:0">
+    <div data-hf-id="hf-47c7" data-layout-allow-overlap="" class="glow"></div>
+    <div data-hf-id="hf-q2x0" data-layout-allow-overlap="" class="all" id="f3-all">
+    <svg data-hf-id="hf-zo45" data-layout-allow-overlap="" class="arcs" id="f3-arcs" width="1920" height="1080" viewBox="0 0 1920 1080"><path data-hf-id="hf-9604" data-layout-allow-overlap="" d="M 480 284 Q 720 120 960 120" /><path data-hf-id="hf-09ih" data-layout-allow-overlap="" d="M 960 120 Q 1200 120 1440 284" /></svg>
+    <div data-hf-id="hf-dzmc" data-layout-allow-overlap="" class="stage">
+      <div data-hf-id="hf-h0vr" data-layout-allow-overlap="" class="dev" id="f3-left" style="left:150px"><div data-hf-id="hf-mcgq" data-layout-allow-overlap="" class="wall"></div><div data-hf-id="hf-qc3b" data-layout-allow-overlap="" class="tbar"><span data-hf-id="hf-xast" data-layout-allow-overlap="" class="wlogo"><b data-hf-id="hf-kvsq" data-layout-allow-overlap=""></b><b data-hf-id="hf-r6ou" data-layout-allow-overlap=""></b><b data-hf-id="hf-rkzv" data-layout-allow-overlap=""></b><b data-hf-id="hf-rzaw" data-layout-allow-overlap=""></b></span><i data-hf-id="hf-f5hv" data-layout-allow-overlap=""></i><i data-hf-id="hf-9l9v" data-layout-allow-overlap=""></i><i data-hf-id="hf-96yu" data-layout-allow-overlap=""></i></div>
+        <div data-hf-id="hf-6gwb" data-layout-allow-overlap="" class="npill"><div data-hf-id="hf-cfwl" data-layout-allow-overlap="" class="pst"><span data-hf-id="hf-qijx" data-layout-allow-overlap="" class="ndots"><i data-hf-id="hf-2ucz" data-layout-allow-overlap="" style="width:20px;height:20px;background:#D97757;box-shadow:0 0 0 3px #000"></i><i data-hf-id="hf-14m7" data-layout-allow-overlap="" style="width:20px;height:20px;background:#EDE8E6;box-shadow:0 0 0 3px #000;margin-left:-6px"></i></span><span data-hf-id="hf-zg2f" data-layout-allow-overlap="">2 working</span></div></div>
+        <div data-hf-id="hf-tswm" data-layout-allow-overlap="" class="sbub" id="f3-sbub"><div data-hf-id="hf-obsr" data-layout-allow-overlap="" class="m">kurian/claude → bob</div><div data-hf-id="hf-ctob" data-layout-allow-overlap="" class="t">Pushed the orders API. Pull when ready.</div></div>
+      </div>
+      <div data-hf-id="hf-yi55" data-layout-allow-overlap="" class="dev" id="f3-right" style="left:1110px"><div data-hf-id="hf-7dfi" data-layout-allow-overlap="" class="wall"></div><div data-hf-id="hf-0h4n" data-layout-allow-overlap="" class="tbar"><span data-hf-id="hf-ygf5" data-layout-allow-overlap="" class="wlogo"><b data-hf-id="hf-p75p" data-layout-allow-overlap=""></b><b data-hf-id="hf-plgq" data-layout-allow-overlap=""></b><b data-hf-id="hf-pzrr" data-layout-allow-overlap=""></b><b data-hf-id="hf-qe2s" data-layout-allow-overlap=""></b></span><i data-hf-id="hf-8snt" data-layout-allow-overlap=""></i><i data-hf-id="hf-8ecs" data-layout-allow-overlap=""></i><i data-hf-id="hf-801r" data-layout-allow-overlap=""></i></div>
+        <div data-hf-id="hf-c650" data-layout-allow-overlap="" class="npill" id="f3-rpill">
+          <div data-hf-id="hf-k9no" data-layout-allow-overlap="" class="pst" id="f3-rpst"><span data-hf-id="hf-n5lt" data-layout-allow-overlap="" class="ndots"><i data-hf-id="hf-vf6b" data-layout-allow-overlap="" style="width:20px;height:20px;background:#D97757;box-shadow:0 0 0 3px #000"></i></span><span data-hf-id="hf-b9by" data-layout-allow-overlap="">1 working</span></div>
+          <div data-hf-id="hf-ise6" data-layout-allow-overlap="" class="peek" id="f3-peek">
+            <div data-hf-id="hf-qjd3" data-layout-allow-overlap="" class="relay"><div data-hf-id="hf-rmee" data-layout-allow-overlap="" id="f3-ri0"><div data-hf-id="hf-jtxn" data-layout-allow-overlap="" class="tile claude" style="width:50px;height:50px;border-radius:14px"><i data-hf-id="hf-vwea" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-claude.svg)"></i><span data-hf-id="hf-xvl2" data-layout-allow-overlap="" class="who" style="width:24px;height:24px;font-size:14px;box-shadow:0 0 0 3px #000">K</span></div></div><i data-hf-id="hf-xykf" data-layout-allow-overlap="" class="wire"><b data-hf-id="hf-jc3v" data-layout-allow-overlap="" id="f3-wd"></b></i><div data-hf-id="hf-xs47" data-layout-allow-overlap="" id="f3-ri1"><div data-hf-id="hf-x417" data-layout-allow-overlap="" class="tile claude" style="width:50px;height:50px;border-radius:14px"><i data-hf-id="hf-j412" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-claude.svg)"></i></div></div></div>
+            <div data-hf-id="hf-b8ky" data-layout-allow-overlap="" class="pbody"><div data-hf-id="hf-pscz" data-layout-allow-overlap="" class="ptop" id="f3-pt"><b data-hf-id="hf-ln9i" data-layout-allow-overlap="">kurian/claude → bob</b><span data-hf-id="hf-u10y" data-layout-allow-overlap="">shop</span></div><div data-hf-id="hf-a3u1" data-layout-allow-overlap="" class="pline" id="f3-pl">Pushed the orders API. Pull when ready.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <i data-hf-id="hf-yons" data-layout-allow-overlap="" class="dot" id="f3-dot"></i>
+    <i data-hf-id="hf-lnzg" data-layout-allow-overlap="" class="ring" id="f3-oring" style="left:908px;top:68px;width:104px;height:104px"></i>
+    <div data-hf-id="hf-j4fq" data-layout-allow-overlap="" class="origin" id="f3-origin"><svg data-hf-id="hf-0cuy" data-layout-allow-overlap="" viewBox="0 0 24 24" fill="none" stroke="#E3C2FF" stroke-width="2" stroke-linecap="round"><circle data-hf-id="hf-zx9d" cx="6" cy="5" r="2.2" /><circle data-hf-id="hf-wtrc" cx="6" cy="19" r="2.2" /><circle data-hf-id="hf-i3sc" cx="18" cy="7" r="2.2" /><path data-hf-id="hf-tzd3" data-layout-allow-overlap="" d="M6 7.2v9.6M18 9.2c0 4.5-7 3.6-11 7.8" /></svg></div>
+    <div data-hf-id="hf-3i3d" data-layout-allow-overlap="" class="olab mono" id="f3-olab">origin</div>
+    <div data-hf-id="hf-gejm" data-layout-allow-overlap="" class="badge mono" id="f3-push" style="left:487px">git push</div>
+    <div data-hf-id="hf-h5ux" data-layout-allow-overlap="" class="badge mono" id="f3-fetch" style="left:1238px">git fetch</div>
+    <div data-hf-id="hf-at9r" data-layout-allow-overlap="" class="dlab mono" id="f3-llab" style="left:150px">kurian · desktop</div>
+    <div data-hf-id="hf-i4ar" data-layout-allow-overlap="" class="dlab mono" id="f3-rlab" style="left:1110px">bob · laptop</div>
+    </div>
+    <div data-hf-id="hf-u8f6" data-layout-allow-overlap="" class="cap" id="f3-cap"><span data-hf-id="hf-0miy" data-layout-allow-overlap="" id="f3-c0">across PCs.</span> <span data-hf-id="hf-qsqv" data-layout-allow-overlap="" id="f3-c1" class="p">nothing to host.</span></div>
+  </div>
+</div>
+<script>
+(function () {
+  const R = document.querySelector('[data-composition-id="03-any-pc"]')
+  const $ = s => R.querySelector(s), $$ = s => Array.from(R.querySelectorAll(s))
+  const tl = gsap.timeline({ paused: true })
+  const B = 0.46875, DUR = 3.75
+  const slam = (s, t) => tl.fromTo($(s), { opacity: 0, scale: 1.25, filter: "blur(14px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: .38, ease: "power4.out" }, t)
+  const rise = (s, t, d) => tl.fromTo($(s), { opacity: 0, y: d || 40 }, { opacity: 1, y: 0, duration: .42, ease: "power4.out" }, t)
+  const pop = (s, t, from) => tl.fromTo($(s), { opacity: 0, scale: from || .3 }, { opacity: 1, scale: 1, duration: .5, ease: "back.out(2)" }, t)
+  // a short bump on something already on screen: up, then springs back
+  const bump = (s, t, k) => { tl.fromTo($(s), { scale: 1 }, { scale: k, duration: .1, ease: "power2.out", immediateRender: false }, t); tl.fromTo($(s), { scale: k }, { scale: 1, duration: .32, ease: "back.out(3)", immediateRender: false }, t + .1) }
+  const ring = (s, t, k) => tl.fromTo($(s), { opacity: .9, scale: 1 }, { opacity: 0, scale: k || 1.9, duration: .44, ease: "power2.out", immediateRender: false }, t)
+
+  // the two PCs swing in from opposite wings, opening like a book, then drift out of phase
+  tl.fromTo($("#f3-left"), { x: -520, rotationY: 42, scale: .85, opacity: 0 }, { x: 0, rotationY: 8, scale: 1, opacity: 1, duration: .62, ease: "power3.out" }, 0)
+  tl.fromTo($("#f3-right"), { x: 520, rotationY: -42, scale: .85, opacity: 0 }, { x: 0, rotationY: -8, scale: 1, opacity: 1, duration: .62, ease: "power3.out" }, .12)
+  tl.fromTo($("#f3-left"), { y: 0 }, { y: -8, duration: DUR, ease: "sine.inOut" }, 0)
+  tl.fromTo($("#f3-right"), { y: 0 }, { y: 8, duration: DUR, ease: "sine.inOut" }, 0)
+  rise("#f3-llab", .3, 14); rise("#f3-rlab", .42, 14)
+  pop("#f3-origin", .15); rise("#f3-olab", .3, 12)
+  tl.fromTo($("#f3-arcs"), { opacity: 0 }, { opacity: 1, duration: .45 }, .25)
+  tl.fromTo($$("#f3-arcs path"), { strokeDashoffset: 0 }, { strokeDashoffset: -220, duration: DUR, ease: "none" }, 0)
+  tl.fromTo($("#f3-all"), { scale: 1 }, { scale: 1.035, duration: DUR, ease: "none" }, 0)
+  // a message, written on the left PC
+  tl.fromTo($("#f3-sbub"), { opacity: 0, y: 20, scale: .8 }, { opacity: 1, y: 0, scale: 1, duration: .45, ease: "back.out(1.8)" }, B)
+  rise("#f3-c0", B)
+  // up to the remote...
+  const d = $("#f3-dot")
+  tl.fromTo(d, { x: 480, y: 284, opacity: 0, scale: .4 }, { opacity: 1, scale: 1, duration: .1, ease: "none" }, 2 * B)
+  tl.fromTo(d, { x: 480 }, { x: 960, duration: B, ease: "none", immediateRender: false }, 2 * B)
+  tl.fromTo(d, { y: 284 }, { y: 120, duration: B, ease: "power1.out", immediateRender: false }, 2 * B)
+  pop("#f3-push", 2 * B, .5)
+  // ...through it, and down into the other PC
+  bump("#f3-origin", 3 * B, 1.18); ring("#f3-oring", 3 * B, 2.2)
+  tl.fromTo(d, { x: 960 }, { x: 1440, duration: B, ease: "none", immediateRender: false }, 3 * B)
+  tl.fromTo(d, { y: 120 }, { y: 284, duration: B, ease: "power1.in", immediateRender: false }, 3 * B)
+  tl.fromTo(d, { opacity: 1 }, { opacity: 0, duration: .08, ease: "none", immediateRender: false }, 4 * B - .06)
+  pop("#f3-fetch", 3 * B, .5)
+  // it lands: the notch over there opens the message
+  tl.fromTo($("#f3-rpill"), { width: 250, height: 60, borderRadius: 30 }, { width: 600, height: 136, borderRadius: 34, duration: .6, ease: "back.out(1.4)", immediateRender: false }, 4 * B)
+  tl.fromTo($("#f3-rpst"), { opacity: 1 }, { opacity: 0, duration: .12, ease: "none", immediateRender: false }, 4 * B)
+  tl.fromTo($("#f3-peek"), { opacity: 0 }, { opacity: 1, duration: .2, ease: "none" }, 4 * B + .05)
+  pop("#f3-ri0", 4 * B + .08, .2); pop("#f3-ri1", 4 * B + .5, .2)
+  rise("#f3-pt", 4 * B + .14, 8); rise("#f3-pl", 4 * B + .2, 8)
+  ;[4 * B + .12, 5 * B + .12, 6 * B + .12].forEach(function (t) {
+    tl.fromTo($("#f3-wd"), { x: 0, opacity: 0 }, { opacity: 1, duration: .06, ease: "none", immediateRender: false }, t)
+    tl.fromTo($("#f3-wd"), { x: 0 }, { x: 60, duration: .4, ease: "power2.inOut", immediateRender: false }, t)
+    tl.fromTo($("#f3-wd"), { opacity: 1 }, { opacity: 0, duration: .06, ease: "none", immediateRender: false }, t + .36)
+  })
+  rise("#f3-c1", 5 * B)
+  window.__timelines["03-any-pc"] = tl
+})()
+</script>
+</template>

@@ -1,0 +1,112 @@
+<template>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+@font-face { font-family: "Segoe UI Variable Display"; src: url("assets/fonts/SegUIVar.ttf"); font-weight: 100 900; }
+@font-face { font-family: "Cascadia Mono"; src: url("assets/fonts/CascadiaMono.ttf"); }
+#root { position: absolute; inset: 0; overflow: hidden; }
+
+[data-composition-id="05-lockup"] { font-family: "Segoe UI Variable Display", sans-serif; color: #fff; }
+[data-composition-id="05-lockup"] .bg { position: absolute; inset: 0; background: #000; }
+[data-composition-id="05-lockup"] .glow { position: absolute; inset: 0; }
+[data-composition-id="05-lockup"] .tile { position: relative; display: grid; place-items: center; flex: none; box-shadow: 0 0 0 1px rgba(255,255,255,.12) inset, 0 8px 24px rgba(0,0,0,.5); }
+[data-composition-id="05-lockup"] .tile .glyph { display: block; width: 62%; height: 62%; background: center / contain no-repeat; } [data-composition-id="05-lockup"] .tile.agy .glyph, [data-composition-id="05-lockup"] .tile.kilo .glyph { width: 80%; height: 80%; }
+[data-composition-id="05-lockup"] .tile svg { display: block; width: 62%; height: 62%; }
+[data-composition-id="05-lockup"] .claude { background: #F4EFE6; } [data-composition-id="05-lockup"] .agy { background: linear-gradient(160deg, #24252B, #131418); }
+[data-composition-id="05-lockup"] .opencode { background: linear-gradient(160deg, #262222, #121010); } [data-composition-id="05-lockup"] .kilo { background: #0B0B0B; }
+[data-composition-id="05-lockup"] .copilot { background: linear-gradient(160deg, #3B2A6B, #17112E); } [data-composition-id="05-lockup"] .team { background: linear-gradient(160deg, #6B3FA0, #2B1745); }
+[data-composition-id="05-lockup"] .who { position: absolute; right: -12%; bottom: -12%; border-radius: 50%; background: #BF5AF2; color: #fff; font-weight: 700; line-height: 1; display: grid; place-items: center; }
+[data-composition-id="05-lockup"] .cap { position: absolute; font-weight: 700; letter-spacing: -.045em; line-height: .95; white-space: nowrap; text-shadow: 0 10px 60px rgba(0,0,0,.85); }
+[data-composition-id="05-lockup"] .cap > div { display: block; } [data-composition-id="05-lockup"] .cap > span { display: inline-block; }
+[data-composition-id="05-lockup"] .p { color: #BF5AF2; }
+[data-composition-id="05-lockup"] .mono { font-family: "Cascadia Mono", monospace; text-transform: uppercase; letter-spacing: .14em; }
+[data-composition-id="05-lockup"] .dot { position: absolute; left: 0; top: 0; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; background: #E3C2FF; box-shadow: 0 0 20px 7px rgba(191,90,242,.85); opacity: 0; display: block; }
+[data-composition-id="05-lockup"] .ring { position: absolute; border-radius: 50%; border: 4px solid #BF5AF2; opacity: 0; display: block; }
+[data-composition-id="05-lockup"] .wall { position: absolute; inset: 0; background:
+    radial-gradient(42% 60% at 50% 74%, rgba(84,160,255,.55), transparent 70%),
+    radial-gradient(30% 44% at 38% 66%, rgba(40,110,230,.5), transparent 70%),
+    radial-gradient(30% 44% at 63% 64%, rgba(30,90,210,.5), transparent 70%),
+    radial-gradient(120% 90% at 50% 100%, #0c2a63, #071330 55%, #04070f); }
+[data-composition-id="05-lockup"] .ndots { display: flex; } [data-composition-id="05-lockup"] .ndots i { display: block; border-radius: 50%; }
+
+[data-composition-id="05-lockup"] .glow { background: radial-gradient(26% 34% at 50% 43.5%, rgba(191,90,242,.45), transparent 70%); opacity: 0; }
+[data-composition-id="05-lockup"] .flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+[data-composition-id="05-lockup"] .node { position: absolute; width: 110px; height: 110px; }
+[data-composition-id="05-lockup"] .pillw { position: absolute; left: 0; right: 0; top: 430px; display: flex; justify-content: center; }
+[data-composition-id="05-lockup"] .bpill { flex: none; width: 260px; height: 80px; border-radius: 40px; background: #000; display: flex; align-items: center; justify-content: center;
+           box-shadow: 0 0 0 2px rgba(191,90,242,.5) inset, 0 0 40px rgba(191,90,242,.25); }
+[data-composition-id="05-lockup"] .pd { display: block; width: 26px; height: 26px; border-radius: 50%; box-shadow: 0 0 0 4px #000; } [data-composition-id="05-lockup"] .pd + .pd { margin-left: -8px; }
+[data-composition-id="05-lockup"] #f5-ring { left: 900px; top: 410px; width: 120px; height: 120px; border: 6px solid #E3C2FF; }
+[data-composition-id="05-lockup"] .lock { position: absolute; inset: 0; }
+[data-composition-id="05-lockup"] .ltile { position: absolute; left: 0; right: 0; top: 150px; display: flex; justify-content: center; }
+[data-composition-id="05-lockup"] .kick { position: absolute; left: 0; right: 0; top: 330px; display: flex; justify-content: center; align-items: center; gap: 16px; font-size: 26px; letter-spacing: .2em; color: #E3C2FF; }
+[data-composition-id="05-lockup"] #f5-title { left: 0; right: 0; top: 400px; text-align: center; font-size: 200px; }
+[data-composition-id="05-lockup"] .sub { position: absolute; left: 0; right: 0; top: 640px; text-align: center; font-size: 52px; font-weight: 600; letter-spacing: -.01em; color: rgba(235,235,245,.78); }
+[data-composition-id="05-lockup"] .logos { position: absolute; left: 0; right: 0; top: 765px; display: flex; justify-content: center; align-items: center; gap: 18px; }
+[data-composition-id="05-lockup"] .win { font-size: 22px; color: rgba(235,235,245,.6); margin-left: 16px; }
+
+</style>
+<div data-hf-id="hf-vfcd" id="root" data-composition-id="05-lockup" data-width="1920" data-height="1080">
+  <div data-hf-id="hf-76yi" class="bg clip" id="f5-bg" data-start="0" data-duration="5.625" data-track-index="0"></div>
+  <div data-hf-id="hf-aydm" class="clip" id="f5-content" data-start="0" data-duration="5.625" data-track-index="1" style="position:absolute;inset:0">
+    <div data-hf-id="hf-9s7c" data-layout-allow-overlap="" class="glow" id="f5-glow"></div>
+    <div data-hf-id="hf-saz4" data-layout-allow-overlap="" class="node" id="f5-t0" style="left:905px;top:85px"><div data-hf-id="hf-jm68" data-layout-allow-overlap="" class="tile claude" style="width:110px;height:110px;border-radius:31px"><i data-hf-id="hf-vwea" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-claude.svg)"></i></div></div>
+    <div data-hf-id="hf-8l1g" data-layout-allow-overlap="" class="node" id="f5-t1" style="left:1219px;top:313px"><div data-hf-id="hf-iw8y" data-layout-allow-overlap="" class="tile copilot" style="width:110px;height:110px;border-radius:31px"><i data-hf-id="hf-si7y" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-copilot.svg)"></i></div></div>
+    <div data-hf-id="hf-swle" data-layout-allow-overlap="" class="node" id="f5-t2" style="left:1099px;top:682px"><div data-hf-id="hf-wifz" data-layout-allow-overlap="" class="tile opencode" style="width:110px;height:110px;border-radius:31px"><i data-hf-id="hf-mvcl" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-opencode.svg)"></i></div></div>
+    <div data-hf-id="hf-6bij" data-layout-allow-overlap="" class="node" id="f5-t3" style="left:711px;top:682px"><div data-hf-id="hf-rjxv" data-layout-allow-overlap="" class="tile kilo" style="width:110px;height:110px;border-radius:31px"><i data-hf-id="hf-tded" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-kilo.svg)"></i></div></div>
+    <div data-hf-id="hf-pp4f" data-layout-allow-overlap="" class="node" id="f5-t4" style="left:591px;top:313px"><div data-hf-id="hf-jcd9" data-layout-allow-overlap="" class="tile agy" style="width:110px;height:110px;border-radius:31px"><i data-hf-id="hf-bofx" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-agy.svg)"></i></div></div>
+    <div data-hf-id="hf-b6j6" data-layout-allow-overlap="" class="pillw"><div data-hf-id="hf-m5x6" data-layout-allow-overlap="" class="bpill" id="f5-pill"><span data-hf-id="hf-v6zj" data-layout-allow-overlap="" class="ndots" id="f5-pdots"><i data-hf-id="hf-ndmu" data-layout-allow-overlap="" class="pd" id="f5-d0" style="background:#D97757"></i><i data-hf-id="hf-sueg" data-layout-allow-overlap="" class="pd" id="f5-d1" style="background:#8B5CF6"></i><i data-hf-id="hf-v0fi" data-layout-allow-overlap="" class="pd" id="f5-d2" style="background:#EDE8E6"></i><i data-hf-id="hf-7q2i" data-layout-allow-overlap="" class="pd" id="f5-d3" style="background:#F8F675"></i><i data-hf-id="hf-bigo" data-layout-allow-overlap="" class="pd" id="f5-d4" style="background:#3DBE6A"></i></span></div></div>
+    <i data-hf-id="hf-zuic" data-layout-allow-overlap="" class="ring" id="f5-ring"></i>
+    <div data-hf-id="hf-dyjs" data-layout-allow-overlap="" class="flash" id="f5-flash"></div>
+    <div data-hf-id="hf-oqn0" data-layout-allow-overlap="" class="lock" id="f5-lock">
+      <div data-hf-id="hf-bv08" data-layout-allow-overlap="" class="ltile" id="f5-tile"><div data-hf-id="hf-wk4x" data-layout-allow-overlap="" class="tile team" style="width:150px;height:150px;border-radius:42px"><svg data-hf-id="hf-yft0" data-layout-allow-overlap="" viewBox="0 0 24 24" fill="#F3E8FF"><circle data-hf-id="hf-6949" cx="9" cy="8" r="3.3" /><path data-hf-id="hf-b204" data-layout-allow-overlap="" d="M2.6 19c.4-3.6 3.1-5.8 6.4-5.8s6 2.2 6.4 5.8c.1.6-.4 1-1 1H3.6c-.6 0-1.1-.4-1-1z" /><circle data-hf-id="hf-3ir8" cx="16.8" cy="9.2" r="2.6" opacity=".6" /><path data-hf-id="hf-e5lf" data-layout-allow-overlap="" d="M15.9 13.6c3-.3 5.3 1.5 5.6 4.5 0 .5-.3.9-.8.9h-3.5c-.1-2-.6-3.8-1.3-5.4z" opacity=".6" /></svg></div></div>
+      <div data-hf-id="hf-u67j" data-layout-allow-overlap="" class="kick mono" id="f5-kick">new in agent notch</div>
+      <div data-hf-id="hf-t5sd" data-layout-allow-overlap="" class="cap" id="f5-title">team messages</div>
+      <div data-hf-id="hf-udfs" data-layout-allow-overlap="" class="sub" id="f5-sub">any agent <span data-hf-id="hf-r9qc" data-layout-allow-overlap="" class="p">·</span> any PC <span data-hf-id="hf-2wqk" data-layout-allow-overlap="" class="p">·</span> one repo</div>
+      <div data-hf-id="hf-y1eq" data-layout-allow-overlap="" class="logos"><div data-hf-id="hf-2jqv" data-layout-allow-overlap="" id="f5-l0"><div data-hf-id="hf-5wa9" data-layout-allow-overlap="" class="tile claude" style="width:56px;height:56px;border-radius:16px"><i data-hf-id="hf-j412" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-claude.svg)"></i></div></div><div data-hf-id="hf-ylmu" data-layout-allow-overlap="" id="f5-l1"><div data-hf-id="hf-ev8b" data-layout-allow-overlap="" class="tile copilot" style="width:56px;height:56px;border-radius:16px"><i data-hf-id="hf-bkma" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-copilot.svg)"></i></div></div><div data-hf-id="hf-unit" data-layout-allow-overlap="" id="f5-l2"><div data-hf-id="hf-3whi" data-layout-allow-overlap="" class="tile opencode" style="width:56px;height:56px;border-radius:16px"><i data-hf-id="hf-iqnd" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-opencode.svg)"></i></div></div><div data-hf-id="hf-tvv0" data-layout-allow-overlap="" id="f5-l3"><div data-hf-id="hf-h4qa" data-layout-allow-overlap="" class="tile kilo" style="width:56px;height:56px;border-radius:16px"><i data-hf-id="hf-hsnd" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-kilo.svg)"></i></div></div><div data-hf-id="hf-hdcj" data-layout-allow-overlap="" id="f5-l4"><div data-hf-id="hf-wht0" data-layout-allow-overlap="" class="tile agy" style="width:56px;height:56px;border-radius:16px"><i data-hf-id="hf-htox" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-agy.svg)"></i></div></div><span data-hf-id="hf-t17m" data-layout-allow-overlap="" class="mono win" id="f5-win">for windows</span></div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  const R = document.querySelector('[data-composition-id="05-lockup"]')
+  const $ = s => R.querySelector(s), $$ = s => Array.from(R.querySelectorAll(s))
+  const tl = gsap.timeline({ paused: true })
+  const B = 0.46875, DUR = 5.625
+  const slam = (s, t) => tl.fromTo($(s), { opacity: 0, scale: 1.25, filter: "blur(14px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: .38, ease: "power4.out" }, t)
+  const rise = (s, t, d) => tl.fromTo($(s), { opacity: 0, y: d || 40 }, { opacity: 1, y: 0, duration: .42, ease: "power4.out" }, t)
+  const pop = (s, t, from) => tl.fromTo($(s), { opacity: 0, scale: from || .3 }, { opacity: 1, scale: 1, duration: .5, ease: "back.out(2)" }, t)
+  // a short bump on something already on screen: up, then springs back
+  const bump = (s, t, k) => { tl.fromTo($(s), { scale: 1 }, { scale: k, duration: .1, ease: "power2.out", immediateRender: false }, t); tl.fromTo($(s), { scale: k }, { scale: 1, duration: .32, ease: "back.out(3)", immediateRender: false }, t + .1) }
+  const ring = (s, t, k) => tl.fromTo($(s), { opacity: .9, scale: 1 }, { opacity: 0, scale: k || 1.9, duration: .44, ease: "power2.out", immediateRender: false }, t)
+
+  const P = [{"x":960,"y":140},{"x":1274,"y":368},{"x":1154,"y":737},{"x":766,"y":737},{"x":646,"y":368}]
+  P.forEach(function (p, i) { pop("#f5-t" + i, i * .03, .6) })
+  pop("#f5-pill", 0, .7)
+  // the break: one by one the agents are pulled into the notch, which charges up
+  P.forEach(function (p, i) {
+    const t = .5 + i * .18
+    tl.fromTo($("#f5-t" + i), { x: 0, y: 0, scale: 1, opacity: 1 }, { x: 960 - p.x, y: 470 - p.y, scale: .15, opacity: 0, duration: .4, ease: "power3.in", immediateRender: false }, t)
+    tl.fromTo($("#f5-d" + i), { scale: 0 }, { scale: 1, duration: .25, ease: "back.out(3)" }, t + .38)
+    tl.fromTo($("#f5-pill"), { scale: 1.08 }, { scale: 1, duration: .17, ease: "power2.out", immediateRender: false }, t + .4)
+  })
+  tl.fromTo($("#f5-glow"), { opacity: 0 }, { opacity: 1, duration: 1.4, ease: "power2.in" }, .4)
+  tl.fromTo($("#f5-pill"), { boxShadow: "0 0 0 2px rgba(191,90,242,.5) inset, 0 0 40px rgba(191,90,242,.25)" }, { boxShadow: "0 0 0 3px rgba(227,194,255,.95) inset, 0 0 90px rgba(191,90,242,.9)", duration: 1.3, ease: "power2.in", immediateRender: false }, .5)
+  // ...and collapses into one bright dot
+  tl.fromTo($("#f5-pill"), { width: 260, backgroundColor: "#000000" }, { width: 80, backgroundColor: "#E3C2FF", duration: .26, ease: "power3.in", immediateRender: false }, 4 * B - .26)
+  tl.fromTo($("#f5-pdots"), { opacity: 1 }, { opacity: 0, duration: .12, ease: "none", immediateRender: false }, 4 * B - .26)
+  // the drop: it bursts into the lockup
+  tl.fromTo($("#f5-pill"), { opacity: 1 }, { opacity: 0, duration: .06, ease: "none", immediateRender: false }, 4 * B)
+  tl.fromTo($("#f5-ring"), { opacity: 1, scale: .2 }, { opacity: 0, scale: 7, duration: .7, ease: "power2.out", immediateRender: false }, 4 * B)
+  tl.fromTo($("#f5-flash"), { opacity: .4 }, { opacity: 0, duration: .35, ease: "power2.out", immediateRender: false }, 4 * B)
+  tl.fromTo($("#f5-glow"), { opacity: 1 }, { opacity: .3, duration: .8, ease: "power2.out", immediateRender: false }, 4 * B)
+  pop("#f5-tile", 4 * B, .2)
+  slam("#f5-title", 4 * B + .08)
+  rise("#f5-kick", 4 * B + .3, 16)
+  rise("#f5-sub", 4 * B + .72, 24)
+  ;[0, 1, 2, 3, 4].forEach(function (i) { pop("#f5-l" + i, 4 * B + 1.1 + i * .06, .4) })
+  rise("#f5-win", 4 * B + 1.45, 10)
+  tl.fromTo($("#f5-lock"), { scale: 1 }, { scale: 1.035, duration: DUR - 4 * B, ease: "none" }, 4 * B)
+  window.__timelines["05-lockup"] = tl
+})()
+</script>
+</template>

@@ -1,0 +1,126 @@
+<template>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+@font-face { font-family: "Segoe UI Variable Display"; src: url("assets/fonts/SegUIVar.ttf"); font-weight: 100 900; }
+@font-face { font-family: "Cascadia Mono"; src: url("assets/fonts/CascadiaMono.ttf"); }
+#root { position: absolute; inset: 0; overflow: hidden; }
+
+[data-composition-id="04-in-the-notch"] { font-family: "Segoe UI Variable Display", sans-serif; color: #fff; }
+[data-composition-id="04-in-the-notch"] .bg { position: absolute; inset: 0; background: #000; }
+[data-composition-id="04-in-the-notch"] .glow { position: absolute; inset: 0; }
+[data-composition-id="04-in-the-notch"] .tile { position: relative; display: grid; place-items: center; flex: none; box-shadow: 0 0 0 1px rgba(255,255,255,.12) inset, 0 8px 24px rgba(0,0,0,.5); }
+[data-composition-id="04-in-the-notch"] .tile .glyph { display: block; width: 62%; height: 62%; background: center / contain no-repeat; } [data-composition-id="04-in-the-notch"] .tile.agy .glyph, [data-composition-id="04-in-the-notch"] .tile.kilo .glyph { width: 80%; height: 80%; }
+[data-composition-id="04-in-the-notch"] .tile svg { display: block; width: 62%; height: 62%; }
+[data-composition-id="04-in-the-notch"] .claude { background: #F4EFE6; } [data-composition-id="04-in-the-notch"] .agy { background: linear-gradient(160deg, #24252B, #131418); }
+[data-composition-id="04-in-the-notch"] .opencode { background: linear-gradient(160deg, #262222, #121010); } [data-composition-id="04-in-the-notch"] .kilo { background: #0B0B0B; }
+[data-composition-id="04-in-the-notch"] .copilot { background: linear-gradient(160deg, #3B2A6B, #17112E); } [data-composition-id="04-in-the-notch"] .team { background: linear-gradient(160deg, #6B3FA0, #2B1745); }
+[data-composition-id="04-in-the-notch"] .who { position: absolute; right: -12%; bottom: -12%; border-radius: 50%; background: #BF5AF2; color: #fff; font-weight: 700; line-height: 1; display: grid; place-items: center; }
+[data-composition-id="04-in-the-notch"] .cap { position: absolute; font-weight: 700; letter-spacing: -.045em; line-height: .95; white-space: nowrap; text-shadow: 0 10px 60px rgba(0,0,0,.85); }
+[data-composition-id="04-in-the-notch"] .cap > div { display: block; } [data-composition-id="04-in-the-notch"] .cap > span { display: inline-block; }
+[data-composition-id="04-in-the-notch"] .p { color: #BF5AF2; }
+[data-composition-id="04-in-the-notch"] .mono { font-family: "Cascadia Mono", monospace; text-transform: uppercase; letter-spacing: .14em; }
+[data-composition-id="04-in-the-notch"] .dot { position: absolute; left: 0; top: 0; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; background: #E3C2FF; box-shadow: 0 0 20px 7px rgba(191,90,242,.85); opacity: 0; display: block; }
+[data-composition-id="04-in-the-notch"] .ring { position: absolute; border-radius: 50%; border: 4px solid #BF5AF2; opacity: 0; display: block; }
+[data-composition-id="04-in-the-notch"] .wall { position: absolute; inset: 0; background:
+    radial-gradient(42% 60% at 50% 74%, rgba(84,160,255,.55), transparent 70%),
+    radial-gradient(30% 44% at 38% 66%, rgba(40,110,230,.5), transparent 70%),
+    radial-gradient(30% 44% at 63% 64%, rgba(30,90,210,.5), transparent 70%),
+    radial-gradient(120% 90% at 50% 100%, #0c2a63, #071330 55%, #04070f); }
+[data-composition-id="04-in-the-notch"] .ndots { display: flex; } [data-composition-id="04-in-the-notch"] .ndots i { display: block; border-radius: 50%; }
+
+[data-composition-id="04-in-the-notch"] .shade { position: absolute; inset: 0; background: linear-gradient(rgba(0,0,0,.2), rgba(0,0,0,.5) 55%, rgba(0,0,0,.75)); }
+[data-composition-id="04-in-the-notch"] .zoom { position: absolute; left: 0; right: 0; top: 10px; display: flex; justify-content: center; transform-origin: 50% 0; }
+[data-composition-id="04-in-the-notch"] .isl { position: relative; flex: none; width: 150px; height: 36px; border-radius: 18px; overflow: hidden; background: #000; font-size: 13px; line-height: 1.35;
+         box-shadow: 0 0 0 .5px rgba(255,255,255,.09) inset, 0 12px 32px rgba(0,0,0,.32), 0 2px 6px rgba(0,0,0,.2); }
+[data-composition-id="04-in-the-notch"] .rim { position: absolute; inset: 0; border-radius: inherit; padding: 1.5px; --spin: 0deg; opacity: .9;
+         background: conic-gradient(from var(--spin), transparent 0deg 240deg, rgba(10,132,255,.9) 315deg, rgba(191,90,242,.95) 342deg, transparent 360deg);
+         -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+[data-composition-id="04-in-the-notch"] .st { position: absolute; left: 0; top: 0; }
+[data-composition-id="04-in-the-notch"] .pst { width: 150px; height: 36px; display: flex; align-items: center; justify-content: center; gap: 9px; white-space: nowrap; }
+[data-composition-id="04-in-the-notch"] .pst b { font-weight: 600; letter-spacing: -.01em; }
+[data-composition-id="04-in-the-notch"] .peek { width: 440px; padding: 11px 14px 11px 11px; display: flex; align-items: flex-start; gap: 11px; }
+[data-composition-id="04-in-the-notch"] .relay { flex: none; display: flex; align-items: center; padding-top: 2px; }
+[data-composition-id="04-in-the-notch"] .wire { position: relative; width: 30px; height: 2px; margin: 0 4px; border-radius: 1px; display: block; background: repeating-linear-gradient(90deg, rgba(235,235,245,.28) 0 3px, transparent 3px 6px); }
+[data-composition-id="04-in-the-notch"] .wire b { position: absolute; top: -3px; left: -4px; width: 8px; height: 8px; border-radius: 50%; background: #E3C2FF; box-shadow: 0 0 8px 2px rgba(191,90,242,.85); opacity: 0; display: block; }
+[data-composition-id="04-in-the-notch"] .cbody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+[data-composition-id="04-in-the-notch"] .ctop { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; white-space: nowrap; }
+[data-composition-id="04-in-the-notch"] .ctop b { font-weight: 600; } [data-composition-id="04-in-the-notch"] .ctop span { color: rgba(235,235,245,.3); font-size: 12px; }
+[data-composition-id="04-in-the-notch"] .cline { color: rgba(235,235,245,.6); font-size: 12.5px; white-space: nowrap; }
+[data-composition-id="04-in-the-notch"] .panel { width: 460px; padding: 18px 16px 12px; }
+[data-composition-id="04-in-the-notch"] .head { display: flex; align-items: center; gap: 10px; padding: 0 6px 2px; }
+[data-composition-id="04-in-the-notch"] .head h1 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -.02em; line-height: 1.2; }
+[data-composition-id="04-in-the-notch"] .head .summary { flex: 1; text-align: right; color: rgba(235,235,245,.6); font-size: 12px; white-space: nowrap; }
+[data-composition-id="04-in-the-notch"] .round { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,.1); display: grid; place-items: center; flex: none; }
+[data-composition-id="04-in-the-notch"] .round svg { width: 14px; height: 14px; }
+[data-composition-id="04-in-the-notch"] .roster { display: flex; gap: 6px; padding: 14px 4px 2px; }
+[data-composition-id="04-in-the-notch"] .person { flex: none; width: 84px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 10.5px; color: rgba(235,235,245,.6); white-space: nowrap; }
+[data-composition-id="04-in-the-notch"] .person.busy .tile { box-shadow: 0 0 0 2px #000, 0 0 0 3.5px #0A84FF; }
+[data-composition-id="04-in-the-notch"] .thread { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; padding: 0 2px 4px; }
+[data-composition-id="04-in-the-notch"] .msg { display: flex; align-items: flex-end; gap: 8px; max-width: 86%; }
+[data-composition-id="04-in-the-notch"] .msg.mine { align-self: flex-end; flex-direction: row-reverse; }
+[data-composition-id="04-in-the-notch"] .nb { min-width: 0; padding: 7px 11px 8px; border-radius: 16px 16px 16px 5px; background: rgba(118,118,128,.26); }
+[data-composition-id="04-in-the-notch"] .msg.mine .nb { border-radius: 16px 16px 5px 16px; background: linear-gradient(160deg, #6E4BD8, #0A84FF); }
+[data-composition-id="04-in-the-notch"] .nm { margin-bottom: 2px; font-size: 10.5px; font-weight: 600; color: rgba(235,235,245,.62); white-space: nowrap; }
+[data-composition-id="04-in-the-notch"] .msg.mine .nm { color: rgba(255,255,255,.95); }
+[data-composition-id="04-in-the-notch"] .nt { font-size: 12.5px; line-height: 1.4; white-space: nowrap; }
+[data-composition-id="04-in-the-notch"] #f4-cap { left: 110px; top: 640px; font-size: 120px; }
+
+</style>
+<div data-hf-id="hf-n6sg" id="root" data-composition-id="04-in-the-notch" data-width="1920" data-height="1080">
+  <div data-hf-id="hf-r3ao" class="bg clip" id="f4-bg" data-start="0" data-duration="3.75" data-track-index="0"></div>
+  <div data-hf-id="hf-bkfq" class="clip" id="f4-content" data-start="0" data-duration="3.75" data-track-index="1" style="position:absolute;inset:0">
+    <div data-hf-id="hf-mcgq" data-layout-allow-overlap="" class="wall"></div><div data-hf-id="hf-t56f" data-layout-allow-overlap="" class="shade"></div>
+    <div data-hf-id="hf-axln" data-layout-allow-overlap="" class="zoom" id="f4-zoom"><div data-hf-id="hf-53ht" data-layout-allow-overlap="" class="isl" id="f4-isl"><div data-hf-id="hf-nukt" data-layout-allow-overlap="" class="rim" id="f4-rim"></div>
+      <div data-hf-id="hf-5myk" data-layout-allow-overlap="" class="st pst" id="f4-pst"><span data-hf-id="hf-qijx" data-layout-allow-overlap="" class="ndots"><i data-hf-id="hf-x358" data-layout-allow-overlap="" style="width:10px;height:10px;background:#D97757;box-shadow:0 0 0 2px #000"></i><i data-hf-id="hf-nnlr" data-layout-allow-overlap="" style="width:10px;height:10px;background:#EDE8E6;box-shadow:0 0 0 2px #000;margin-left:-3px"></i></span><b data-hf-id="hf-r9d7" data-layout-allow-overlap="">2 working</b></div>
+      <div data-hf-id="hf-3wj4" data-layout-allow-overlap="" class="st peek" id="f4-peek">
+        <div data-hf-id="hf-qjd3" data-layout-allow-overlap="" class="relay"><div data-hf-id="hf-ok01" data-layout-allow-overlap="" id="f4-ri0"><div data-hf-id="hf-gu9f" data-layout-allow-overlap="" class="tile claude" style="width:26px;height:26px;border-radius:7px"><i data-hf-id="hf-vwea" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-claude.svg)"></i><span data-hf-id="hf-53kg" data-layout-allow-overlap="" class="who" style="width:15px;height:15px;font-size:9px;box-shadow:0 0 0 2px #000">B</span></div></div><i data-hf-id="hf-xykf" data-layout-allow-overlap="" class="wire"><b data-hf-id="hf-3oey" data-layout-allow-overlap="" id="f4-wd"></b></i><div data-hf-id="hf-nsc8" data-layout-allow-overlap="" id="f4-ri1"><div data-hf-id="hf-vx7y" data-layout-allow-overlap="" class="tile opencode" style="width:26px;height:26px;border-radius:7px"><i data-hf-id="hf-mvcl" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-opencode.svg)"></i></div></div></div>
+        <div data-hf-id="hf-rf07" data-layout-allow-overlap="" class="cbody"><div data-hf-id="hf-42oq" data-layout-allow-overlap="" class="ctop" id="f4-ct"><b data-hf-id="hf-zgc4" data-layout-allow-overlap="">bob/claude → kurian/opencode</b><span data-hf-id="hf-u10y" data-layout-allow-overlap="">shop</span></div><div data-hf-id="hf-etbs" data-layout-allow-overlap="" class="cline" id="f4-cl">Does /orders paginate?</div></div>
+      </div>
+      <div data-hf-id="hf-w1ay" data-layout-allow-overlap="" class="st panel" id="f4-panel">
+        <div data-hf-id="hf-k7bz" data-layout-allow-overlap="" class="head" id="f4-head"><span data-hf-id="hf-hg7v" data-layout-allow-overlap="" class="round"><svg data-hf-id="hf-2tx5" data-layout-allow-overlap="" viewBox="0 0 16 16"><path data-hf-id="hf-o9e1" data-layout-allow-overlap="" d="M10 3 5 8l5 5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg></span><h1 data-hf-id="hf-j0el" data-layout-allow-overlap="">shop</h1><span data-hf-id="hf-sdv1" data-layout-allow-overlap="" class="summary">2 agents · 2 teammates</span></div>
+        <div data-hf-id="hf-6ukp" data-layout-allow-overlap="" class="roster"><div data-hf-id="hf-0l0t" data-layout-allow-overlap="" class="person busy" id="f4-p0"><div data-hf-id="hf-fms9" data-layout-allow-overlap="" class="tile claude" style="width:32px;height:32px;border-radius:9px"><i data-hf-id="hf-j412" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-claude.svg)"></i></div><span data-hf-id="hf-c877" data-layout-allow-overlap="">kurian/claude</span></div><div data-hf-id="hf-aqwp" data-layout-allow-overlap="" class="person" id="f4-p1"><div data-hf-id="hf-zxf0" data-layout-allow-overlap="" class="tile opencode" style="width:32px;height:32px;border-radius:9px"><i data-hf-id="hf-iqnd" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-opencode.svg)"></i></div><span data-hf-id="hf-w3y4" data-layout-allow-overlap="">kurian/opencode</span></div><div data-hf-id="hf-gwmi" data-layout-allow-overlap="" class="person" id="f4-p2"><div data-hf-id="hf-708d" data-layout-allow-overlap="" class="tile claude" style="width:32px;height:32px;border-radius:9px"><i data-hf-id="hf-jic3" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-claude.svg)"></i><span data-hf-id="hf-8o4o" data-layout-allow-overlap="" class="who" style="width:15px;height:15px;font-size:9px;box-shadow:0 0 0 2px #000">B</span></div><span data-hf-id="hf-xs28" data-layout-allow-overlap="">bob/claude</span></div><div data-hf-id="hf-kuqj" data-layout-allow-overlap="" class="person" id="f4-p3"><div data-hf-id="hf-o28q" data-layout-allow-overlap="" class="tile agy" style="width:32px;height:32px;border-radius:9px"><i data-hf-id="hf-bofx" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-agy.svg)"></i><span data-hf-id="hf-3wnd" data-layout-allow-overlap="" class="who" style="width:15px;height:15px;font-size:9px;box-shadow:0 0 0 2px #000">A</span></div><span data-hf-id="hf-w2va" data-layout-allow-overlap="">alice/agy</span></div></div>
+        <div data-hf-id="hf-9icm" data-layout-allow-overlap="" class="thread"><div data-hf-id="hf-km0b" data-layout-allow-overlap="" class="msg" id="f4-m0"><div data-hf-id="hf-4qlb" data-layout-allow-overlap="" class="tile claude" style="width:24px;height:24px;border-radius:7px"><i data-hf-id="hf-jwn4" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-claude.svg)"></i><span data-hf-id="hf-7h7l" data-layout-allow-overlap="" class="who" style="width:15px;height:15px;font-size:9px;box-shadow:0 0 0 2px #000">B</span></div><div data-hf-id="hf-btq6" data-layout-allow-overlap="" class="nb"><div data-hf-id="hf-ahpb" data-layout-allow-overlap="" class="nm">bob/claude → kurian/opencode · 1m ago</div><div data-hf-id="hf-qquf" data-layout-allow-overlap="" class="nt">Does /orders paginate?</div></div></div><div data-hf-id="hf-70o5" data-layout-allow-overlap="" class="msg mine" id="f4-m1"><div data-hf-id="hf-c78q" data-layout-allow-overlap="" class="tile opencode" style="width:24px;height:24px;border-radius:7px"><i data-hf-id="hf-jxkg" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-opencode.svg)"></i></div><div data-hf-id="hf-m1pe" data-layout-allow-overlap="" class="nb"><div data-hf-id="hf-n9vc" data-layout-allow-overlap="" class="nm">kurian/opencode → bob/claude · now</div><div data-hf-id="hf-evqi" data-layout-allow-overlap="" class="nt">Cursor-based: ?after=&lt;id&gt;&amp;limit=50.</div></div></div><div data-hf-id="hf-cps9" data-layout-allow-overlap="" class="msg" id="f4-m2"><div data-hf-id="hf-tnoc" data-layout-allow-overlap="" class="tile agy" style="width:24px;height:24px;border-radius:7px"><i data-hf-id="hf-htox" data-layout-allow-overlap="" class="glyph" style="background-image:url(assets/logo-agy.svg)"></i><span data-hf-id="hf-54vx" data-layout-allow-overlap="" class="who" style="width:15px;height:15px;font-size:9px;box-shadow:0 0 0 2px #000">A</span></div><div data-hf-id="hf-mg0f" data-layout-allow-overlap="" class="nb"><div data-hf-id="hf-ydg9" data-layout-allow-overlap="" class="nm">alice/agy → everyone · now</div><div data-hf-id="hf-ogfl" data-layout-allow-overlap="" class="nt">Webhook tests are green.</div></div></div></div>
+      </div>
+    </div></div>
+    <div data-hf-id="hf-dyh9" data-layout-allow-overlap="" class="cap" id="f4-cap"><div data-hf-id="hf-xzp0" data-layout-allow-overlap="" id="f4-c0">right in</div><div data-hf-id="hf-sxls" data-layout-allow-overlap="" id="f4-c1" class="p">your notch.</div></div>
+  </div>
+</div>
+<script>
+(function () {
+  const R = document.querySelector('[data-composition-id="04-in-the-notch"]')
+  const $ = s => R.querySelector(s), $$ = s => Array.from(R.querySelectorAll(s))
+  const tl = gsap.timeline({ paused: true })
+  const B = 0.46875, DUR = 3.75
+  const slam = (s, t) => tl.fromTo($(s), { opacity: 0, scale: 1.25, filter: "blur(14px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: .38, ease: "power4.out" }, t)
+  const rise = (s, t, d) => tl.fromTo($(s), { opacity: 0, y: d || 40 }, { opacity: 1, y: 0, duration: .42, ease: "power4.out" }, t)
+  const pop = (s, t, from) => tl.fromTo($(s), { opacity: 0, scale: from || .3 }, { opacity: 1, scale: 1, duration: .5, ease: "back.out(2)" }, t)
+  // a short bump on something already on screen: up, then springs back
+  const bump = (s, t, k) => { tl.fromTo($(s), { scale: 1 }, { scale: k, duration: .1, ease: "power2.out", immediateRender: false }, t); tl.fromTo($(s), { scale: k }, { scale: 1, duration: .32, ease: "back.out(3)", immediateRender: false }, t + .1) }
+  const ring = (s, t, k) => tl.fromTo($(s), { opacity: .9, scale: 1 }, { opacity: 0, scale: k || 1.9, duration: .44, ease: "power2.out", immediateRender: false }, t)
+
+  const Z = $("#f4-zoom"), I = $("#f4-isl")
+  tl.fromTo(Z, { scale: 3.25 }, { scale: 3.0, duration: .6, ease: "power2.out" }, 0)
+  tl.fromTo($("#f4-rim"), { "--spin": "0deg" }, { "--spin": "1080deg", duration: DUR, ease: "none" }, 0)
+  // a message arrives: the pill springs open into the team card
+  tl.fromTo(I, { width: 150, height: 36, borderRadius: 18 }, { width: 440, height: 60, borderRadius: 24, duration: .62, ease: "back.out(1.3)", immediateRender: false }, .23)
+  tl.fromTo($("#f4-pst"), { opacity: 1 }, { opacity: 0, duration: .15, ease: "none", immediateRender: false }, .23)
+  tl.fromTo($("#f4-peek"), { opacity: 0 }, { opacity: 1, duration: .2, ease: "none" }, .25)
+  pop("#f4-ri0", .3, .2); pop("#f4-ri1", .8, .2)
+  rise("#f4-ct", .35, 6); rise("#f4-cl", .4, 6)
+  ;[.45, .95, 1.45].forEach(function (t) {
+    tl.fromTo($("#f4-wd"), { x: 0, opacity: 0 }, { opacity: 1, duration: .06, ease: "none", immediateRender: false }, t)
+    tl.fromTo($("#f4-wd"), { x: 0 }, { x: 30, duration: .42, ease: "power2.inOut", immediateRender: false }, t)
+    tl.fromTo($("#f4-wd"), { opacity: 1 }, { opacity: 0, duration: .06, ease: "none", immediateRender: false }, t + .38)
+  })
+  rise("#f4-c0", B); rise("#f4-c1", 2 * B)
+  // on the bar it opens into the team view
+  tl.fromTo(Z, { scale: 3.0 }, { scale: 1.8, duration: .5, ease: "power3.out", immediateRender: false }, 4 * B)
+  tl.fromTo(I, { width: 440, height: 60, borderRadius: 24 }, { width: 460, height: 312, borderRadius: 30, duration: .62, ease: "back.out(1.1)", immediateRender: false }, 4 * B)
+  tl.fromTo($("#f4-peek"), { opacity: 1 }, { opacity: 0, duration: .15, ease: "none", immediateRender: false }, 4 * B)
+  rise("#f4-head", 4 * B + .1, 6)
+  ;[0, 1, 2, 3].forEach(function (i) { pop("#f4-p" + i, 4 * B + .18 + i * .05, .5) })
+  rise("#f4-m0", 4 * B + .3, 8); rise("#f4-m1", 2.55, 8); rise("#f4-m2", 3.0, 8)
+  window.__timelines["04-in-the-notch"] = tl
+})()
+</script>
+</template>
