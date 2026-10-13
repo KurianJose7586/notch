@@ -4,11 +4,12 @@ const fs = require('fs')
 const path = require('path')
 const { spawn } = require('child_process')
 const { apply, tick, set, homeOf } = require('./state')
-const { AGENTS, launchAgent, makeWorktree, worktrees, branches, bringHome, discard, samePath, launchLabels } = require('./launch')
+const { AGENTS, launchAgent, launchIn, makeWorktree, worktrees, branches, bringHome, discard, samePath, launchLabels } = require('./launch')
 const setup = require('./setup')
 const createPhone = require('./phone')
 const createUpdater = require('./updater')
 const position = require('./position')
+const { createTeam, slug } = require('./team')
 
 if (!app.requestSingleInstanceLock()) process.exit(0) // app.exit doesn't stop this script; a duplicate must not clear .quit or spawn the helper
 
@@ -65,7 +66,11 @@ const updates = createUpdater({
   dir: app.getPath('userData'), version: app.getVersion(),
   onChange: s => win?.webContents.send('update', s),
 })
-const push = () => { win?.webContents.send('sessions', Object.values(sessions), limits); phone.broadcast() }
+const push = () => { win?.webContents.send('sessions', Object.values(sessions), limits, teamView()); phone.broadcast() }
+// Team messages between agents on the same repo, here and on teammates' PCs (team.js). Off until you switch it on.
+const team = createTeam({ file: path.join(app.getPath('userData'), 'team.json'), changed: () => push() })
+// What the notch draws of it: per repo, teammates' agents and recent messages; `of`: each session's repo and team name.
+const teamView = () => team.on ? { repos: team.state(), of: Object.fromEntries(Object.values(sessions).map(s => [s.key, { id: team.idOf(s.cwd), name: nameOf(s) }])) } : null
 const clock = epochS => new Date(epochS * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 
 // What Claude shows in its status line: context use, then the 5-hour and weekly limits, coloured as they fill up.
@@ -187,6 +192,92 @@ async function pressWhenPrompted(s, isPrompt = PROMPT.permission) {
   }
 }
 
+// Team messages. An agent's name on the team is the name you gave its session here, or else what kind of agent it is.
+const nameOf = s => slug(s.label) || s.agent
+const KIND = { claude: 'Claude Code', agy: 'Antigravity', opencode: 'OpenCode', kilo: 'Kilo', copilot: 'Copilot' }
+const said = m => `- ${m.from}${m.to ? ' to ' + m.to : ''}: ${m.text}`
+const whoIs = a => `- ${a.human}/${a.name} (${KIND[a.agent] || a.agent}${a.here ? ', on this computer' : ''})${a.task ? ': ' + a.task : ''}`
+
+// Everyone else on a folder's repo: this PC's other sessions there, then teammates' agents.
+async function rosterOf(cwd, self) {
+  const id = await team.repo(cwd), r = await team.roster(cwd), here = []
+  for (const o of Object.values(sessions)) if (o !== self && o.cwd && await team.repo(o.cwd) === id) here.push({ human: r.human, name: nameOf(o), agent: o.agent, task: o.task, here: true })
+  return { ...r, list: [...here, ...r.who] }
+}
+
+// New team messages ride back on a hook's reply, for agents that let a hook add to what the model reads: as hook
+// context (Claude, Copilot), as a step before the next model call (Antigravity), or added to a tool's result by
+// plugin.js (OpenCode, Kilo; it flags the calls whose reply it shows). Each is shown once. A finishing agent is only
+// held for messages that name it, and never twice in a row, so agents can't keep each other going.
+const MAIL = { claude: ['UserPromptSubmit', 'PostToolUse', 'Stop'], copilot: ['UserPromptSubmit', 'PostToolUse', 'Stop'], agy: ['PreInvocation', 'Stop'] }
+function wrap(agent, event, text) {
+  const stop = event === 'Stop'
+  if (agent === 'claude') return stop ? { decision: 'block', reason: text } : { hookSpecificOutput: { hookEventName: event, additionalContext: text } }
+  if (agent === 'agy') return stop ? { decision: 'continue', reason: text } : { injectSteps: [{ systemMessage: { systemMessage: text } }] }
+  // Copilot: VS Code's own harness reads the nested shape and the Copilot CLI's harness the flat one; each ignores the other
+  const inner = { hookEventName: event, ...(stop ? { decision: 'block', reason: text } : { additionalContext: text }) }
+  return stop ? { decision: 'block', reason: text, hookSpecificOutput: inner } : { additionalContext: text, hookSpecificOutput: inner }
+}
+async function mailFor(s, agent, event, p) {
+  const plugin = agent === 'opencode' || agent === 'kilo'
+  if (!team.on || !s.cwd || !(plugin ? p.mail === true : MAIL[agent]?.includes(event))) return ''
+  const stop = event === 'Stop', turn = event === 'UserPromptSubmit' || (event === 'PreInvocation' && p.invocationNum === 0)
+  if (turn) s.heldStop = false
+  if (stop && (s.heldStop || p.stop_hook_active || s.state !== 'done')) { s.heldStop = false; return '' } // held once already, or it failed
+  const mail = await team.take(s.cwd, s.key, nameOf(s), { started: s.started, direct: stop }).catch(() => null)
+  if (!mail) return '' // not in a git repo
+  let text = mail.length ? `New messages from other coding agents working in this repo:\n${mail.map(said).join('\n')}\nYou can answer with the team_send tool.` : ''
+  if (turn) { // a new task: who else is here, whenever that changed
+    const { list } = await rosterOf(s.cwd, s), names = list.map(a => a.human + '/' + a.name).join()
+    if (names && names !== s.toldRoster) text = `Also working in this repo right now:\n${list.map(whoIs).join('\n')}\nThey can be reached with the team_send tool.${text ? '\n\n' + text : ''}`
+    s.toldRoster = names
+  }
+  if (!text) return ''
+  if (stop) { s.heldStop = true; set(s, 'working', Date.now()); s.action = 'Reading team messages'; s.unread = false }
+  return plugin ? text : JSON.stringify(wrap(agent, event, text))
+}
+
+// Calls from mcp.js. The MCP server is the agent's child like its hooks are, so the agent process tells which session
+// is asking (the busiest one, for agents that run several sessions in one process).
+const agentPid = {} // MCP server pid -> agent pid
+const sent = {} // session -> when it last sent: a runaway agent can't flood the team
+async function teamCall(tool, body, url, res) {
+  let a = {}
+  try { a = JSON.parse(body) } catch {}
+  const agent = url.searchParams.get('agent') || 'agent', pid = +url.searchParams.get('pid') || 0
+  agentPid[pid] ??= +(await win32('find ' + pid)).split(' ')[1] || 0
+  const s = Object.values(sessions).filter(o => o.agent === agent && (agentPid[pid] ? o.pid === agentPid[pid] : samePath(o.cwd, a.cwd))).sort((x, y) => y.updated - x.updated)[0]
+  const cwd = s?.cwd || a.cwd, name = s ? nameOf(s) : slug(agent)
+  if (!team.on) return res.end('Team messages are off. They can be turned on in Agent Notch: Setup → Team messages.')
+  if (!cwd || !(await team.repo(cwd))) return res.end("This folder isn't in a git repository, so there is no team to message from here.")
+  const { list, human, remote, error, live } = await rosterOf(cwd, s)
+  const link = !remote ? 'This repo has no remote, so only agents on this computer get messages.' : error ? `The remote can't be reached right now (${error}); messages go out once it can.` : ''
+  if (tool === 'team_send') {
+    if (!String(a.text || '').trim()) return res.end('Not sent: the message is empty.')
+    const k = s?.key || agent, recent = (sent[k] || []).filter(t => Date.now() - t < 300e3)
+    if (recent.length >= 10) return res.end('Not sent: that would be 11 messages in 5 minutes. Wait a little, or say more in one message.')
+    sent[k] = [...recent, Date.now()]
+    await team.send(cwd, { name, agent, to: a.to, text: a.text, key: s?.key })
+    const heard = list.some(o => team.addressed(a.to, o.human, o.name))
+    return res.end([`Sent to ${a.to || 'everyone in this repo'}.`, heard ? '' : `Nobody ${a.to ? 'by that name ' : ''}is working in this repo right now, so only agents that are will see it.`, link].filter(Boolean).join(' '))
+  }
+  if (tool !== 'team_check') return res.end('Unknown tool')
+  let mail = []
+  for (let t = 0, wait = Math.min(Math.max(+a.wait_seconds || 0, 0), 90); ; t++) { // waiting for a reply: check every second, fetch every 5
+    mail = await team.take(cwd, s?.key || `${agent}:${pid}`, name, { started: s?.started })
+    if (mail.length || t >= wait) break
+    if (t % 5 === 0) team.hurry(cwd)
+    await sleep(1000)
+  }
+  res.end([
+    `You are ${human}/${name}.`,
+    list.length ? `Also working in this repo:\n${list.map(whoIs).join('\n')}`
+      : `Nobody else is working in this repo right now${remote && !live ? " that you can see: teammates' agents show up once anyone has sent a team message in this repo" : ''}.`,
+    mail.length ? `New messages:\n${mail.map(said).join('\n')}` : 'No new messages.',
+    link,
+  ].filter(Boolean).join('\n\n'))
+}
+
 async function handleEvent(agent, event, body, url, res) {
   let p = {}
   try { p = JSON.parse(body) } catch {}
@@ -210,6 +301,11 @@ async function handleEvent(agent, event, body, url, res) {
   }
   push()
   if (event === 'StatusLine') return res.end(statusText(s)) // Claude prints this in its own status line
+  const mail = s && await mailFor(s, agent, event, p)
+  if (mail) { push(); return res.end(mail) }
+  if (s?.restartWhenDone && s.state === 'done') setTimeout(() => restart(s.key), 800) // asked while it was busy: it's finished now
+  // Reading team messages can't hurt, so it never waits for your OK (sending does, until you allow it for good)
+  if (agent === 'claude' && event === 'PreToolUse' && p.tool_name === 'mcp__agent-notch__team_check') return res.end(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'allow' } }))
   if (s && s.auto && agent === 'agy' && event === 'PreToolUse') { res.end(answer(agent, 'ask')); return pressWhenPrompted(s) } // any agy tool can prompt
   if (!s || !isGate(agent, event, p)) return res.end('')
   // The Antigravity IDE has no console to press Enter in, so the notch can't answer its prompt: leave it to the IDE.
@@ -229,11 +325,14 @@ async function handleEvent(agent, event, body, url, res) {
 }
 
 http.createServer((req, res) => {
-  if (req.method === 'GET') return res.end(JSON.stringify(Object.values(sessions), null, 2)) // debug: curl localhost:47800
+  // Agents on this PC only. Replies carry team messages, so a web page must not get in, either under another name
+  // pointed at 127.0.0.1 (DNS rebinding: wrong Host) or cross-site (can't add the x-notch header without a CORS OK).
   const url = new URL(req.url, 'http://x')
   const [, agent, event] = url.pathname.split('/')
+  if (!/^(127\.0\.0\.1|localhost):47800$/.test(req.headers.host || '') || (agent === 'team' && !req.headers['x-notch'])) { res.writeHead(403); return res.end() }
+  if (req.method === 'GET') return res.end(JSON.stringify(Object.values(sessions), null, 2)) // debug: curl localhost:47800
   let body = ''
-  req.on('data', c => (body += c)).on('end', () => handleEvent(agent, event, body, url, res).catch(e => {
+  req.on('data', c => (body += c)).on('end', () => (agent === 'team' ? teamCall(event, body, url, res) : handleEvent(agent, event, body, url, res)).catch(e => {
     console.error('hook event failed:', e) // a broken event must never leave an agent waiting on its hook
     if (!res.writableEnded) res.end('')
   }))
@@ -246,6 +345,11 @@ setInterval(async () => {
   let changed = tick(sessions, Date.now(), isAlive)
   for (const s of Object.values(sessions)) if (s.unread && s.hwnd && s.hwnd === foreground) { s.unread = false; changed = true }
   if (changed) push()
+  if (team.on) { // what each repo's agents here are doing, for teammates; team.js decides when to actually fetch
+    const groups = {}
+    for (const s of Object.values(sessions)) if (s.cwd) (groups[s.cwd] ||= []).push({ name: nameOf(s), agent: s.agent, task: s.task })
+    team.sync(groups).catch(e => console.error('team sync failed:', e.message))
+  }
 }, 700)
 
 function focus(key) {
@@ -255,6 +359,21 @@ function focus(key) {
   s.unread = false
   if (s.hwnd) win32('focus ' + s.hwnd)
   push()
+}
+
+// Restart an agent in its own terminal, back in the same conversation: say, so it loads tools added since it started.
+// Terminal agents only (an app has no shell to come back in). A busy one restarts as soon as it finishes.
+const RESUME = { claude: '--resume', opencode: '--session', kilo: '--session', agy: '--conversation' }
+const canRestart = s => !!RESUME[s.agent] && !!s.pid && !s.app
+async function restart(key) {
+  const s = sessions[key]
+  if (!s || !canRestart(s)) return
+  if (s.state === 'working' || s.state === 'waiting') { s.restartWhenDone = true; return push() }
+  const cmd = `${s.agent} ${RESUME[s.agent]} ${key.slice(s.agent.length + 1).replace(/[^\w-]/g, '')}` // the id, safe to type into a shell
+  const pid = s.pid
+  Object.assign(s, { restartWhenDone: false, located: false, pid: null, hwnd: null, action: 'Restarted' }) // the resumed agent reports in as this same session
+  push()
+  if (await win32(`restart ${pid} ${Buffer.from(cmd).toString('base64')}`) !== 'typed') launchIn(s.cwd || app.getPath('home'), cmd) // no shell to go back to: a new window
 }
 
 let jumpIndex = 0
@@ -330,6 +449,8 @@ ipcMain.on('auto', (_, key, on) => {
   push()
 })
 ipcMain.on('dismiss', (_, key) => { decide(key, 'ask'); delete sessions[key]; push() })
+ipcMain.on('restart', (_, key) => restart(key))
+ipcMain.handle('restart-all', () => { const list = Object.values(sessions).filter(canRestart); for (const s of list) restart(s.key); return list.length })
 ipcMain.on('grid', () => grid())
 ipcMain.on('grab-focus', grabFocus)
 ipcMain.on('rename', (_, key, label) => rename(key, label))
@@ -362,7 +483,7 @@ ipcMain.handle('setup-status', () => ({ agents: setup.status(), login: app.getLo
 const hookRunner = () => setup.runner(app.isPackaged ? process.execPath : null)
 ipcMain.handle('setup-connect', (_, agent, on) => {
   if (!setup.AGENTS.includes(agent)) return { error: 'Unknown agent' }
-  try { setup.set(agent, !!on, on ? hookRunner() : null) } catch (e) { return { error: e.message } }
+  try { setup.set(agent, !!on, on ? hookRunner() : null, team.on) } catch (e) { return { error: e.message } }
   return { agents: setup.status() }
 })
 ipcMain.handle('setup-limits', (_, on) => {
@@ -375,6 +496,13 @@ ipcMain.handle('update-state', () => updates.state())
 ipcMain.handle('update-check', () => updates.check())
 ipcMain.handle('update-auto', (_, on) => updates.setAuto(!!on))
 ipcMain.on('update-restart', () => goodbye('reload', () => { win = null; updates.restart() })) // the goodbye animation, then install and relaunch
+// Team messages on/off. The MCP tools are only in agents' configs while it's on, so they cost nothing otherwise.
+ipcMain.handle('team-set', (_, on) => {
+  team.set(!!on)
+  try { setup.refresh(hookRunner(), team.on) } catch (e) { return { on: team.on, error: e.message } }
+  return { on: team.on }
+})
+ipcMain.handle('team-info', () => ({ on: team.on }))
 ipcMain.handle('phone-info', () => phone.info())
 ipcMain.handle('phone-set', (_, on) => { phone.set(!!on); return phone.info() })
 ipcMain.handle('phone-renew', () => { phone.renew(); return phone.info() })
@@ -416,7 +544,7 @@ app.whenReady().then(() => {
   phone.start()
   updates.start()
   // Bring connected agents' hooks up to date with this version and point them at this copy
-  try { setup.refresh(hookRunner()) } catch (e) { console.error('hook refresh failed:', e.message) }
+  try { setup.refresh(hookRunner(), team.on) } catch (e) { console.error('hook refresh failed:', e.message) }
   loadPosition()
   win = new BrowserWindow({
     ...position.windowRect(anchorX, displayAt(anchorX).bounds, SIZES.compact),

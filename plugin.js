@@ -46,7 +46,12 @@ const AgentNotch = async ({ directory }) => {
     'chat.message': async (input, output) =>
       send('prompt', { sessionID: input.sessionID, text: output.parts.filter(p => p.type === 'text').map(p => p.text).join(' ') }),
     'tool.execute.before': async (input, output) => send('tool', { sessionID: input.sessionID, tool: input.tool, args: output.args }),
-    'tool.execute.after': async input => send('toolDone', { sessionID: input.sessionID }),
+    'tool.execute.after': async (input, output) => { // the reply carries any new team messages: added to the tool's result, which the model reads
+      const text = typeof output?.output === 'string', parts = Array.isArray(output?.content) // an MCP tool's result is raw parts
+      const mail = await send('toolDone', { sessionID: input.sessionID, mail: text || parts })
+      if (mail && text) output.output += '\n\n' + mail
+      else if (mail && parts) output.content.push({ type: 'text', text: mail })
+    },
     'permission.ask': async (input, output) => { // the notch may hold this until you click Allow / Deny
       const r = await send('permission', { sessionID: input.sessionID, title: input.title, detail: [].concat(input.pattern || []).join(' ') }, 58000)
       if (r === 'allow' || r === 'deny') output.status = r
@@ -80,6 +85,11 @@ const setup = async ctx => {
     if (e.effect !== 'ask') return
     const r = await send('permission', { sessionID: e.sessionID, title: e.message || `Allow ${e.action}?`, detail: e.resources.join(' ') }, 58000)
     if (r === 'allow' || r === 'deny') e.effect = r
+  })
+  await ctx.tool?.hook?.('execute.after', async e => { // new team messages are added to the tool's result, which the model reads
+    if (e.status !== 'completed' || typeof e.result?.content !== 'string') return
+    const mail = await send('toolDone', { sessionID: e.sessionID, mail: true })
+    if (mail) e.result = { ...e.result, content: e.result.content + '\n\n' + mail }
   })
   return () => ac.abort()
 }

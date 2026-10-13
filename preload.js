@@ -1,7 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('notch', {
-  onSessions: fn => ipcRenderer.on('sessions', (_, s, limits) => fn(s, limits || {})),
+  onSessions: fn => ipcRenderer.on('sessions', (_, s, limits, team) => fn(s, limits || {}, team || null)),
   onKeyboard: fn => ipcRenderer.on('keyboard', (_, on) => fn(on)),
   onVenom: fn => ipcRenderer.on('venom', () => fn()),
   onUpdate: fn => ipcRenderer.on('update', (_, s) => fn(s)),

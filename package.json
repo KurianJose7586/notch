@@ -5,7 +5,7 @@
   "main": "boot.js",
   "scripts": {
     "start": "electron .",
-    "test": "node state.js && node launch.js && node phone.js && node updater.js && node position.js",
+    "test": "node state.js && node launch.js && node phone.js && node updater.js && node position.js && node team.js",
     "setup": "npm install && node setup.js && electron .",
     "install-hooks": "node setup.js",
     "remove-hooks": "node setup.js --remove",
@@ -35,7 +35,9 @@
       "phone.js",
       "phone.html",
       "updater.js",
-      "position.js"
+      "position.js",
+      "team.js",
+      "mcp.js"
     ],
     "directories": {
       "output": "dist",

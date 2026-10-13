@@ -29,19 +29,24 @@ const homes = () => ({ // an agent counts as installed once it has made its conf
 // How agents invoke the hook. Installed: notch-hook.cmd next to the exe, which runs hook.js with the exe in Node mode
 // (no Node needed, and ~2x faster than `agent-notch.exe --hook`). From source: Node runs hook.js from this folder.
 // agy runs hooks through `cmd /c` and mangles quoted paths, so it gets a space-free 8.3 short path.
+const shortPath = p => execSync(`cmd /c for %A in ("${p}") do @echo %~sA`).toString().trim()
 function runner(exe) {
   const target = exe ? path.join(path.dirname(exe), 'notch-hook.cmd') : path.join(__dirname, 'hook.js')
-  const short = execSync(`cmd /c for %A in ("${target}") do @echo %~sA`).toString().trim()
+  const short = shortPath(target)
   if (short.includes(' ')) throw new Error(`No short path for ${target}; move it to a folder without spaces`)
   const slashed = target.replace(/\\/g, '/')
-  return exe ? { quoted: `"${slashed}"`, bare: short } : { quoted: `node "${slashed}"`, bare: `node ${short}` }
+  // Team messages' MCP server, same exe (or Node) as the hooks. agy gets short paths here too, in case it uses a shell.
+  const script = path.join(__dirname, 'mcp.js'), env = exe ? { ELECTRON_RUN_AS_NODE: '1' } : {}
+  const mcp = { command: exe || 'node', args: [script], env }, mcpBare = { command: exe ? shortPath(exe) : 'node', args: [shortPath(script)], env }
+  return exe ? { quoted: `"${slashed}"`, bare: short, mcp, mcpBare } : { quoted: `node "${slashed}"`, bare: `node ${short}`, mcp, mcpBare }
 }
 
 // A config we can't parse is left alone rather than overwritten; one that wouldn't change isn't rewritten.
 function editJson(file, fn) {
   const exists = fs.existsSync(file)
   const text = exists ? fs.readFileSync(file, 'utf8') : '{}'
-  const json = JSON.parse(text)
+  let json
+  try { json = JSON.parse(text) } catch { throw new Error(`Couldn't read ${file.replace(home(), '~')} (comments or a typo?), so it was left alone`) }
   const before = JSON.stringify(json)
   fn(json)
   if (exists && JSON.stringify(json) === before) return
@@ -78,8 +83,36 @@ function status() {
   ])
 }
 
-// on = true connects with `run` (from runner()); on = false disconnects. Re-connecting replaces the old hooks.
-function set(agent, on, run) {
+// Team messages' tools (mcp.js) sit in each connected agent's own MCP config while team messages are on, as agent-notch.
+// m: { command, args, env } to add, or null to remove.
+const firstOf = (dir, names) => names.map(n => path.join(home(), dir, n)).find(f => fs.existsSync(f)) || path.join(home(), dir, names.at(-1))
+const local = m => ({ type: 'local', command: [m.command, ...m.args], environment: m.env, enabled: true }) // OpenCode's shape, and Kilo's
+const MCP = {
+  claude: { file: () => path.join(home(), '.claude.json'), key: 'mcpServers', entry: m => ({ type: 'stdio', ...m }) }, // user scope
+  agy: { file: () => path.join(home(), '.gemini', 'config', 'mcp_config.json'), key: 'mcpServers', entry: m => m }, // CLI and IDE
+  opencode: { file: () => firstOf('.config/opencode', ['opencode.jsonc', 'opencode.json']), key: 'mcp', entry: local },
+  kilo: { file: () => firstOf('.config/kilo', ['kilo.jsonc', 'kilo.json']), key: 'mcp', entry: local },
+  copilot: { file: () => path.join(home(), '.copilot', 'mcp-config.json'), key: 'mcpServers', entry: m => ({ type: 'local', ...m, tools: ['*'] }) }, // VS Code and the Copilot CLI
+}
+function setMcp(agent, m) {
+  const c = MCP[agent], file = c?.file()
+  if (!c || (!m && !JSON.stringify(readJson(file)[c.key] || {}).includes(MARK))) return // nothing of ours to take out
+  editJson(file, j => {
+    const list = j[c.key] ||= {}
+    if (m) list[MARK] = c.entry(m); else delete list[MARK]
+    if (!Object.keys(list).length) delete j[c.key]
+  })
+}
+
+// on = true connects with `run` (from runner()); on = false disconnects, team tools included. team: whether the team
+// tools go in too (undefined leaves them as they are). Re-connecting replaces the old hooks.
+function set(agent, on, run, team) {
+  setHooks(agent, on, run)
+  const m = agent === 'agy' ? run?.mcpBare : run?.mcp
+  if (!on || team !== undefined) setMcp(agent, on && team ? { ...m, args: [...m.args, agent] } : null)
+}
+
+function setHooks(agent, on, run) {
   const file = files()[agent]
   if (agent === 'claude') {
     if (!on && !fs.existsSync(file)) return
@@ -133,10 +166,12 @@ function setLimits(on, run) {
 // On start: rewrite every connected agent's hooks for `run`. Agents connected by an older version pick up new events,
 // and ones pointing at another copy of Agent Notch (e.g. the source folder before installing) move to this one, so
 // removing that copy can't leave them calling a hook that's gone. Files that wouldn't change aren't touched.
-function refresh(run) {
+function refresh(run, team) {
+  let failed = null
   for (const agent of AGENTS) {
-    try { if (connected(agent)) set(agent, true, run) } catch (e) { console.error(`hook refresh failed for ${agent}:`, e.message) } // one unparseable config mustn't block the rest
+    try { if (connected(agent)) set(agent, true, run, team) } catch (e) { failed = e; console.error(`hook refresh failed for ${agent}:`, e.message) } // one unparseable config mustn't block the rest
   }
+  if (failed) throw failed
 }
 
 module.exports = { AGENTS, status, runner, set, setLimits, refresh }

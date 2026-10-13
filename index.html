@@ -406,6 +406,43 @@
   #eyes i { position: relative; width: 12px; height: 16px; border-radius: 50%; background: #fff; overflow: hidden; }
   #eyes b { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px; border-radius: 50%; background: #000; transform: translate(var(--px, 0px), var(--py, 0px)); transition: transform .08s linear; }
   #venom .vlogo { position: absolute; left: 0; top: 0; width: 22px; height: 22px; border-radius: 6px; will-change: transform; }
+
+  /* Team messages: one flies from agent to agent across the pill; teammates' agents and the conversation in the panel */
+  #pill.card.team { width: 440px; }
+  .relay { flex: none; display: flex; align-items: center; padding-top: 2px; }
+  #pill.card .relay .icon { width: 26px; height: 26px; border-radius: 7.5px; }
+  #pill.card .relay .icon + .wire + .icon { animation-delay: .5s; } /* the receiver pops when the message lands */
+  .wire { position: relative; width: 30px; height: 2px; margin: 0 4px; border-radius: 1px;
+          background: repeating-linear-gradient(90deg, rgba(235,235,245,.28) 0 3px, transparent 3px 6px); }
+  .wire::after { content: ""; position: absolute; top: -3px; left: -4px; width: 8px; height: 8px; border-radius: 50%; background: #E3C2FF;
+                 box-shadow: 0 0 8px 2px rgba(191,90,242,.85); animation: fly 1s var(--ease) .15s 3 both; }
+  @keyframes fly { 0% { left: -4px; opacity: 0; scale: .4; } 18% { opacity: 1; scale: 1; } 82% { opacity: 1; scale: 1; } 100% { left: calc(100% - 4px); opacity: 0; scale: .5; } }
+  #pill.card.team .card-line { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .icon.team { background: linear-gradient(160deg, #6B3FA0, #2B1745); }
+  .who-badge { position: absolute; right: -4px; bottom: -4px; width: 15px; height: 15px; border-radius: 50%; background: var(--purple); color: #fff;
+               font: 700 9px/15px "Segoe UI", sans-serif; text-align: center; box-shadow: 0 0 0 2px #1c1c1e; }
+  .row.mate .name { color: rgba(255,255,255,.86); }
+  .status.mate { color: #D49BFF; } .ind.mate { width: 7px; height: 7px; background: var(--purple); box-shadow: 0 0 0 3px rgba(191,90,242,.22); }
+  .tchip { display: flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 10px; background: rgba(191,90,242,.18); color: #E3C2FF;
+           font-size: 11px; font-weight: 600; transition: background .15s ease, scale .35s var(--spring); }
+  .tchip:hover { background: rgba(191,90,242,.34); } .tchip:active { scale: .92; }
+  .tchip svg { width: 11px; height: 11px; }
+  .roster { display: flex; gap: 6px; overflow-x: auto; padding: 14px 4px 2px; }
+  .roster::-webkit-scrollbar { display: none; }
+  .person { flex: none; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 10.5px; color: var(--secondary); }
+  .person span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .person.busy .icon { box-shadow: 0 0 0 2px #000, 0 0 0 3.5px var(--blue); }
+  .thread { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; padding: 0 2px 4px; }
+  .msg { display: flex; align-items: flex-end; gap: 8px; max-width: 86%; }
+  .msg .icon { width: 24px; height: 24px; border-radius: 7px; }
+  .msg.mine { align-self: flex-end; flex-direction: row-reverse; }
+  .bubble { min-width: 0; padding: 7px 11px 8px; border-radius: 16px 16px 16px 5px; background: rgba(118,118,128,.26); }
+  .msg.mine .bubble { border-radius: 16px 16px 5px 16px; background: linear-gradient(160deg, #6E4BD8, #0A84FF); }
+  .bubble .meta { margin-bottom: 2px; font-size: 10.5px; font-weight: 600; color: var(--tertiary); }
+  .msg.mine .bubble .meta { color: rgba(255,255,255,.7); }
+  .bubble .text { font-size: 12.5px; line-height: 1.4; white-space: pre-wrap; word-break: break-word; user-select: text; cursor: text; }
+  .msg.new { animation: rise .5s var(--ease) both; }
+  .thread .empty { padding: 18px 12px; }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; }
   }
@@ -436,7 +473,7 @@ const SHORTCUTS = [
   ]],
   ['In the notch', 'after Ctrl+Alt+N', [
     ['↑ ↓', 'Select an agent'], ['↵', 'Open its terminal'], ['Y N', 'Allow / deny its request'], ['A', 'Toggle AUTO'],
-    ['R', 'Rename'], ['D', 'Dismiss'], ['+', 'New agent'], ['G', 'Tile windows'], ['C', 'Clear finished'],
+    ['R', 'Rename'], ['D', 'Dismiss'], ['+', 'New agent'], ['G', 'Tile windows'], ['C', 'Clear finished'], ['T', 'Team messages'],
     ['S', 'Sound on / off'], ['Z', 'Sleep / wake'], ['← →', 'Move the notch along the top'], ['Home', 'Back to the centre'], [',', 'Setup'], ['I', 'This sheet'], ['Q', 'Quit'], ['Esc', 'Close'],
   ]],
   ['New agent', '', [['Tab', 'Move between fields'], ['Space', 'Pick an agent / flip a switch'], ['Ctrl+↵', 'Launch'], ['Esc', 'Back']]],
@@ -451,6 +488,8 @@ const FOLDER_ICON = '<svg viewBox="0 0 16 16"><path d="M1.5 4.5a1.5 1.5 0 0 1 1.
 const CHEV_ICON = '<svg class="chev" viewBox="0 0 16 16" style="width:12px;height:12px"><path d="M4 6l4 4 4-4" fill="none" stroke="rgba(235,235,245,.5)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 const CHECK = '<svg viewBox="0 0 24 24"><path pathLength="1" d="M5.5 12.5l4.2 4.2L18.5 7.5"/></svg>'
 const CROSS = '<svg viewBox="0 0 24 24"><path pathLength="1" d="M7 7l10 10M17 7 7 17"/></svg>'
+const TEAM_ICON = '<svg viewBox="0 0 24 24" fill="#F3E8FF"><circle cx="9" cy="8" r="3.3"/><path d="M2.6 19c.4-3.6 3.1-5.8 6.4-5.8s6 2.2 6.4 5.8c.1.6-.4 1-1 1H3.6c-.6 0-1.1-.4-1-1z"/><circle cx="16.8" cy="9.2" r="2.6" opacity=".6"/><path d="M15.9 13.6c3-.3 5.3 1.5 5.6 4.5 0 .5-.3.9-.8.9h-3.5c-.1-2-.6-3.8-1.3-5.4z" opacity=".6"/></svg>'
+const MSG_ICON = '<svg viewBox="0 0 16 16"><path fill="currentColor" d="M8 2.5c3.6 0 6.5 2.3 6.5 5.2S11.6 13 8 13c-.7 0-1.4-.1-2-.3L3 14l.8-2.4C2.4 10.7 1.5 9.3 1.5 7.7 1.5 4.8 4.4 2.5 8 2.5z"/></svg>'
 const PEEK_MS = 4500, RESOLVED_MS = 950
 
 const css = getComputedStyle(document.documentElement)
@@ -468,6 +507,7 @@ let welcome = calm ? null : 'drop' // drop -> hello -> null
 let farewell = null // quit | reload -> dot, while the goodbye plays
 let sound = true
 let menuOpen = false // the ⋯ menu in the list's header
+let team = null, teamSeen = null, teamPeek = null, teamPeekTimer, teamRepo = null, teamSig = '', teamShown = new Set() // team messages (main.js teamView)
 let asleep = false // sleeping: a small dim zzz; quiet unless an agent needs you
 try { asleep = localStorage.getItem('asleep') === 'on' } catch {}
 try { sound = localStorage.getItem('sound') !== 'off' } catch {}
@@ -477,6 +517,7 @@ const synced = (e, ms) => (e.style.animationDelay = -(Date.now() % ms) + 'ms', e
 const byRank = (a, b) => RANK[a.state] - RANK[b.state] || a.started - b.started
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`
 const agentName = s => NAMES[s.agent] || s.agent
+const canRestart = s => ['claude', 'opencode', 'kilo', 'agy'].includes(s.agent) && !!s.pid && !s.app // same rule as main.js
 const name = s => s.label || agentName(s) // your name for the session, else the agent's
 const baseName = d => d.split(/[\\/]/).filter(Boolean).pop() || d
 const homeOf = cwd => cwd.match(/^(.*?)\.worktrees[\\/]/)?.[1] || cwd // a launched worktree belongs with its repo (same as state.js)
@@ -597,6 +638,48 @@ function card(lead, top, right, line, extra) {
   return [lead, body]
 }
 
+// Team messages. Everyone in a repo: this PC's agents there (here), then teammates' agents on their PCs.
+const repoOf = s => team?.of[s.key]?.id
+const projectOf = repo => sessions.find(s => repoOf(s) === repo)?.project || ''
+function people(repo) {
+  const t = team?.repos[repo]
+  if (!t) return []
+  return [...sessions.filter(s => repoOf(s) === repo).map(s => ({ human: t.human, name: team.of[s.key].name, agent: s.agent, task: s.task, state: s.state, here: true })), ...t.who]
+}
+function teamIcon() { const i = el('div', 'icon team'); i.innerHTML = TEAM_ICON; return i }
+function mateIcon(a) { const i = icon(a.agent); if (!a.here) i.append(el('span', 'who-badge', a.human[0].toUpperCase())); return i }
+function fromIcon(m) { const i = icon(m.agent || m.from); if (!m.mine && m.agent) i.append(el('span', 'who-badge', m.from[0].toUpperCase())); return i }
+// Who a message is for, as an icon: everyone, the agent it names (here or on a teammate's PC), or else a person's initial
+function toIcon(m) {
+  const t = String(m.to || '').toLowerCase().split(/[\s,]+/).map(x => x.replace(/^@/, '')).filter(Boolean)[0]
+  if (!t || t === 'all' || t === 'everyone') return teamIcon()
+  const a = people(m.repo).find(a => `${a.human}/${a.name}` === t || a.name === t)
+  return a ? mateIcon(a) : icon(t)
+}
+// A message on its way: the sender's icon, a dot flying along a wire, then the receiver's
+function relay(m) { const r = el('div', 'relay'); r.append(fromIcon(m), el('i', 'wire'), toIcon(m)); return r }
+function blip() { // a team message: two quick, high, quiet notes
+  if (!sound || asleep) return
+  const ctx = audio(), t = ctx.currentTime
+  for (const [f, d] of [[1567.98, 0], [2093, .08]]) {
+    const o = ctx.createOscillator(), g = ctx.createGain()
+    o.type = 'sine'; o.frequency.value = f
+    g.gain.setValueAtTime(0, t + d); g.gain.linearRampToValueAtTime(.05, t + d + .01); g.gain.exponentialRampToValueAtTime(.0001, t + d + .3)
+    o.connect(g).connect(ctx.destination); o.start(t + d); o.stop(t + d + .32)
+  }
+}
+// New team messages since the last update, sent from here or arrived: the newest flies across the pill
+function noticeMessages() {
+  if (!team) return
+  const all = Object.entries(team.repos).flatMap(([repo, t]) => t.log.map(m => ({ ...m, repo })))
+  const fresh = teamSeen ? all.filter(m => !teamSeen.has(m.id)) : [] // nothing old peeks when the notch starts
+  teamSeen = new Set([...(teamSeen || []), ...all.map(m => m.id)])
+  if (!fresh.length || open || asleep) return
+  teamPeek = fresh.at(-1)
+  clearTimeout(teamPeekTimer); teamPeekTimer = setTimeout(() => { teamPeek = null; render() }, 6000)
+  blip()
+}
+
 // Picks what the collapsed island shows. Returns a signature so the DOM (and its entrance animations) only rebuilds on real change.
 function pillView() {
   const waiting = sessions.filter(s => s.state === 'waiting'), working = sessions.filter(s => s.state === 'working')
@@ -628,6 +711,10 @@ function pillView() {
       card(icon(req.agent), `${name(req)} · ${req.request.title}`, req.project, null, [el('div', 'code', req.request.detail || req.action), requestActions(req, false)]),
   }
   if (asleep && !waiting.length) return { mode: 'sleep', sig: 'sleep', cls: 'asleep', build: () => [el('span', 'sleepz', 'zzz')] }
+  if (teamPeek) {
+    const m = teamPeek
+    return { mode: 'peek', sig: 'team' + m.id, cls: 'card team', build: () => card(relay(m), `${m.from} → ${m.to || 'everyone'}`, projectOf(m.repo), m.text) }
+  }
   if (peek) {
     const s = peek, verb = s.state === 'waiting' ? 'needs you' : s.state === 'error' ? 'stopped' : 'finished', line = s.state === 'done' ? (s.task || s.action) : s.action
     return { mode: 'peek', sig: 'peek' + s.key + s.state + line, cls: 'card', build: () => card(icon(s.agent), `${name(s)} ${verb}`, s.project, line) }
@@ -699,6 +786,7 @@ function row(s, index) {
   if (s.app) r.title += ` (${APP_TAG[s.appName] || 'App'})`
   // Only what needs a look: context shows up once it's filling, and rename is a double-click (or R)
   if (typeof s.context === 'number' && s.context >= 70) title.append(Object.assign(el('span', 'meta' + (s.context >= 90 ? ' bad' : ' warn'), s.context + '% context'), { title: 'How full this session\'s context window is' }))
+  if (s.restartWhenDone) title.append(Object.assign(el('span', 'meta', 'restarts when done'), { title: 'It restarts, in the same conversation, as soon as it finishes' }))
   title.title = 'Double-click to rename'
   title.ondblclick = e => { e.stopPropagation(); startRename(s, title) }
   body.append(title)
@@ -731,13 +819,68 @@ function row(s, index) {
   sw.onclick = e => { e.stopPropagation(); tick(!s.auto); notch.send('auto', s.key, !s.auto) }
   const x = el('button', 'x', '✕'); x.title = 'Dismiss'
   x.onclick = e => { e.stopPropagation(); leave(r, s.key) }
+  // Restart: a terminal agent comes back in the same conversation, with whatever was set up since it started (team tools)
+  const re = el('button', 'x', '↻'); re.title = 'Restart (same conversation)'
+  re.onclick = e => { e.stopPropagation(); tick(); notch.send('restart', s.key) }
   // AUTO needs a way to approve: no permission hook in Copilot, and no terminal prompt to press Enter on in Antigravity's IDE
   const canAuto = s.agent !== 'copilot' && !(s.agent === 'agy' && s.app)
-  const controls = el('div', 'controls'); controls.append(...(canAuto ? [sw] : []), timerEl(s.since || s.updated), x)
+  const controls = el('div', 'controls'); controls.append(...(canAuto ? [sw] : []), timerEl(s.since || s.updated), ...(canRestart(s) ? [re] : []), x)
   const side = el('div', 'side'); side.append(status, controls)
 
   r.append(icon(s.agent), body, side)
   return r
+}
+
+// A teammate's agent, working on their PC: who and what, nothing to open
+function mateRow(a) {
+  const r = el('div', 'row mate'), body = el('div', 'body'), status = el('div', 'status mate'), side = el('div', 'side')
+  r.title = `${a.human}'s ${NAMES[a.agent] || a.agent}, on their computer`
+  body.append(el('div', 'name', `${a.human} · ${a.name === a.agent ? NAMES[a.agent] || a.agent : a.name}`), el('div', 'action', a.task || 'In this repo'))
+  status.append(el('span', 'ind mate'), 'Teammate'); side.append(status)
+  r.append(mateIcon(a), body, side)
+  return r
+}
+
+// The conversation in one repo: everyone working in it across the top, then the messages, newest at the bottom.
+function openTeam(repo) {
+  if (!team?.repos[repo]) return
+  teamRepo = repo; view = 'team'; teamSig = ''; teamPeek = null
+  buildTeam(true)
+  if (open) anim(panel, [{ opacity: 0, filter: 'blur(5px)' }, { opacity: 1, filter: 'blur(0px)' }], { duration: 320 }); else setOpen(true)
+}
+function buildTeam(enter = false) {
+  const t = team?.repos[teamRepo]
+  if (!t) return closeTeam()
+  const all = people(teamRepo), sig = JSON.stringify([t.log.map(m => m.id), all, t.error, t.live])
+  if (sig === teamSig) return // nothing new: leave it be (and where you've scrolled to)
+  teamSig = sig
+  const stick = enter || panel.scrollHeight - panel.scrollTop - panel.clientHeight < 40 // following along at the bottom
+  const head = el('div', 'head'), back = el('button', 'round')
+  back.innerHTML = BACK_ICON; back.title = 'Back (Esc)'; back.onclick = closeTeam
+  const note = !t.remote ? 'This PC only: the repo has no remote' : t.error ? `Can't reach ${t.remote} right now` : `Through ${t.remote}`
+  head.append(back, el('h1', '', projectOf(teamRepo) || 'Team'), el('span', 'summary', note))
+  const roster = el('div', 'roster')
+  for (const a of all) {
+    const p = el('div', 'person' + (a.state === 'working' ? ' busy' : '')); p.title = a.task || ''
+    p.append(mateIcon(a), el('span', '', `${a.human}/${a.name}`)); roster.append(p)
+  }
+  const thread = el('div', 'thread')
+  for (const m of t.log) {
+    const r = el('div', 'msg' + (m.mine ? ' mine' : '') + (enter || teamShown.has(m.id) ? '' : ' new')), bubble = el('div', 'bubble')
+    bubble.append(el('div', 'meta', `${m.from} → ${m.to || 'everyone'} · ${duration(m.at)} ago`), el('div', 'text', m.text))
+    r.append(fromIcon(m), bubble); thread.append(r)
+    teamShown.add(m.id)
+  }
+  if (!t.log.length) { const e = el('div', 'empty'); e.append(el('b', '', 'No messages yet'), "Agents here can message each other, and teammates' agents, with the team_send tool."); thread.append(e) }
+  const wrap = el('div', 'team-view'); wrap.append(head, roster, thread)
+  panel.replaceChildren(wrap)
+  if (stick) panel.scrollTop = panel.scrollHeight
+  layout()
+}
+function closeTeam() {
+  if (view !== 'team') return
+  view = 'list'; render()
+  anim(panel, [{ opacity: 0, filter: 'blur(5px)' }, { opacity: 1, filter: 'blur(0px)' }], { duration: 320 })
 }
 
 // Claude's 5-hour and weekly limits (from its status line), shown when known.
@@ -779,6 +922,7 @@ function warnLimits() {
 }
 
 function renderPanel() {
+  if (view === 'team') return buildTeam() // live: new messages slide in
   if (view !== 'list' || editing) return // built once and updated in place, so typing survives agent updates
   const n = st => sessions.filter(s => s.state === st).length
   const head = el('div', 'head')
@@ -802,14 +946,22 @@ function renderPanel() {
     const right = el('span', 'right'), plus = el('button', 'gplus', '+')
     plus.title = 'New agent in ' + g[0].project
     plus.onclick = () => openLauncher(home)
-    right.append(el('span', '', g.length > 1 ? plural(g.length, 'agent') : ''), plus)
+    const mates = team?.repos[repoOf(g[0])]?.who.length || 0
+    right.append(el('span', '', [g.length > 1 && plural(g.length, 'agent'), mates && plural(mates, 'teammate')].filter(Boolean).join(' · ')), plus)
     // Worktree agents that have all stopped working: offer to merge their branches back
     const crew = g.filter(s => s.cwd && s.cwd !== homeOf(s.cwd)), ready = crew.length > 0 && !crew.some(s => s.state === 'working' || s.state === 'waiting')
     if (ready) { const b = el('button', 'ghome', 'Bring it home'); b.title = 'Merge what the worktree agents did back into ' + g[0].project; b.onclick = () => openHome(home); right.prepend(b) }
+    // Team messages: teammates' agents in this repo under yours, and the way into the conversation
+    const repo = repoOf(g[0]), t = repo && team.repos[repo]
+    if (t) {
+      const chip = el('button', 'tchip'); chip.innerHTML = MSG_ICON; chip.append(t.log.length ? String(t.log.length) : 'Team')
+      chip.title = `Team messages in ${g[0].project} (T)`; chip.onclick = e => { e.stopPropagation(); openTeam(repo) }
+      right.prepend(chip)
+    }
     title.append(el('span', '', g[0].project), right)
-    list.append(...g.map(s => row(s, i++)))
-    group.append(...(sorted.length > 1 || ready ? [title] : []), list) // a project heading only helps when there's more than one
-    if (sorted.length === 1 && !ready) group.style.marginTop = '12px'
+    list.append(...g.map(s => row(s, i++)), ...(t ? t.who.map(mateRow) : []))
+    group.append(...(sorted.length > 1 || ready || t ? [title] : []), list) // a project heading only helps when there's more than one
+    if (sorted.length === 1 && !ready && !t) group.style.marginTop = '12px'
     return group
   })
   if (!sessions.length) {
@@ -833,6 +985,7 @@ function renderPanel() {
   menu.append(
     item('Tile agent windows', 'Ctrl+Alt+G', () => notch.send('grid')),
     item('Bring agent branches home', '', async () => openHome((await notch.invoke('recent'))[0])), // the last folder you launched into
+    ...(team && Object.keys(team.repos).length ? [item('Team messages', 'T', () => openTeam(repoOf(ordered[sel] || {}) || Object.keys(team.repos)[0]))] : []),
     item(sound ? 'Sound: on' : 'Sound: off', 'S', () => { sound = !sound; try { localStorage.setItem('sound', sound ? 'on' : 'off') } catch {}; tick(); render() }),
     item(asleep ? 'Wake' : 'Sleep', 'Ctrl+Alt+Z', () => { const next = !asleep; if (keyboard) closeKeyboard(); setAsleep(next); if (next) setOpen(false) }),
     item('Shortcuts', 'I', () => openHelp()),
@@ -964,6 +1117,24 @@ async function openSetup(first) {
   ph.append(phBody, phSw)
   pair.hidden = true
   notch.invoke('phone-info').then(paintPhone)
+  // Team messages: agents in the same git repo, yours and teammates', message each other through the repo's remote
+  const tm = el('div', 'srow'), tmBody = el('div', 'sbody'), tmSub = el('span', 'sub')
+  const tmSw = el('button', 'switch'); tmSw.append(el('span', 'knob')); tmSw.setAttribute('role', 'switch')
+  const tmRe = el('button', 'mini', 'Restart agents') // agents already running only get the tools when they start again
+  tmRe.title = 'Restart your terminal agents in the same conversations (busy ones as soon as they finish)'
+  tmRe.onclick = async () => { const n = await notch.invoke('restart-all'); tmRe.textContent = n ? `Restarting ${n}` : 'Nothing to restart'; tmRe.disabled = true; tick() }
+  const paintTeam = info => {
+    tmSw.classList.toggle('on', info.on); tmSw.setAttribute('aria-checked', info.on)
+    tmSub.className = 'sub' + (info.on && !info.error ? ' on' : '')
+    tmSub.textContent = info.error || (info.on ? "On · teammates in a repo see your agents' names and tasks there. Agents already running need a restart"
+      : "Agents in the same git repo, yours and teammates', message each other through the repo's own remote")
+    tmRe.hidden = !info.on || !sessions.some(canRestart)
+    layout()
+  }
+  tmSw.onclick = async () => { const info = await notch.invoke('team-set', !tmSw.classList.contains('on')); paintTeam(info); tick(info.on) }
+  tmBody.append(el('b', '', 'Team messages'), tmSub)
+  tm.append(tmBody, tmRe, tmSw)
+  notch.invoke('team-info').then(paintTeam)
   const tip = el('div', 'srow'), tbody = el('div', 'sbody')
   tbody.append(el('b', '', 'Ctrl + Alt + N'), el('span', 'sub', 'Opens Notch from anywhere. The ⓘ button lists every shortcut.'))
   tip.append(tbody)
@@ -991,7 +1162,7 @@ async function openSetup(first) {
   upBody.append(el('b', '', 'Agent Notch ' + (upd.version || '')), upSub); upRow.append(upBody, upBtn)
   autoBody.append(el('b', '', 'Check for updates automatically'), el('span', 'sub', 'Asks GitHub for a new release. Nothing else leaves your PC')); autoRow.append(autoBody, autoSw)
   paintUpdate()
-  prefs.append(lim, ph, pair, login, idle, upRow, autoRow, tip)
+  prefs.append(lim, ph, pair, tm, login, idle, upRow, autoRow, tip)
 
   const finish = el('div', 'finish'), doneBtn = el('button', 'go', first ? 'Get started' : 'Done')
   doneBtn.onclick = async () => {
@@ -1296,12 +1467,12 @@ function setOpen(v) {
   if (v) notch.send('size', true) // grow the window before the panel animates out
   else setOpen.shrink = setTimeout(() => open || notch.send('size', false), 750) // shrink once the collapse has finished
   if (v) {
-    peek = null; welcome = null; renderPill()
+    peek = null; teamPeek = null; welcome = null; renderPill()
     // Stagger the panel's contents in, top to bottom
     panel.querySelectorAll('.head, .group > .title, .row, .foot, .keys, .chips, .field, textarea, .opts').forEach((e, i) =>
       anim(e, [{ opacity: 0, translate: '0 10px', filter: 'blur(3px)' }, { opacity: 1, translate: '0 0', filter: 'blur(0px)' }], { duration: 480, delay: 70 + Math.min(i, 12) * 28, fill: 'backwards' }))
   }
-  if (!v && view === 'help') { view = 'list'; setTimeout(render, 450) } // after the collapse animation
+  if (!v && (view === 'help' || view === 'team')) { view = 'list'; setTimeout(render, 450) } // after the collapse animation
   renderPill(); layout()
   v ? stopVenom() : armVenom()
 }
@@ -1309,7 +1480,7 @@ function setOpen(v) {
 island.addEventListener('mouseenter', () => {
   notch.send('mouse', true)
   if (farewell || keyboard || view === 'launch' || view === 'setup' || view === 'home' || editing || pill.classList.contains('request')) return // requests expand on click, so Allow/Deny don't move under the cursor
-  clearTimeout(hoverTimer); hoverTimer = setTimeout(() => setOpen(true), 90)
+  clearTimeout(hoverTimer); hoverTimer = setTimeout(() => teamPeek ? openTeam(teamPeek.repo) : setOpen(true), 90) // a message peek opens its conversation
 })
 island.addEventListener('mouseleave', () => {
   if (drag) return // the window is moving under the cursor
@@ -1373,6 +1544,7 @@ document.addEventListener('keydown', e => {
   if (view === 'home') { if (e.key === 'Escape') { e.preventDefault(); closeHome(false) } return }
   if (view === 'setup') { if (e.key === 'Escape') { e.preventDefault(); closeSetup(false) } return }
   if (view === 'help') { if (['Escape', 'Backspace', 'i', 'I', '?'].includes(e.key)) { e.preventDefault(); closeHelp() } return }
+  if (view === 'team') { if (['Escape', 'Backspace', 't', 'T'].includes(e.key)) { e.preventDefault(); closeTeam() } return }
   if (menuOpen && e.key === 'Escape') { e.preventDefault(); return setMenu(false) }
   if (!keyboard || editing) return
   const s = ordered[sel]
@@ -1384,10 +1556,11 @@ document.addEventListener('keydown', e => {
     case 'n': if (s?.request) decideUI(s, 'deny'); break
     case 'a': if (s) { tick(!s.auto); notch.send('auto', s.key, !s.auto) } break
     case 'g': notch.send('grid'); return closeKeyboard()
-    case 'r': if (s) { e.preventDefault(); startRename(s, panel.querySelectorAll('.row')[sel].querySelector('.name')) } return
+    case 'r': if (s) { e.preventDefault(); startRename(s, panel.querySelectorAll('.row:not(.mate)')[sel].querySelector('.name')) } return
+    case 't': { e.preventDefault(); const repo = repoOf(s || {}) || Object.keys(team?.repos || {})[0]; if (repo) openTeam(repo); return }
     case '+': case '=': case 'l': e.preventDefault(); return openLauncher()
     case 'escape': return closeKeyboard()
-    case 'd': case 'delete': { const r = panel.querySelectorAll('.row')[sel]; if (s && r) leave(r, s.key); sel = Math.max(0, sel - (sel === ordered.length - 1 ? 1 : 0)); return }
+    case 'd': case 'delete': { const r = panel.querySelectorAll('.row:not(.mate)')[sel]; if (s && r) leave(r, s.key); sel = Math.max(0, sel - (sel === ordered.length - 1 ? 1 : 0)); return }
     case 'c': panel.querySelectorAll('.row.done').forEach((r, i) => setTimeout(() => leave(r, r.dataset.key), i * 45)); return
     case 's': sound = !sound; try { localStorage.setItem('sound', sound ? 'on' : 'off') } catch {}; tick(); break
     case 'q': return notch.send('quit')
@@ -1402,8 +1575,9 @@ document.addEventListener('keydown', e => {
   e.preventDefault(); render()
 })
 
-notch.onSessions((list, lim) => {
+notch.onSessions((list, lim, tm) => {
   limits = lim || {}
+  team = tm
   for (const s of list) {
     const was = prevState[s.key]
     if (was && was !== s.state) {
@@ -1418,6 +1592,7 @@ notch.onSessions((list, lim) => {
   if (peek) peek = list.find(s => s.key === peek.key) || null
   prevState = Object.fromEntries(list.map(s => [s.key, s.state]))
   sessions = list
+  noticeMessages()
   render()
   known = new Set(list.map(s => s.key)) // rows seen from here on animate in when new
   warnLimits()

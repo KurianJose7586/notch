@@ -6,6 +6,8 @@
 #   grid <x> <y> <w> <h> <h1,h2> -> "ok"      (tiles the windows inside that physical-pixel rect)
 #   screen <pid>                 -> base64 of the visible text in that agent's terminal
 #   enter <pid>                  -> "True"    (presses Enter inside that agent's terminal only)
+#   restart <pid> <base64>       -> "typed" | "gone"  (ends that agent and everything it started, then types the command
+#                                   into the shell it ran from; "gone" if it had none, so the caller opens a new window)
 Add-Type @"
 using System; using System.Runtime.InteropServices;
 [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left, Top, Right, Bottom; }
@@ -109,6 +111,34 @@ function Enter($p) { # types Enter into that agent's own input queue: no focus c
   "$ok"
 }
 
+function TypeLine($p, $text) { # types a line, then Enter, into the input queue of the console that process is in
+  $h = Con $p 'CONIN$'; $ok = $false
+  if ($h -ne [IntPtr]-1 -and $h -ne [IntPtr]::Zero) {
+    $keys = foreach ($c in ($text + "`r").ToCharArray()) {
+      foreach ($isDown in 1, 0) {
+        $k = New-Object KEY_INPUT; $k.EventType = 1; $k.KeyDown = $isDown; $k.Repeat = 1; $k.Char = $c
+        if ($c -eq "`r") { $k.VKey = 0x0D; $k.Scan = 0x1C }
+        $k
+      }
+    }
+    $n = 0; $ok = [W]::WriteConsoleInput($h, [KEY_INPUT[]]$keys, $keys.Count, [ref]$n)
+    [W]::CloseHandle($h) | Out-Null
+  }
+  [W]::FreeConsole() | Out-Null
+  $ok
+}
+
+function Restart($p, $text) {
+  $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$p"
+  if (-not $proc) { return 'gone' }
+  $sh = Get-CimInstance Win32_Process -Filter "ProcessId=$($proc.ParentProcessId)"
+  taskkill /PID $p /T /F 2>&1 | Out-Null  # the agent and what it started (its MCP servers, shells)
+  for ($i = 0; $i -lt 30 -and (Get-Process -Id $p -ErrorAction SilentlyContinue); $i++) { Start-Sleep -Milliseconds 100 }
+  # Started from a shell: that shell is back at its prompt, so the command goes in there. Otherwise the tab closed with it.
+  if ($sh -and $sh.Name -match '^(powershell|pwsh|cmd|bash|sh|zsh|fish|nu)\.exe$' -and (TypeLine $sh.ProcessId $text)) { return 'typed' }
+  'gone'
+}
+
 function Grid($x, $y, $w, $h, $list) {
   $hs = $list -split ',' | ForEach-Object { [IntPtr][int64]$_ }
   $n = $hs.Count; $cols = [Math]::Ceiling([Math]::Sqrt($n)); $rows = [Math]::Ceiling($n / $cols); $gap = 10
@@ -146,6 +176,7 @@ while ($null -ne ($line = [Console]::In.ReadLine())) {
       }
       'screen' { $out.WriteLine((Screen $arg)) }
       'enter' { $out.WriteLine((Enter $arg)) }
+      'restart' { $p, $b64 = $arg -split ' ', 2; $out.WriteLine((Restart ([uint32]$p) ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($b64))))) }
       'grid'  { $a = $arg -split ' '; Grid ([int]$a[0]) ([int]$a[1]) ([int]$a[2]) ([int]$a[3]) $a[4]; $out.WriteLine('ok') }
       default { $out.WriteLine('?') }
     }

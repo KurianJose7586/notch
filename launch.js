@@ -13,13 +13,17 @@ const commandFor = (agent, prompt) => prompt ? `${agent} ${PROMPT_FLAG[agent]}${
 
 // Own window per agent (tabs can't be tiled). -NoExit keeps the shell open after the agent quits.
 // The command goes in base64 so nothing in the prompt can break out of it.
-function launchAgent(agent, dir, prompt) {
-  const encoded = Buffer.from(commandFor(agent, prompt), 'utf16le').toString('base64')
+function launchIn(dir, command) {
+  const encoded = Buffer.from(command, 'utf16le').toString('base64')
   spawn('wt.exe', ['-w', 'new', '-d', dir, 'powershell.exe', '-NoLogo', '-NoExit', '-EncodedCommand', encoded], { detached: true, stdio: 'ignore' }).unref()
 }
+const launchAgent = (agent, dir, prompt) => launchIn(dir, commandFor(agent, prompt))
 
-const git = (args, cwd) => new Promise((ok, fail) =>
-  execFile('git', args, { cwd, windowsHide: true }, (e, out, err) => e ? fail(new Error((err || e.message).trim().split('\n')[0])) : ok(out.trim())))
+// Never prompts (stdin closed, no credential dialogs): a background fetch or push fails and is retried instead of
+// waiting on a window nobody sees. timeout 0 = none.
+const GIT_ENV = { ...process.env, GIT_TERMINAL_PROMPT: '0', GCM_INTERACTIVE: 'never' }
+const git = (args, cwd, timeout = 0) => new Promise((ok, fail) =>
+  execFile('git', args, { cwd, windowsHide: true, timeout, env: GIT_ENV }, (e, out, err) => e ? fail(new Error((err || e.message).trim().split('\n')[0])) : ok(out.trim())).stdin.end())
 
 // <parent>/<repo>.worktrees/<repo>-<agent>-<id> on branch notch/<agent>-<id>, branched from HEAD.
 // ponytail: starts at the worktree root even if you picked a subfolder, and uncommitted changes don't carry over
@@ -92,7 +96,7 @@ const launchLabels = (agents, prompts) => agents.map((a, i) =>
 
 const samePath = (a, b) => !!a && !!b && path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase()
 
-module.exports = { AGENTS, launchAgent, makeWorktree, worktrees, branches, bringHome, discard, samePath, commandFor, launchLabels }
+module.exports = { AGENTS, launchAgent, launchIn, makeWorktree, worktrees, branches, bringHome, discard, samePath, commandFor, launchLabels, git }
 
 if (require.main === module) {
   const assert = require('assert')
