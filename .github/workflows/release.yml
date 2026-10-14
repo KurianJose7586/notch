@@ -37,6 +37,22 @@ jobs:
             dist/AgentNotch-Setup-*.exe
             dist/AgentNotch-Setup-*.exe.blockmap
             dist/latest.yml
+      # Mirror on Cloudflare R2: GitHub's release downloads crawl on some networks (a few KB/s in India). The website's
+      # button and the updater download from here; latest.yml goes last, so nobody sees a release before its installer.
+      - name: Mirror to Cloudflare R2
+        if: github.ref_type == 'tag'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+          R2: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+        run: |
+          put() { aws s3 cp "$1" "s3://agent-notch/$2" --endpoint-url "$R2" --no-progress "${@:3}"; }
+          for f in dist/AgentNotch-Setup-*.exe dist/AgentNotch-Setup-*.exe.blockmap; do put "$f" "$(basename "$f")"; done
+          put dist/AgentNotch-Setup-*.exe AgentNotch-Setup.exe --cache-control no-cache
+          put dist/latest.yml latest.yml --cache-control no-cache
       - name: Publish release
         if: github.ref_type == 'tag'
         env:

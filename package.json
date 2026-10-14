@@ -64,6 +64,10 @@
     ],
     "publish": [
       {
+        "provider": "generic",
+        "url": "https://pub-671421c125c0425e9c137b3baf67b496.r2.dev"
+      },
+      {
         "provider": "github",
         "owner": "KurianJose7586",
         "repo": "notch"

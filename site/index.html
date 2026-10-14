@@ -310,7 +310,7 @@ footer a{text-underline-offset:4px}
     </h1>
     <p class="sub">A Dynamic-Island-style notch for Windows. See what every coding agent is doing, which ones need you, and answer them without hunting for the terminal.</p>
     <div class="cta">
-      <a class="btn" data-dl href="https://github.com/KurianJose7586/notch/releases/latest">Download for Windows</a>
+      <a class="btn" data-dl href="https://pub-671421c125c0425e9c137b3baf67b496.r2.dev/AgentNotch-Setup.exe">Download for Windows</a>
       <button class="btn ghost" id="tidy" type="button"><span id="tidyL">Make it chaos</span> <span><kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd data-k="g">G</kbd></span></button>
     </div>
   </div>
@@ -494,7 +494,7 @@ footer a{text-underline-offset:4px}
         <li>Switch on the agents you use in the setup sheet.</li>
         <li>Start an agent. It shows up in the notch.</li>
       </ol>
-      <a class="btn" data-dl href="https://github.com/KurianJose7586/notch/releases/latest">Download for Windows</a>
+      <a class="btn" data-dl href="https://pub-671421c125c0425e9c137b3baf67b496.r2.dev/AgentNotch-Setup.exe">Download for Windows</a>
       <p class="note">Not code-signed yet, so SmartScreen will make a face. →<br>By installing you agree to the <a href="legal.html#terms">Terms</a> and <a href="legal.html#privacy">Privacy Policy</a>.</p>
     </div>
     <div class="rv" style="--i:2">
@@ -633,11 +633,12 @@ film.addEventListener('click',()=>{
 /* in-page links: scroll ourselves so they work even where hash navigation is blocked (file previews) */
 document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#"]');const t=a&&$(a.getAttribute('href'));if(t){e.preventDefault();t.scrollIntoView({behavior:still?'auto':'smooth'});nt.classList.remove('open')}});
 
-/* one-click download: point the buttons straight at the latest installer (falls back to the releases page) */
+/* one-click download: the buttons fetch the latest installer from our Cloudflare R2 mirror (GitHub's own downloads crawl on
+   some networks); GitHub's release info just adds the version and size */
 fetch('https://api.github.com/repos/KurianJose7586/notch/releases/latest').then(r=>r.json()).then(r=>{
   const a=r.assets.find(a=>a.name.endsWith('.exe'));if(!a)return;
   const meta=` <small style="opacity:.6;font-weight:500">${r.tag_name} · ${Math.round(a.size/1e6)} MB</small>`;
-  $$('[data-dl]').forEach(b=>{b.href=a.browser_download_url;b.innerHTML+=meta;
+  $('[data-dl]').forEach(b=>{b.innerHTML+=meta;
     b.addEventListener('click',()=>{const d=$('#dlbox');d.classList.add('on');setTimeout(()=>d.classList.remove('on'),14000)})});
 }).catch(()=>{});
 
