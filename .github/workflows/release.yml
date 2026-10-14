@@ -48,11 +48,18 @@ jobs:
           AWS_REQUEST_CHECKSUM_CALCULATION: when_required
           AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
           R2: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          PUB: https://pub-671421c125c0425e9c137b3baf67b496.r2.dev
         run: |
+          # A key pasted with a line break breaks the request signature, and aws s3 cp then exits 0 without uploading
+          trim() { printf %s "$1" | tr -d '[:space:]'; }
+          export AWS_ACCESS_KEY_ID="$(trim "$AWS_ACCESS_KEY_ID")" AWS_SECRET_ACCESS_KEY="$(trim "$AWS_SECRET_ACCESS_KEY")" R2="$(trim "$R2")"
           put() { aws s3 cp "$1" "s3://agent-notch/$2" --endpoint-url "$R2" --no-progress "${@:3}"; }
           for f in dist/AgentNotch-Setup-*.exe dist/AgentNotch-Setup-*.exe.blockmap; do put "$f" "$(basename "$f")"; done
           put dist/AgentNotch-Setup-*.exe AgentNotch-Setup.exe --cache-control no-cache
           put dist/latest.yml latest.yml --cache-control no-cache
+          # So its exit code proves nothing: check what people will actually download
+          curl -sf "$PUB/latest.yml" | grep -q "^version: ${GITHUB_REF_NAME#v}$"
+          curl -sfI "$PUB/AgentNotch-Setup.exe" > /dev/null
       - name: Publish release
         if: github.ref_type == 'tag'
         env:
