@@ -432,11 +432,15 @@
            font-size: 11px; font-weight: 600; transition: background .15s ease, scale .35s var(--spring); }
   .tchip:hover { background: rgba(191,90,242,.34); } .tchip:active { scale: .92; }
   .tchip svg { width: 11px; height: 11px; }
+  .team-view .head h1 { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } /* a long repo name gives way */
+  .team-view .head .summary { flex: 1 0 auto; }
   .team-view .coord { margin-top: 12px; }
+  .team-view .coord .sub { white-space: normal; }
   .roster { display: flex; gap: 6px; overflow-x: auto; padding: 14px 4px 2px; }
   .roster::-webkit-scrollbar { display: none; }
-  .person { flex: none; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 10.5px; color: var(--secondary); }
+  .person { flex: none; width: 76px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 10.5px; color: var(--secondary); }
   .person span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .person .pn { font-weight: 600; color: rgba(255,255,255,.86); } .person .ph { margin-top: -5px; font-size: 9.5px; color: var(--tertiary); }
   .person.busy .icon { box-shadow: 0 0 0 2px #000, 0 0 0 3.5px var(--blue); }
   .thread { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; padding: 0 2px 4px; }
   .msg { display: flex; align-items: flex-end; gap: 8px; max-width: 86%; }
@@ -447,6 +451,12 @@
   .bubble .meta { margin-bottom: 2px; font-size: 10.5px; font-weight: 600; color: var(--tertiary); }
   .msg.mine .bubble .meta { color: rgba(255,255,255,.7); }
   .bubble .text { font-size: 12.5px; line-height: 1.4; white-space: pre-wrap; word-break: break-word; user-select: text; cursor: text; }
+  .bubble .text.clamp { display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; } /* long notes fold */
+  .bubble .text code { font: 11.5px/1.4 var(--mono); padding: 0 4px; border-radius: 4px; background: rgba(255,255,255,.1); }
+  .msg.mine .bubble .text code { background: rgba(0,0,0,.2); }
+  .bubble .more { margin-top: 3px; padding: 0; background: none; font-size: 11.5px; font-weight: 600; color: #A8D1FF; }
+  .msg.mine .bubble .more { color: #fff; }
+  .bubble .meta .wait { color: var(--orange); }
   .msg.new { animation: rise .5s var(--ease) both; }
   .thread .empty { padding: 18px 12px; }
   @media (prefers-reduced-motion: reduce) {
@@ -513,7 +523,7 @@ let welcome = calm ? null : 'drop' // drop -> hello -> null
 let farewell = null // quit | reload -> dot, while the goodbye plays
 let sound = true
 let menuOpen = false // the ⋯ menu in the list's header
-let team = null, teamSeen = null, teamPeek = null, teamPeekTimer, teamRepo = null, teamSig = '', teamShown = new Set() // team messages (main.js teamView)
+let team = null, teamSeen = null, teamPeek = null, teamPeekTimer, teamRepo = null, teamSig = '', teamShown = new Set(), teamOpen = new Set() // team messages (main.js teamView); teamOpen: long ones unfolded
 let asleep = false // sleeping: a small dim zzz; quiet unless an agent needs you
 try { asleep = localStorage.getItem('asleep') === 'on' } catch {}
 try { sound = localStorage.getItem('sound') !== 'off' } catch {}
@@ -867,7 +877,7 @@ function openTeam(repo) {
 function buildTeam(enter = false) {
   const t = team?.repos[teamRepo]
   if (!t) return closeTeam()
-  const all = people(teamRepo), sig = JSON.stringify([t.log.map(m => m.id), all, t.error, t.live, t.coord])
+  const all = people(teamRepo), sig = JSON.stringify([t.log.map(m => m.id + (m.waiting ? '*' : '')), all, t.error, t.live, t.coord])
   if (sig === teamSig) return // nothing new: leave it be (and where you've scrolled to)
   teamSig = sig
   const stick = enter || panel.scrollHeight - panel.scrollTop - panel.clientHeight < 40 // following along at the bottom
@@ -879,17 +889,26 @@ function buildTeam(enter = false) {
   const coord = el('div', 'list coord'), crow = el('div', 'srow'), cbody = el('div', 'sbody'), csw = el('button', 'switch' + (t.coord ? ' on' : ''))
   csw.append(el('span', 'knob')); csw.setAttribute('role', 'switch'); csw.setAttribute('aria-checked', String(!!t.coord))
   csw.onclick = () => { tick(!t.coord); notch.invoke('team-coord', teamRepo, !t.coord) }
-  cbody.append(el('b', '', 'Coordinate'), el('span', 'sub', t.coord ? 'Your agents here keep working with the team until one marks it done' : 'Let your agents here keep working with the team until the work is done'))
+  cbody.append(el('b', '', 'Coordinate'), el('span', 'sub', t.coord ? 'Your agents here keep working with the team until one marks the work done' : 'Keep your agents here working with the team until the work is done'))
   crow.append(cbody, csw); coord.append(crow)
   const roster = el('div', 'roster')
-  for (const a of all) {
-    const p = el('div', 'person' + (a.state === 'working' ? ' busy' : '')); p.title = a.task || ''
-    p.append(mateIcon(a), el('span', '', `${a.human}/${a.name}`)); roster.append(p)
+  for (const a of all) { // agent, then whose (you, or the teammate)
+    const p = el('div', 'person' + (a.state === 'working' ? ' busy' : '')); p.title = `${a.human}/${a.name}${a.task ? ': ' + a.task : ''}`
+    p.append(mateIcon(a), el('span', 'pn', a.name), el('span', 'ph', a.here ? 'you' : a.human)); roster.append(p)
   }
+  const you = x => x === t.human ? 'you' : x.startsWith(t.human + '/') ? 'you' + x.slice(t.human.length) : x // this PC's person
   const thread = el('div', 'thread')
   for (const m of t.log) {
-    const r = el('div', 'msg' + (m.mine ? ' mine' : '') + (enter || teamShown.has(m.id) ? '' : ' new')), bubble = el('div', 'bubble')
-    bubble.append(el('div', 'meta', `${m.from} → ${m.to || 'everyone'}${m.done ? ' · ✓ done' : ''} · ${duration(m.at)} ago`), el('div', 'text', m.text))
+    const r = el('div', 'msg' + (m.mine ? ' mine' : '') + (enter || teamShown.has(m.id) ? '' : ' new')), bubble = el('div', 'bubble'), meta = el('div', 'meta')
+    meta.append(`${you(m.from)} → ${m.to ? you(m.to) : 'everyone'}${m.done ? ' · ✓ done' : ''} · ${duration(m.at)} ago`)
+    if (m.waiting) { const w = el('span', 'wait', ' · not read yet'); w.title = 'Reaches your agents the next time one is working in this repo'; meta.append(w) }
+    const text = richText(m.text), long = m.text.length > 360 || m.text.split('\n').length > 7
+    bubble.append(meta, text)
+    if (long) { // long notes fold to a few lines
+      const more = el('button', 'more'), fold = open => { text.classList.toggle('clamp', !open); more.textContent = open ? 'Show less' : 'Show more' }
+      more.onclick = e => { e.stopPropagation(); const open = !teamOpen.has(m.id); open ? teamOpen.add(m.id) : teamOpen.delete(m.id); fold(open); layout() }
+      fold(teamOpen.has(m.id)); bubble.append(more)
+    }
     r.append(fromIcon(m), bubble); thread.append(r)
     teamShown.add(m.id)
   }
@@ -898,6 +917,12 @@ function buildTeam(enter = false) {
   panel.replaceChildren(wrap)
   if (stick) panel.scrollTop = panel.scrollHeight
   layout()
+}
+// A message's text with its `code` spans (and ``` blocks) set as code, as the agents write them
+function richText(s) {
+  const d = el('div', 'text')
+  String(s).replace(/```[\w-]*\n?/g, '`').split('`').forEach((part, i) => part && d.append(i % 2 ? el('code', '', part) : part))
+  return d
 }
 function closeTeam() {
   if (view !== 'team') return
@@ -1474,8 +1499,9 @@ async function mergeHome(saveMine) {
 
 function layout() {
   island.classList.toggle('open', open)
-  const dot = welcome === 'drop' || farewell === 'dot'
-  island.style.width = (open ? 460 : dot ? 36 : pill.offsetWidth) + 'px'
+  const dot = welcome === 'drop' || farewell === 'dot', wide = open && view === 'team' ? 520 : 460 // a conversation reads better wider
+  panel.style.width = wide + 'px'
+  island.style.width = (open ? wide : dot ? 36 : pill.offsetWidth) + 'px'
   island.style.height = (open ? Math.min(panel.scrollHeight, 690) : dot ? 36 : pill.offsetHeight) + 'px'
 }
 

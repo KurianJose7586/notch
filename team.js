@@ -16,6 +16,7 @@ const SINCE = '30.minutes.ago' // a teammate seen for the first time: only their
 const STALE_MS = 15 * 60e3 // presence nobody refreshed for this long (their PC slept or went offline) isn't shown
 const KEEP = 100 // messages kept per repo
 const MAX = 2000 // characters per message: notes, not documents (and a hook's context has room for several)
+const CATCH_UP_MS = 24 * 3600e3 // a message none of an agent's sessions saw still reaches its next session within a day
 
 const slug = s => String(s || '').toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^[-.]+|[-.]+$/g, '').slice(0, 40)
 
@@ -66,6 +67,7 @@ function createTeam({ file, every = EVERY_MS, host = os.hostname(), changed = ()
   }
   function add(r, m) {
     m.n = ++n
+    m.got = [] // which agents it has reached (human/name)
     const log = data.log[r.id] ||= []
     log.push(m)
     log.splice(0, log.length - KEEP)
@@ -92,13 +94,17 @@ function createTeam({ file, every = EVERY_MS, host = os.hostname(), changed = ()
     return r
   }
 
-  // Messages an agent hasn't been shown yet, addressed to it and not its own. started: when it showed up (on its first
-  // call it gets what arrived since). direct: only if one of them names it (news alone doesn't keep a finishing agent going).
+  // Messages a session hasn't been shown yet, addressed to it and not its own. started: when it showed up; on its first
+  // call it gets what arrived since, and what none of this agent's sessions saw in the last day, so a message to an
+  // agent that had stopped reaches it when it's back. direct: only if one of them names it (news alone doesn't keep a
+  // finishing agent going).
   async function take(cwd, key, name, { started = Date.now(), direct = false } = {}) {
-    const r = await open(cwd)
+    const r = await open(cwd), me = `${r.human}/${name}`
     const since = data.cursors[key]
-    const mail = (data.log[r.id] || []).filter(m => (since === undefined ? m.at >= started : m.n > since) && m.key !== key && addressed(m.to, r.human, name))
+    const missed = m => m.got && !m.got.includes(me) && m.from !== me && Date.now() - m.at < CATCH_UP_MS
+    const mail = (data.log[r.id] || []).filter(m => (since === undefined ? m.at >= started || missed(m) : m.n > since) && m.key !== key && addressed(m.to, r.human, name))
     if (direct && !mail.some(m => addressed(m.to, r.human, name) === 'direct')) return []
+    for (const m of mail) if (m.got && !m.got.includes(me)) m.got.push(me)
     delete data.cursors[key]
     data.cursors[key] = n // newest last, so the oldest go first below
     const keys = Object.keys(data.cursors)
@@ -168,7 +174,9 @@ function createTeam({ file, every = EVERY_MS, host = os.hostname(), changed = ()
   // What the notch shows: per repo, teammates' agents and the recent messages (mine: sent from this PC).
   const state = () => Object.fromEntries(Object.values(repos).map(r => [r.id, {
     human: r.human, remote: r.remote, live: r.live, error: r.error, who: r.who, coord: !!data.coord[r.id],
-    log: (data.log[r.id] || []).slice(-30).map(({ id, from, agent, to, text, at, key, done }) => ({ id, from, agent, to, text, at, mine: !!key, done: !!done })),
+    log: (data.log[r.id] || []).slice(-30).map(({ id, from, agent, to, text, at, key, done, got }) => ({ id, from, agent, to, text, at, mine: !!key, done: !!done,
+      // a teammate's message for this PC that none of its agents has had yet (it reaches the next one that's working here)
+      waiting: !key && got?.length === 0 && (!!addressed(to, r.human, '') || String(to).toLowerCase().includes(r.human + '/')) })),
   }]))
 
   // groups: { cwd: [{ name, agent, task }] } for every folder with live agents on this PC. Called every tick; each repo
@@ -275,6 +283,17 @@ if (require.main === module) {
     assert.equal((await a.roster(A)).error, null)
     await b.sync({ [B]: [{ name: 'opencode', agent: 'opencode', task: 'checkout page' }] })
     assert.deepEqual(texts(await b.take(B, 'opencode:9', 'opencode')), ['{ id, status }'])
+
+    // a message for an agent with no session running shows as waiting; its next session gets it, and only once
+    await b.send(B, { name: 'opencode', to: 'alice/claude', text: 'ping while you were away', key: 'opencode:9' })
+    await b.sync({ [B]: [{ name: 'opencode', agent: 'opencode', task: 'checkout page' }] })
+    await a.sync({ [A]: [] })
+    assert.equal(Object.values(a.state())[0].log.at(-1).waiting, true)
+    const later = Date.now() + 1000 // sessions that started after it arrived
+    assert.deepEqual(texts(await a.take(A, 'claude:9', 'claude', { started: later })), ['ping while you were away'])
+    assert.deepEqual(await a.take(A, 'claude:10', 'claude', { started: later }), [], 'once per agent')
+    assert.equal(Object.values(a.state())[0].log.at(-1).waiting, false)
+    await a.take(A, 'claude:1', 'claude') // the session that was already running gets it too
 
     // a restarted notch picks up where it left off
     const a2 = createTeam({ file: path.join(tmp, 'a.json'), every: 0, host: 'pc-a' })
