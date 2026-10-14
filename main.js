@@ -205,10 +205,26 @@ async function rosterOf(cwd, self) {
   return { ...r, list: [...here, ...r.who] }
 }
 
+// Coordinate mode (a per-repo switch, on this PC): the agents in a repo work as one team until one of them sends done.
+// A finishing agent is kept going with the team's news, or told to wait for it; 10 quiet minutes let everyone stop.
+const QUIET_MS = 10 * 60e3
+const RULES = `Coordinate mode is on in this repo: you and the other agents working in it (team_check lists them) are one team on the same goal, with as little human help as possible.
+- Agree who does what before editing (claim your part with team_send) and leave files another agent has claimed to them.
+- Tell the team when you finish a part, change something others rely on (APIs, shared files, schemas), or get stuck.
+- Waiting on a teammate? Call team_check with wait_seconds: 90 (again if needed) instead of stopping.
+- Skip messages that only say thanks or OK.
+- When the whole goal is done and checked, one of you sends team_send with done: true; then everyone can stop.`
+const NUDGE = "Coordinate mode is on and the team's work isn't marked done. If you're waiting on teammates, call team_check with wait_seconds: 90. If your part is finished, tell the team with team_send and wait for what's next. If the whole goal is done and checked, send team_send with done: true, then stop."
+async function coordinating(s) {
+  const c = s?.cwd && await team.coordination(s.cwd).catch(() => null)
+  if (!c?.on || Date.now() - Math.max(c.last?.at || 0, s.turnAt || 0) > QUIET_MS) return false
+  return !(c.last?.done && c.last.at >= (s.turnAt || 0)) // a done that came after this agent's task began ends its round
+}
+
 // New team messages ride back on a hook's reply, for agents that let a hook add to what the model reads: as hook
 // context (Claude, Copilot), as a step before the next model call (Antigravity), or added to a tool's result by
 // plugin.js (OpenCode, Kilo; it flags the calls whose reply it shows). Each is shown once. A finishing agent is only
-// held for messages that name it, and never twice in a row, so agents can't keep each other going.
+// held for messages that name it, and never twice in a row, so agents can't keep each other going (unless coordinating).
 const MAIL = { claude: ['UserPromptSubmit', 'PostToolUse', 'Stop'], copilot: ['UserPromptSubmit', 'PostToolUse', 'Stop'], agy: ['PreInvocation', 'Stop'] }
 function wrap(agent, event, text) {
   const stop = event === 'Stop'
@@ -222,18 +238,21 @@ async function mailFor(s, agent, event, p) {
   const plugin = agent === 'opencode' || agent === 'kilo'
   if (!team.on || !s.cwd || !(plugin ? p.mail === true : MAIL[agent]?.includes(event))) return ''
   const stop = event === 'Stop', turn = event === 'UserPromptSubmit' || (event === 'PreInvocation' && p.invocationNum === 0)
-  if (turn) s.heldStop = false
-  if (stop && (s.heldStop || p.stop_hook_active || s.state !== 'done')) { s.heldStop = false; return '' } // held once already, or it failed
-  const mail = await team.take(s.cwd, s.key, nameOf(s), { started: s.started, direct: stop }).catch(() => null)
+  if (turn) { s.heldStop = false; s.turnAt = Date.now() }
+  const coord = await coordinating(s)
+  if (stop && (s.state !== 'done' || !coord && (s.heldStop || p.stop_hook_active))) { s.heldStop = false; return '' } // it failed, or held once already
+  const mail = await team.take(s.cwd, s.key, nameOf(s), { started: s.started, direct: stop && !coord }).catch(() => null)
   if (!mail) return '' // not in a git repo
   let text = mail.length ? `New messages from other coding agents working in this repo:\n${mail.map(said).join('\n')}\nYou can answer with the team_send tool.` : ''
   if (turn) { // a new task: who else is here, whenever that changed
     const { list } = await rosterOf(s.cwd, s), names = list.map(a => a.human + '/' + a.name).join()
     if (names && names !== s.toldRoster) text = `Also working in this repo right now:\n${list.map(whoIs).join('\n')}\nThey can be reached with the team_send tool.${text ? '\n\n' + text : ''}`
     s.toldRoster = names
+    if (coord) text = `${RULES}${text ? '\n\n' + text : ''}`
   }
+  if (stop && coord) text = `${text ? text + '\n\n' : ''}${NUDGE}` // coordinating: keep going with the news, or wait for it
   if (!text) return ''
-  if (stop) { s.heldStop = true; set(s, 'working', Date.now()); s.action = 'Reading team messages'; s.unread = false }
+  if (stop) { s.heldStop = true; set(s, 'working', Date.now()); s.action = mail.length ? 'Reading team messages' : 'Waiting for the team'; s.unread = false }
   return plugin ? text : JSON.stringify(wrap(agent, event, text))
 }
 
@@ -257,9 +276,9 @@ async function teamCall(tool, body, url, res) {
     const k = s?.key || agent, recent = (sent[k] || []).filter(t => Date.now() - t < 300e3)
     if (recent.length >= 10) return res.end('Not sent: that would be 11 messages in 5 minutes. Wait a little, or say more in one message.')
     sent[k] = [...recent, Date.now()]
-    await team.send(cwd, { name, agent, to: a.to, text: a.text, key: s?.key })
+    await team.send(cwd, { name, agent, to: a.to, text: a.text, key: s?.key, done: a.done === true })
     const heard = list.some(o => team.addressed(a.to, o.human, o.name))
-    return res.end([`Sent to ${a.to || 'everyone in this repo'}.`, heard ? '' : `Nobody ${a.to ? 'by that name ' : ''}is working in this repo right now, so only agents that are will see it.`, link].filter(Boolean).join(' '))
+    return res.end([`Sent to ${a.to || 'everyone in this repo'}${a.done === true ? ', marked done: agents in coordinate mode can stop now' : ''}.`, heard ? '' : `Nobody ${a.to ? 'by that name ' : ''}is working in this repo right now, so only agents that are will see it.`, link].filter(Boolean).join(' '))
   }
   if (tool !== 'team_check') return res.end('Unknown tool')
   let mail = []
@@ -274,6 +293,7 @@ async function teamCall(tool, body, url, res) {
     list.length ? `Also working in this repo:\n${list.map(whoIs).join('\n')}`
       : `Nobody else is working in this repo right now${remote && !live ? " that you can see: teammates' agents show up once anyone has sent a team message in this repo" : ''}.`,
     mail.length ? `New messages:\n${mail.map(said).join('\n')}` : 'No new messages.',
+    await coordinating(s) ? RULES : '',
     link,
   ].filter(Boolean).join('\n\n'))
 }
@@ -305,7 +325,7 @@ async function handleEvent(agent, event, body, url, res) {
   if (mail) { push(); return res.end(mail) }
   if (s?.restartWhenDone && s.state === 'done') setTimeout(() => restart(s.key), 800) // asked while it was busy: it's finished now
   // Reading team messages can't hurt, so it never waits for your OK (sending does, until you allow it for good)
-  if (agent === 'claude' && event === 'PreToolUse' && p.tool_name === 'mcp__agent-notch__team_check') return res.end(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'allow' } }))
+  if (agent === 'claude' && event === 'PreToolUse' && (p.tool_name === 'mcp__agent-notch__team_check' || p.tool_name === 'mcp__agent-notch__team_send' && await coordinating(s))) return res.end(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'allow' } }))
   if (s && s.auto && agent === 'agy' && event === 'PreToolUse') { res.end(answer(agent, 'ask')); return pressWhenPrompted(s) } // any agy tool can prompt
   if (!s || !isGate(agent, event, p)) return res.end('')
   // The Antigravity IDE has no console to press Enter in, so the notch can't answer its prompt: leave it to the IDE.
@@ -511,6 +531,7 @@ ipcMain.handle('team-set', (_, on) => {
   return { on: team.on }
 })
 ipcMain.handle('team-info', () => ({ on: team.on }))
+ipcMain.handle('team-coord', (_, id, on) => { team.setCoord(String(id), !!on); return !!on })
 ipcMain.handle('phone-info', () => phone.info())
 ipcMain.handle('phone-set', (_, on) => { phone.set(!!on); return phone.info() })
 ipcMain.handle('phone-renew', () => { phone.renew(); return phone.info() })

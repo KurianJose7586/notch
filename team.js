@@ -4,6 +4,7 @@
 // and the ref doubles as the outbox: a push that fails (offline) goes out with the next one. Whoever can push to the
 // repo is on the team and nobody else is. Branches, tags and the working tree are never touched.
 // A repo's channel opens when someone first sends a message there; until then nothing is pushed to it.
+// Coordinate mode (per repo, on this PC) keeps agents working with the team until a message marks the work done.
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
@@ -32,7 +33,7 @@ const parse = body => { try { return JSON.parse(body.slice(body.indexOf('\n\n') 
 // file: on/off switch, delivery cursors and recent messages. every: fetch interval. host: this PC's name.
 // changed(): there's a new message, or teammates' agents came, went or moved on (the notch redraws).
 function createTeam({ file, every = EVERY_MS, host = os.hostname(), changed = () => {} }) {
-  let data = { on: false, seen: {}, log: {}, cursors: {} }
+  let data = { on: false, seen: {}, log: {}, cursors: {}, coord: {} }
   try { data = { ...data, ...JSON.parse(fs.readFileSync(file, 'utf8')) } } catch {}
   const save = () => fs.writeFileSync(file, JSON.stringify(data))
   let n = Math.max(0, ...Object.values(data.log).flat().map(m => m.n)) // message numbers, for delivery cursors
@@ -73,11 +74,12 @@ function createTeam({ file, every = EVERY_MS, host = os.hostname(), changed = ()
   }
 
   // name: what the sending agent is called, agent: what kind it is; key: its session, so it isn't handed its own message back.
-  async function send(cwd, { name, agent = '', to, text, key }) {
+  // done: the team's shared work is finished, which ends a coordinated round on every PC.
+  async function send(cwd, { name, agent = '', to, text, key, done }) {
     const r = await open(cwd)
     text = String(text || '').trim().slice(0, MAX)
     if (!text) throw new Error('The message is empty')
-    const m = { from: `${r.human}/${name}`, agent, to: String(to || '').trim().slice(0, 200), text }
+    const m = { from: `${r.human}/${name}`, agent, to: String(to || '').trim().slice(0, 200), text, ...(done ? { done: true } : {}) }
     const id = !r.remote ? crypto.randomUUID() : await run(r, async () => { // no remote: only this PC's agents can hear it
       const ref = `refs/notch/msg/${r.me}`, parent = await g(r, ['rev-parse', '-q', '--verify', ref]).catch(() => '')
       const sha = await commit(r, `notch: ${m.from} -> ${m.to || 'all'}\n\n${JSON.stringify(m)}`, parent)
@@ -111,6 +113,13 @@ function createTeam({ file, every = EVERY_MS, host = os.hostname(), changed = ()
     return { id: r.id, human: r.human, remote: r.remote, live: r.live, error: r.error, synced: r.synced, who: r.who }
   }
 
+  // Coordinate mode on a folder's repo, and its latest message (main.js works out whether a round is still going).
+  async function coordination(cwd) {
+    const r = await open(cwd)
+    return { on: !!data.coord[r.id], last: (data.log[r.id] || []).at(-1) || null }
+  }
+  function setCoord(id, on) { if (on) data.coord[id] = true; else delete data.coord[id]; save(); changed() }
+
   // What this PC's agents on a repo are doing. Republished when it changes, and every few minutes so it doesn't go stale.
   function present(r, agents) {
     const text = JSON.stringify(agents)
@@ -142,7 +151,7 @@ function createTeam({ file, every = EVERY_MS, host = os.hostname(), changed = ()
       for (const rec of out.split('\x1e')) {
         const [id, body = ''] = rec.trim().split('\x1f'), m = parse(body)
         if (typeof m?.from !== 'string' || typeof m.text !== 'string') continue
-        const msg = { id, from: m.from.slice(0, 80), agent: String(m.agent || '').slice(0, 20), to: String(m.to || '').slice(0, 200), text: m.text.slice(0, MAX), at: Date.now() }
+        const msg = { id, from: m.from.slice(0, 80), agent: String(m.agent || '').slice(0, 20), to: String(m.to || '').slice(0, 200), text: m.text.slice(0, MAX), ...(m.done === true ? { done: true } : {}), at: Date.now() }
         add(r, msg)
       }
       seen[ref] = tip
@@ -158,8 +167,8 @@ function createTeam({ file, every = EVERY_MS, host = os.hostname(), changed = ()
 
   // What the notch shows: per repo, teammates' agents and the recent messages (mine: sent from this PC).
   const state = () => Object.fromEntries(Object.values(repos).map(r => [r.id, {
-    human: r.human, remote: r.remote, live: r.live, error: r.error, who: r.who,
-    log: (data.log[r.id] || []).slice(-30).map(({ id, from, agent, to, text, at, key }) => ({ id, from, agent, to, text, at, mine: !!key })),
+    human: r.human, remote: r.remote, live: r.live, error: r.error, who: r.who, coord: !!data.coord[r.id],
+    log: (data.log[r.id] || []).slice(-30).map(({ id, from, agent, to, text, at, key, done }) => ({ id, from, agent, to, text, at, mine: !!key, done: !!done })),
   }]))
 
   // groups: { cwd: [{ name, agent, task }] } for every folder with live agents on this PC. Called every tick; each repo
@@ -191,7 +200,7 @@ function createTeam({ file, every = EVERY_MS, host = os.hostname(), changed = ()
     repo: cwd => open(cwd).then(r => r.id, () => null),
     idOf: cwd => ids[cwd], // the same, for a folder already looked at; undefined otherwise
     hurry: cwd => open(cwd).then(r => { r.next = 0 }, () => {}), // someone's waiting on a reply: fetch on the next sync
-    send, take, roster, sync, addressed, state,
+    send, take, roster, sync, addressed, state, coordination, setCoord,
   }
 }
 
@@ -243,6 +252,18 @@ if (require.main === module) {
     const q = await a.take(A, 'claude:1', 'claude', { direct: true })
     assert.deepEqual(q.map(m => [m.from, m.text]), [['bob/opencode', 'what does /orders return?']])
     assert.deepEqual((await a.roster(A)).who.map(w => w.name), ['opencode'], 'bob joined once the channel was open')
+
+    // coordinate mode is this PC's switch; a message marked done reaches the other PC as done
+    assert.equal((await b.coordination(B)).on, false)
+    b.setCoord(b.idOf(B), true)
+    assert.equal((await b.coordination(B)).on, true)
+    await a.send(A, { name: 'claude', text: 'all done and tested', key: 'claude:1', done: true })
+    await a.sync({ [A]: [{ name: 'claude', agent: 'claude', task: 'orders API' }] })
+    await b.sync({ [B]: [{ name: 'opencode', agent: 'opencode', task: 'checkout page' }] })
+    const { last } = await b.coordination(B)
+    assert.deepEqual([last.text, last.done], ['all done and tested', true])
+    assert.equal(Object.values(b.state())[0].coord, true)
+    assert.deepEqual(texts(await b.take(B, 'opencode:9', 'opencode')), ['all done and tested'])
 
     // offline: the send waits in the ref and goes out with the next sync that reaches the remote
     await git(['remote', 'set-url', 'origin', path.join(tmp, 'nowhere.git')], A)

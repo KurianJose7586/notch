@@ -15,13 +15,14 @@ const TOOLS = [
       properties: {
         text: { type: 'string', description: 'The message' },
         to: { type: 'string', description: 'Who it is for: an agent from team_check (e.g. "bob/claude"), a teammate ("bob": all their agents), or leave it out for everyone in the repo' },
+        done: { type: 'boolean', description: "true only when the team's whole shared goal is finished and checked: it tells everyone the work is done, so agents in coordinate mode can stop" },
       },
       required: ['text'],
     },
   },
   {
     name: 'team_check',
-    description: "See who else is working in this git repository right now (agents on this computer and on teammates' computers, with what each is doing) and read new messages they sent you. New messages also reach you automatically as you work; call this before work that could clash with someone else's, or with wait_seconds when you are waiting for a reply.",
+    description: "See who else is working in this git repository right now (agents on this computer and on teammates' computers, with what each is doing) and read new messages they sent you. New messages also reach you automatically as you work; call this before work that could clash with someone else's, or with wait_seconds when you are waiting for a reply (in coordinate mode, do that instead of stopping while teammates are still working).",
     inputSchema: {
       type: 'object',
       properties: { wait_seconds: { type: 'number', description: 'If nothing new has arrived, wait up to this many seconds (at most 90) for a message' } },

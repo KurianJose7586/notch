@@ -432,6 +432,7 @@
            font-size: 11px; font-weight: 600; transition: background .15s ease, scale .35s var(--spring); }
   .tchip:hover { background: rgba(191,90,242,.34); } .tchip:active { scale: .92; }
   .tchip svg { width: 11px; height: 11px; }
+  .team-view .coord { margin-top: 12px; }
   .roster { display: flex; gap: 6px; overflow-x: auto; padding: 14px 4px 2px; }
   .roster::-webkit-scrollbar { display: none; }
   .person { flex: none; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 10.5px; color: var(--secondary); }
@@ -866,7 +867,7 @@ function openTeam(repo) {
 function buildTeam(enter = false) {
   const t = team?.repos[teamRepo]
   if (!t) return closeTeam()
-  const all = people(teamRepo), sig = JSON.stringify([t.log.map(m => m.id), all, t.error, t.live])
+  const all = people(teamRepo), sig = JSON.stringify([t.log.map(m => m.id), all, t.error, t.live, t.coord])
   if (sig === teamSig) return // nothing new: leave it be (and where you've scrolled to)
   teamSig = sig
   const stick = enter || panel.scrollHeight - panel.scrollTop - panel.clientHeight < 40 // following along at the bottom
@@ -874,6 +875,12 @@ function buildTeam(enter = false) {
   back.innerHTML = BACK_ICON; back.title = 'Back (Esc)'; back.onclick = closeTeam
   const note = !t.remote ? 'This PC only: the repo has no remote' : t.error ? `Can't reach ${t.remote} right now` : `Through ${t.remote}`
   head.append(back, el('h1', '', projectOf(teamRepo) || 'Team'), el('span', 'summary', note))
+  // Coordinate: this PC's agents here keep working with the team until one of them sends done
+  const coord = el('div', 'list coord'), crow = el('div', 'srow'), cbody = el('div', 'sbody'), csw = el('button', 'switch' + (t.coord ? ' on' : ''))
+  csw.append(el('span', 'knob')); csw.setAttribute('role', 'switch'); csw.setAttribute('aria-checked', String(!!t.coord))
+  csw.onclick = () => { tick(!t.coord); notch.invoke('team-coord', teamRepo, !t.coord) }
+  cbody.append(el('b', '', 'Coordinate'), el('span', 'sub', t.coord ? 'Your agents here keep working with the team until one marks it done' : 'Let your agents here keep working with the team until the work is done'))
+  crow.append(cbody, csw); coord.append(crow)
   const roster = el('div', 'roster')
   for (const a of all) {
     const p = el('div', 'person' + (a.state === 'working' ? ' busy' : '')); p.title = a.task || ''
@@ -882,12 +889,12 @@ function buildTeam(enter = false) {
   const thread = el('div', 'thread')
   for (const m of t.log) {
     const r = el('div', 'msg' + (m.mine ? ' mine' : '') + (enter || teamShown.has(m.id) ? '' : ' new')), bubble = el('div', 'bubble')
-    bubble.append(el('div', 'meta', `${m.from} → ${m.to || 'everyone'} · ${duration(m.at)} ago`), el('div', 'text', m.text))
+    bubble.append(el('div', 'meta', `${m.from} → ${m.to || 'everyone'}${m.done ? ' · ✓ done' : ''} · ${duration(m.at)} ago`), el('div', 'text', m.text))
     r.append(fromIcon(m), bubble); thread.append(r)
     teamShown.add(m.id)
   }
   if (!t.log.length) { const e = el('div', 'empty'); e.append(el('b', '', 'No messages yet'), "Agents here can message each other, and teammates' agents, with the team_send tool."); thread.append(e) }
-  const wrap = el('div', 'team-view'); wrap.append(head, roster, thread)
+  const wrap = el('div', 'team-view'); wrap.append(head, coord, roster, thread)
   panel.replaceChildren(wrap)
   if (stick) panel.scrollTop = panel.scrollHeight
   layout()
