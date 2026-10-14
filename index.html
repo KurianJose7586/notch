@@ -526,7 +526,7 @@ const agentName = s => NAMES[s.agent] || s.agent
 const canRestart = s => ['claude', 'opencode', 'kilo', 'agy'].includes(s.agent) && !!s.pid && !s.app // same rule as main.js
 const name = s => s.label || agentName(s) // your name for the session, else the agent's
 const baseName = d => d.split(/[\\/]/).filter(Boolean).pop() || d
-const homeOf = cwd => cwd.match(/^(.*?)\.worktrees[\\/]/)?.[1] || cwd // a launched worktree belongs with its repo (same as state.js)
+const homeOf = cwd => cwd.match(/^(.*?)(?:[\\/]\.claude[\\/]worktrees|[\\/]?\.worktrees)[\\/]/)?.[1] || cwd // a worktree belongs with its repo (same as state.js)
 const samePath = (a, b) => !!a && !!b && a.replace(/\//g, '\\').replace(/\\+$/, '').toLowerCase() === b.replace(/\//g, '\\').replace(/\\+$/, '').toLowerCase()
 const duration = t => { const s = Math.max(0, (Date.now() - t) / 1000); return s < 60 ? `${s | 0}s` : s < 3600 ? `${s / 60 | 0}m` : `${s / 3600 | 0}h` }
 function timerEl(t) { const e = el('span', 'timer', duration(t)); e.dataset.since = t; return e }

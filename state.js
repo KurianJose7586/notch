@@ -4,9 +4,13 @@ const path = require('path')
 const WAIT_AFTER_MS = 1500 // agy has no "needs permission" event: a tool that hasn't finished by now is assumed to be on a prompt
 const STALE_MS = 2 * 3600e3
 
-// A worktree the launcher made (<repo>.worktrees/<repo>-<id>) belongs with its repo
-const homeOf = cwd => cwd.match(/^(.*?)\.worktrees[\\/]/)?.[1] || cwd
+// A worktree belongs with its repo: the launcher's (<repo>.worktrees/<repo>-<id>), one inside the repo
+// (<repo>/.worktrees/<name>) and Claude Code's own (<repo>/.claude/worktrees/<name>)
+const homeOf = cwd => cwd.match(/^(.*?)(?:[\\/]\.claude[\\/]worktrees|[\\/]?\.worktrees)[\\/]/)?.[1] || cwd
 const short = (s, n = 90) => (s || '').toString().replace(/\s+/g, ' ').trim().slice(0, n)
+// What a person asked for. Claude Code also sends its own notes in as prompts (<task-notification>, <agent-message>,
+// <artifact-view-context>...): those blocks go, and a prompt with nothing else leaves the task as it was.
+const asked = s => short(String(s || '').replace(/<([a-z]+(?:-[a-z]+)+)\b[^>]*>[\s\S]*?<\/\1>/gi, ' '), 140)
 
 // Claude uses `Edit` + file_path, OpenCode/Kilo use `edit` + filePath.
 function describe(tool, i) {
@@ -37,7 +41,7 @@ function normalize(agent, event, p) {
     const base = { id: p.session_id, cwd: p.cwd }
     switch (event) {
       case 'SessionStart': return { ...base, kind: 'idle' }
-      case 'UserPromptSubmit': return { ...base, kind: 'turn', task: short(p.prompt, 140) }
+      case 'UserPromptSubmit': return { ...base, kind: 'turn', task: asked(p.prompt) }
       case 'PreToolUse': return { ...base, kind: 'tool', action: describe(p.tool_name, p.tool_input), todos: p.tool_input && p.tool_input.todos }
       case 'PostToolUse': return { ...base, kind: 'toolDone' }
       case 'PermissionRequest': return { ...base, kind: 'idle' } // permission gate: main.js decides and sets state
@@ -54,7 +58,7 @@ function normalize(agent, event, p) {
     const base = { id, cwd: p.cwd || p.workspaceFolder || '' }
     switch (event) {
       case 'SessionStart': return { ...base, kind: 'idle' }
-      case 'UserPromptSubmit': return { ...base, kind: 'turn', task: short(p.prompt, 140) }
+      case 'UserPromptSubmit': return { ...base, kind: 'turn', task: asked(p.prompt) }
       case 'PreToolUse': return { ...base, kind: 'tool', action: describe(p.tool_name || p.toolName, p.tool_input || p.toolArgs || p.toolInput) }
       case 'PostToolUse': return { ...base, kind: 'toolDone' }
       case 'Stop': return { ...base, kind: 'stop' }
@@ -76,7 +80,7 @@ function normalize(agent, event, p) {
   if (agent === 'opencode' || agent === 'kilo') { // same plugin API; events come from plugin.js
     const base = { id: p.sessionID, cwd: p.cwd }
     switch (event) {
-      case 'prompt': return { ...base, kind: 'turn', task: short(p.text, 140) }
+      case 'prompt': return { ...base, kind: 'turn', task: asked(p.text) }
       case 'tool': return { ...base, kind: 'tool', action: describe(p.tool, p.args), todos: p.args && p.args.todos }
       case 'toolDone': case 'permission.replied': case 'question.replied': return { ...base, kind: 'toolDone' }
       case 'permission': return { ...base, kind: 'idle' } // permission.ask gate: main.js decides and sets state
@@ -149,6 +153,14 @@ if (require.main === module) {
   assert.equal(S['claude:a'].state, 'working'); assert.equal(S['claude:a'].project, 'LRNAI')
   apply(S, 'claude', 'UserPromptSubmit', { session_id: 'w', cwd: 'C:\\x\\LRNAI.worktrees\\LRNAI-claude-ab1', prompt: 'x' }, 0)
   assert.equal(S['claude:w'].project, 'LRNAI'); delete S['claude:w']
+  for (const cwd of ['C:\\x\\LRNAI\\.worktrees\\demo', 'C:\\x\\LRNAI\\.claude\\worktrees\\feat']) { // worktrees inside the repo, too
+    apply(S, 'claude', 'UserPromptSubmit', { session_id: 'w', cwd, prompt: 'x' }, 0); assert.equal(S['claude:w'].project, 'LRNAI'); delete S['claude:w']
+  }
+  // Claude Code's own notes sent as prompts aren't tasks; what a person typed alongside one is
+  apply(S, 'claude', 'UserPromptSubmit', { session_id: 'a', cwd: 'C:/x/LRNAI', prompt: '<task-notification>\n<task-id>b1</task-id> <status>completed</status>\n</task-notification>' }, 0)
+  assert.equal(S['claude:a'].task, 'fix login')
+  apply(S, 'claude', 'UserPromptSubmit', { session_id: 'a', cwd: 'C:/x/LRNAI', prompt: '<artifact-view-context artifact="f7">x</artifact-view-context> fix login on mobile' }, 0)
+  assert.equal(S['claude:a'].task, 'fix login on mobile')
   apply(S, 'claude', 'PreToolUse', { session_id: 'a', tool_name: 'TodoWrite', tool_input: { todos: [{ status: 'completed' }, { status: 'pending' }] } }, 1)
   assert.deepEqual(S['claude:a'].todos, { done: 1, total: 2 })
   apply(S, 'claude', 'PreToolUse', { session_id: 'a', tool_name: 'Edit', tool_input: { file_path: 'C:/x/src/auth.ts' } }, 2)
