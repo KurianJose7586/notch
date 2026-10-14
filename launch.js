@@ -125,7 +125,7 @@ if (require.main === module) {
     fs.writeFileSync(path.join(made[2], 'a.txt'), 'two\n')
     const { list } = await branches(repoDir, [], { [made[0]]: 'add new.txt' })
     assert.ok(list.every(b => b.stat.startsWith('1 file changed')), JSON.stringify(list))
-    assert.equal(await git(['log', '-1', '--format=%s', list[0].branch], repoDir), 'add new.txt')
+    assert.equal(list.find(b => samePath(b.path, made[0])).subject, 'add new.txt') // git lists worktrees by name, not in the order they were made
     // your own uncommitted edit blocks the merge, unless you say to commit it first
     fs.writeFileSync(path.join(repoDir, 'mine.txt'), 'v1\n'); await git(['add', 'mine.txt'], repoDir); await git(['commit', '-q', '-m', 'mine'], repoDir)
     fs.writeFileSync(path.join(repoDir, 'mine.txt'), 'v2\n')
@@ -133,9 +133,9 @@ if (require.main === module) {
     const res = await bringHome(repoDir, list.map(b => b.branch), true)
     assert.equal(fs.readFileSync(path.join(repoDir, 'mine.txt'), 'utf8'), 'v2\n')
     assert.ok((await git(['log', '--format=%s'], repoDir)).includes('Save my work before merging agent branches'))
-    assert.deepEqual(Object.values(res), ['merged', 'merged', 'conflict'])
+    assert.deepEqual(Object.values(res).sort(), ['conflict', 'merged', 'merged']) // whichever a.txt edit goes in second clashes
     assert.equal(await git(['status', '--porcelain'], repoDir), '', 'an aborted merge leaves the checkout clean')
-    await discard(repoDir, list[2].branch)
+    await discard(repoDir, Object.keys(res).find(b => res[b] === 'conflict'))
     assert.equal((await worktrees(repoDir)).notch.length, 0)
     fs.rmSync(repoDir, { recursive: true, force: true }); fs.rmSync(repoDir + '.worktrees', { recursive: true, force: true })
     console.log('launch.js ok')
