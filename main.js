@@ -491,7 +491,15 @@ ipcMain.handle('setup-limits', (_, on) => {
   return { agents: setup.status() }
 })
 ipcMain.handle('setup-login', (_, on) => { app.setLoginItemSettings({ openAtLogin: !!on, ...loginOpts() }); return app.getLoginItemSettings(loginOpts()).openAtLogin })
-ipcMain.handle('setup-done', () => { fs.writeFileSync(SETUP_DONE, ''); return true })
+ipcMain.handle('setup-done', () => { fs.writeFileSync(SETUP_DONE, ''); fs.writeFileSync(NEWS_SEEN, NEWS.id); return true }) // new users get the news in Setup itself
+// What's new: one peek, once, for people who were already using Notch when a feature arrived
+const NEWS = { id: 'team', title: 'New: team messages', line: 'Agents can now message each other. Hover to set up' }
+const NEWS_SEEN = path.join(app.getPath('userData'), 'news-seen')
+ipcMain.handle('news', () => {
+  if (!fs.existsSync(SETUP_DONE) || (fs.existsSync(NEWS_SEEN) && fs.readFileSync(NEWS_SEEN, 'utf8') === NEWS.id)) return null
+  fs.writeFileSync(NEWS_SEEN, NEWS.id)
+  return team.on ? null : NEWS // already using it: nothing new
+})
 ipcMain.handle('update-state', () => updates.state())
 ipcMain.handle('update-check', () => updates.check())
 ipcMain.handle('update-auto', (_, on) => updates.setAuto(!!on))

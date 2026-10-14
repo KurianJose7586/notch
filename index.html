@@ -44,6 +44,11 @@
   .zzz i:nth-child(2) { font-size: 14px; animation-delay: .22s; }
   .zzz i:nth-child(3) { font-size: 17px; animation-delay: .44s; }
   @keyframes snooze { 0% { opacity: 0; translate: 0 4px; scale: .6; } 35% { opacity: 1; } 100% { opacity: 0; translate: 12px -16px; scale: 1.1; } }
+  /* First run: the notch is asleep (eyes shut, zZz), yawns, opens its eyes and looks around */
+  #pill.wake { width: 108px; padding: 0; }
+  #pill.wake .zzz { position: absolute; right: 8px; top: 7px; }
+  #pill.wake .zzz i { animation-iteration-count: infinite; }
+  #island.waking:not(.open) #eyes { opacity: 1; }
   #island:not(.open):hover { scale: 1.03; }
   #island.req:not(.open):hover { scale: 1.01; }
   #island.peek { border-radius: 24px; }
@@ -110,7 +115,7 @@
   .card-top b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .card-top span { color: var(--tertiary); font-size: 12px; flex: none; }
   .card-line { color: var(--secondary); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .card-top b.ok { color: var(--green); } .card-top b.no, .card-top b.bad { color: #FF6961; } .card-top b.warn { color: var(--orange); }
+  .card-top b.ok { color: var(--green); } .card-top b.new { color: #D49BFF; } .card-top b.no, .card-top b.bad { color: #FF6961; } .card-top b.warn { color: var(--orange); }
 
   /* Allowed / Denied confirmation badge: pops, then the stroke draws itself */
   .badge { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; animation: pop .55s var(--spring) both; }
@@ -562,15 +567,23 @@ notch.onGoodbye(kind => {
   })
 })
 
-function lullaby() { // goodbye: the welcome chime, falling
+function lullaby(up) { // goodbye: the welcome chime, falling (up: rising, when it wakes up the first time)
   if (!sound) return
   const ctx = audio(), t = ctx.currentTime
-  for (const [f, d] of [[1318.5, 0], [880, .14], [659.3, .3]]) {
+  for (const [f, d] of up ? [[659.3, 0], [880, .14], [1318.5, .3]] : [[1318.5, 0], [880, .14], [659.3, .3]]) {
     const o = ctx.createOscillator(), g = ctx.createGain()
     o.type = 'sine'; o.frequency.value = f
     g.gain.setValueAtTime(0, t + d); g.gain.linearRampToValueAtTime(.08, t + d + .015); g.gain.exponentialRampToValueAtTime(.0001, t + d + .7)
     o.connect(g).connect(ctx.destination); o.start(t + d); o.stop(t + d + .75)
   }
+}
+
+function yawn() { // first run: a sleepy, falling "aah"
+  if (!sound) return
+  const ctx = audio(), t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain()
+  o.type = 'triangle'; o.frequency.setValueAtTime(520, t); o.frequency.exponentialRampToValueAtTime(300, t + .7)
+  g.gain.setValueAtTime(.05, t); g.gain.exponentialRampToValueAtTime(.0001, t + .7)
+  o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + .72)
 }
 
 function chime() { // needs you: soft two-note rise
@@ -628,6 +641,8 @@ function requestActions(s, withAll) {
   }
   return a
 }
+
+const zzz = () => { const z = el('span', 'zzz'); z.append(el('i', '', 'z'), el('i', '', 'z'), el('i', '', 'Z')); return z }
 
 function card(lead, top, right, line, extra) {
   const body = el('div', 'card-body'), head = el('div', 'card-top')
@@ -691,11 +706,11 @@ function pillView() {
     mode: 'bye', sig: 'bye', cls: 'bye', build: () => {
       const icons = el('span', 'hello-icons')
       Object.keys(GLYPH).forEach((a, i) => { const ic = icon(a); ic.style.animationDelay = 80 + i * 90 + 'ms'; icons.append(ic) })
-      const zzz = el('span', 'zzz'); zzz.append(el('i', '', 'z'), el('i', '', 'z'), el('i', '', 'Z'))
-      return [icons, el('b', '', farewell === 'reload' ? 'Be right back' : 'Goodnight'), zzz]
+      return [icons, el('b', '', farewell === 'reload' ? 'Be right back' : 'Goodnight'), zzz()]
     },
   }
   if (welcome === 'drop') return { mode: 'drop', sig: 'drop', build: () => [] }
+  if (welcome === 'nap' || welcome === 'wake') return { mode: 'wake', sig: welcome, cls: 'wake', build: () => welcome === 'nap' ? [zzz()] : [] } // first run: asleep, then awake
   if (welcome === 'hello') return {
     mode: 'hello', sig: 'hello', cls: 'hello', build: () => {
       const icons = el('span', 'hello-icons')
@@ -1031,7 +1046,7 @@ function startRename(s, title) {
 }
 
 // Setup: connect agents (each switch adds or removes the notch's hook in that agent's own config), start with Windows.
-async function openSetup(first) {
+async function openSetup(first, focus) { // focus: 'team' scrolls to the Team messages switch (from its news peek)
   const st = await notch.invoke('setup-status')
   let firstErr = ''
   if (first) for (const a of Object.keys(GLYPH)) { // new users forgetting a switch means agents that never show up: start with every installed one on
@@ -1176,6 +1191,7 @@ async function openSetup(first) {
   const wrap = el('div', 'setup help'); wrap.append(head, intro, h2('Agents'), agents, h2('Preferences'), prefs, err, finish)
   panel.replaceChildren(wrap)
   if (open) { anim(panel, [{ opacity: 0, filter: 'blur(5px)' }, { opacity: 1, filter: 'blur(0px)' }], { duration: 320 }); layout() } else setOpen(true)
+  if (focus === 'team') setTimeout(() => { tm.scrollIntoView({ block: 'center', behavior: 'smooth' }); anim(tm, [{ background: 'rgba(191,90,242,.24)' }, { background: 'rgba(191,90,242,0)' }], { duration: 1800, delay: 350 }) }, 450)
 }
 
 function closeSetup(collapse) {
@@ -1480,7 +1496,7 @@ function setOpen(v) {
 island.addEventListener('mouseenter', () => {
   notch.send('mouse', true)
   if (farewell || keyboard || view === 'launch' || view === 'setup' || view === 'home' || editing || pill.classList.contains('request')) return // requests expand on click, so Allow/Deny don't move under the cursor
-  clearTimeout(hoverTimer); hoverTimer = setTimeout(() => teamPeek ? openTeam(teamPeek.repo) : setOpen(true), 90) // a message peek opens its conversation
+  clearTimeout(hoverTimer); hoverTimer = setTimeout(() => teamPeek ? openTeam(teamPeek.repo) : toast?.open ? toast.open() : setOpen(true), 90) // a message peek opens its conversation; a news peek, its setting
 })
 island.addEventListener('mouseleave', () => {
   if (drag) return // the window is moving under the cursor
@@ -1863,12 +1879,32 @@ notch.onUpdate(s => {
 notch.invoke('update-state').then(s => { upd = s; paintUpdate?.() })
 
 // Welcome: a dot drops in, stretches into a pill, agents pop in one by one, then it settles.
-if (welcome) {
+// The very first run wakes up instead: it snores, yawns, opens its eyes, looks around, finds you, and opens Setup.
+if (welcome) notch.invoke('setup-status').then(st => st.done ? greet() : wakeUp())
+else { island.classList.remove('intro'); setTimeout(firstRun, 300) }
+function greet() {
   setTimeout(() => island.classList.remove('intro'), 40) // a timer, not rAF: rAF can stall while hidden and the notch would stay invisible
   setTimeout(() => { if (welcome) { welcome = 'hello'; render() } }, 380)
   setTimeout(() => { if (welcome) { welcome = null; render() } firstRun(); armVenom() }, 2700)
-} else { island.classList.remove('intro'); setTimeout(firstRun, 300) }
-async function firstRun() { if (!(await notch.invoke('setup-status')).done) openSetup(true) }
+}
+function wakeUp() {
+  const at = (ms, fn) => setTimeout(() => welcome && fn(), ms) // hovering the notch skips the rest
+  const look = (x, y) => pupils.forEach(p => { p.style.setProperty('--px', x + 'px'); p.style.setProperty('--py', y + 'px') })
+  welcome = 'nap'; render(); island.classList.add('waking'); eyes.style.scale = '1 .12' // eyes shut
+  setTimeout(() => island.classList.remove('intro'), 40)
+  at(500, () => anim(island, [{ scale: '1' }, { scale: '1.03' }, { scale: '1' }], { duration: 1100, iterations: 2, easing: 'ease-in-out' })) // snoring
+  at(2000, () => { welcome = 'wake'; render(); yawn(); anim(island, [{ scale: '1 1' }, { scale: '1.14 .8', offset: .25 }, { scale: '.9 1.32', offset: .6 }, { scale: '.9 1.32', offset: .8 }, { scale: '1 1' }], { duration: 900 }) })
+  at(3000, () => { eyes.style.scale = ''; anim(eyes, [{ scale: '1 .12' }, { scale: '1 1' }], { duration: 160 }) })
+  at(3450, () => look(-3, 0)); at(3850, () => look(3, 0)); at(4250, () => look(0, 4))
+  at(4400, () => anim(eyes, [{ scale: '1 1' }, { scale: '1 .1' }, { scale: '1 1' }], { duration: 170 }))
+  at(4650, () => { react('happy'); lullaby(true) })
+  setTimeout(() => { island.classList.remove('waking'); eyes.style.scale = ''; look(0, 0); if (welcome) { welcome = null; render() } firstRun(); armVenom() }, 5300)
+}
+async function firstRun() {
+  if (!(await notch.invoke('setup-status')).done) return openSetup(true)
+  const n = await notch.invoke('news') // what's new, once, for people who were already using Notch
+  if (n) { blip(); showToast({ lead: () => teamIcon(), title: () => el('b', 'new', n.title), right: '', line: n.line, open: () => openSetup(false, 'team') }, 8000) }
+}
 
 setInterval(() => { if (open) for (const t of document.querySelectorAll('.timer')) t.textContent = duration(+t.dataset.since) }, 1000) // only visible timers
 render()
