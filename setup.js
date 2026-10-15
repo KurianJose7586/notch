@@ -105,22 +105,26 @@ function setMcp(agent, m) {
 }
 
 // on = true connects with `run` (from runner()); on = false disconnects, team tools included. team: whether the team
-// tools go in too (undefined leaves them as they are). Re-connecting replaces the old hooks.
+// tools (and Claude Code's wait for messages) go in too; undefined leaves the tools as they are. Re-connecting replaces
+// the old hooks.
 function set(agent, on, run, team) {
-  setHooks(agent, on, run)
+  setHooks(agent, on, run, team)
   const m = agent === 'agy' ? run?.mcpBare : run?.mcp
   if (!on || team !== undefined) setMcp(agent, on && team ? { ...m, args: [...m.args, agent] } : null)
 }
 
-function setHooks(agent, on, run) {
+function setHooks(agent, on, run, team) {
   const file = files()[agent]
   if (agent === 'claude') {
     if (!on && !fs.existsSync(file)) return
+    // With team messages on, each turn's end also starts a background wait (up to 8 hours) that wakes the agent when
+    // a teammate's agent messages it. async too, so a Claude Code that predates asyncRewake never waits on it.
+    const wake = { type: 'command', command: `${run?.quoted} claude Wake`, async: true, asyncRewake: true, timeout: 8 * 3600 }
     return editJson(file, s => {
       s.hooks ||= {}
       for (const ev of CLAUDE_EVENTS) {
         s.hooks[ev] = (s.hooks[ev] || []).filter(h => !JSON.stringify(h).includes(MARK))
-        if (on) s.hooks[ev].push({ ...(ev.endsWith('ToolUse') && { matcher: '*' }), hooks: [{ type: 'command', command: `${run.quoted} claude ${ev}`, timeout: 60 }] })
+        if (on) s.hooks[ev].push({ ...(ev.endsWith('ToolUse') && { matcher: '*' }), hooks: [{ type: 'command', command: `${run.quoted} claude ${ev}`, timeout: 60 }, ...(ev === 'Stop' && team ? [wake] : [])] })
         if (!s.hooks[ev].length) delete s.hooks[ev]
       }
       if (!Object.keys(s.hooks).length) delete s.hooks

@@ -3,7 +3,8 @@
 // its own, refs/notch/msg/<me>, and fetches everyone's into refs/notch/in/. One writer per ref, so pushes never clash,
 // and the ref doubles as the outbox: a push that fails (offline) goes out with the next one. Whoever can push to the
 // repo is on the team and nobody else is. Branches, tags and the working tree are never touched.
-// A repo's channel opens when someone first sends a message there; until then nothing is pushed to it.
+// A repo's channel opens once the team is used there: an agent sends or checks the team, Coordinate is switched on, or
+// a teammate's agents turn up on it. Until then nothing is pushed to it.
 // Coordinate mode (per repo, on this PC) keeps agents working with the team until a message marks the work done.
 const fs = require('fs')
 const os = require('os')
@@ -54,7 +55,7 @@ function createTeam({ file, every = EVERY_MS, host = os.hostname(), changed = ()
       // this PC's ref; a second clone of the same repo here gets its own, so no ref ever has two writers
       me: `${human}-${slug(host)}-${crypto.createHash('sha1').update(id).digest('hex').slice(0, 6)}`,
       ident: ['-c', `user.name=${name || human}`, '-c', `user.email=${email || `${human}@${slug(host)}`}`],
-      queue: Promise.resolve(), live: false, dirty: false, busy: false, next: 0, who: [], error: null, synced: 0,
+      queue: Promise.resolve(), live: !!data.coord[id], dirty: false, busy: false, next: 0, who: [], error: null, synced: 0,
     }
   })()
 
@@ -119,12 +120,17 @@ function createTeam({ file, every = EVERY_MS, host = os.hostname(), changed = ()
     return { id: r.id, human: r.human, remote: r.remote, live: r.live, error: r.error, synced: r.synced, who: r.who }
   }
 
-  // Coordinate mode on a folder's repo, and its latest message (main.js works out whether a round is still going).
+  // Coordinate mode on a folder's repo, its latest message (main.js works out whether a round is still going), and
+  // whether its channel is open.
   async function coordination(cwd) {
     const r = await open(cwd)
-    return { on: !!data.coord[r.id], last: (data.log[r.id] || []).at(-1) || null }
+    return { on: !!data.coord[r.id], last: (data.log[r.id] || []).at(-1) || null, live: r.live }
   }
-  function setCoord(id, on) { if (on) data.coord[id] = true; else delete data.coord[id]; save(); changed() }
+  function setCoord(id, on) {
+    if (on) data.coord[id] = true; else delete data.coord[id]
+    if (on && repos[id]) Object.assign(repos[id], { live: true, next: 0 }) // teammates see your agents here right away
+    save(); changed()
+  }
 
   // What this PC's agents on a repo are doing. Republished when it changes, and every few minutes so it doesn't go stale.
   function present(r, agents) {
@@ -168,6 +174,7 @@ function createTeam({ file, every = EVERY_MS, host = os.hostname(), changed = ()
       const [ref, body = ''] = rec.trim().split('\x1f'), p = ref && !ref.endsWith('/' + r.me) && parse(body)
       if (p && Date.now() - p.at < STALE_MS && Array.isArray(p.agents)) who.push(...p.agents.map(a => ({ human: String(p.human), name: String(a.name), agent: String(a.agent), task: String(a.task || '') })))
     }
+    if (who.length) r.live = true // teammates' agents are on the channel: they see ours too
     if (JSON.stringify(who) !== JSON.stringify(r.who)) { r.who = who; changed() }
   }
 
@@ -207,7 +214,7 @@ function createTeam({ file, every = EVERY_MS, host = os.hostname(), changed = ()
     set(on) { data.on = !!on; save() },
     repo: cwd => open(cwd).then(r => r.id, () => null),
     idOf: cwd => ids[cwd], // the same, for a folder already looked at; undefined otherwise
-    hurry: cwd => open(cwd).then(r => { r.next = 0 }, () => {}), // someone's waiting on a reply: fetch on the next sync
+    hurry: cwd => open(cwd).then(r => { r.live = true; r.next = 0 }, () => {}), // an agent is checking the team: open the channel, fetch on the next sync
     send, take, roster, sync, addressed, state, coordination, setCoord,
   }
 }
@@ -306,6 +313,25 @@ if (require.main === module) {
     await a3.sync({}, Date.now() + 10 * 60000)
     await b.sync({ [B]: [{ name: 'opencode', agent: 'opencode', task: 'checkout page' }] })
     assert.deepEqual((await b.roster(B)).who, [])
+
+    // a channel opens with no message sent: Coordinate switched on here, then carol's agents turn up for dave, which
+    // opens his side; an agent checking the team opens it too
+    const origin2 = path.join(tmp, 'origin2.git'), C = path.join(tmp, 'carol'), D = path.join(tmp, 'dave')
+    await git(['init', '-q', '--bare', origin2], tmp)
+    for (const [dir, who] of [[C, 'Carol'], [D, 'Dave']]) {
+      await git(['clone', '-q', origin2, dir], tmp)
+      await git(['config', 'user.name', who], dir); await git(['config', 'user.email', `${who}@x`], dir)
+    }
+    const c = createTeam({ file: path.join(tmp, 'c.json'), every: 0, host: 'pc-c' }), d = createTeam({ file: path.join(tmp, 'd.json'), every: 0, host: 'pc-d' })
+    const atC = { [C]: [{ name: 'claude', agent: 'claude', task: 'docs' }] }, atD = { [D]: [{ name: 'agy', agent: 'agy', task: 'tests' }] }
+    await c.sync(atC); await d.sync(atD)
+    assert.deepEqual([(await c.roster(C)).live, (await d.roster(D)).live], [false, false], 'nothing published before the team is used')
+    c.setCoord(c.idOf(C), true)
+    await c.sync(atC); await d.sync(atD); await d.sync(atD); await c.sync(atC)
+    assert.deepEqual([(await d.roster(D)).who.map(w => w.human), (await c.roster(C)).who.map(w => w.human)], [['carol'], ['dave']])
+    const e = createTeam({ file: path.join(tmp, 'e.json'), every: 0, host: 'pc-e' })
+    await e.hurry(D)
+    assert.equal((await e.roster(D)).live, true)
 
     // only notch refs: no branches pushed, nothing in the working tree
     assert.equal(await git(['for-each-ref', '--format=%(refname)', 'refs/heads'], origin), '')

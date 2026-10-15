@@ -912,7 +912,7 @@ function buildTeam(enter = false) {
     r.append(fromIcon(m), bubble); thread.append(r)
     teamShown.add(m.id)
   }
-  if (!t.log.length) { const e = el('div', 'empty'); e.append(el('b', '', 'No messages yet'), "Agents here can message each other, and teammates' agents, with the team_send tool."); thread.append(e) }
+  if (!t.log.length) { const e = el('div', 'empty'); e.append(el('b', '', 'No messages yet'), "Ask an agent here to check the team, or to message a teammate's agent. Teammates' agents appear above a minute or two after they start working in this repo."); thread.append(e) }
   const wrap = el('div', 'team-view'); wrap.append(head, coord, roster, thread)
   panel.replaceChildren(wrap)
   if (stick) panel.scrollTop = panel.scrollHeight

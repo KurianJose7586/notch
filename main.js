@@ -196,6 +196,7 @@ async function pressWhenPrompted(s, isPrompt = PROMPT.permission) {
 const nameOf = s => slug(s.label) || s.agent
 const KIND = { claude: 'Claude Code', agy: 'Antigravity', opencode: 'OpenCode', kilo: 'Kilo', copilot: 'Copilot' }
 const said = m => `- ${m.from}${m.to ? ' to ' + m.to : ''}: ${m.text}`
+const news = mail => `New messages from other coding agents working in this repo:\n${mail.map(said).join('\n')}\nYou can answer with the team_send tool.`
 const whoIs = a => `- ${a.human}/${a.name} (${KIND[a.agent] || a.agent}${a.here ? ', on this computer' : ''})${a.task ? ': ' + a.task : ''}`
 
 // Everyone else on a folder's repo: this PC's other sessions there, then teammates' agents.
@@ -206,18 +207,20 @@ async function rosterOf(cwd, self) {
 }
 
 // Coordinate mode (a per-repo switch, on this PC): the agents in a repo work as one team until one of them sends done.
-// A finishing agent is kept going with the team's news, or told to wait for it; 10 quiet minutes let everyone stop.
+// Claude Code is on call between turns (onCall below). Other agents are kept going with the team's news, or told to
+// wait for it, until 10 quiet minutes let everyone stop.
 const QUIET_MS = 10 * 60e3
-const RULES = `Coordinate mode is on in this repo: you and the other agents working in it (team_check lists them) are one team on the same goal, with as little human help as possible.
+const wakes = agent => agent === 'claude' // its Stop also starts a background wait for the team (setup.js)
+const rules = agent => `Coordinate mode is on in this repo: you and the other agents working in it (team_check lists them) are one team on the same goal, with as little human help as possible.
 - Agree who does what before editing (claim your part with team_send) and leave files another agent has claimed to them.
 - Tell the team when you finish a part, change something others rely on (APIs, shared files, schemas), or get stuck.
-- Waiting on a teammate? Call team_check with wait_seconds: 90 (again if needed) instead of stopping.
+- ${wakes(agent) ? "Waiting on a teammate? Just end your turn: their next message wakes you up." : 'Waiting on a teammate? Call team_check with wait_seconds: 90 (again if needed) instead of stopping.'}
 - Skip messages that only say thanks or OK.
 - When the whole goal is done and checked, one of you sends team_send with done: true; then everyone can stop.`
 const NUDGE = "Coordinate mode is on and the team's work isn't marked done. If you're waiting on teammates, call team_check with wait_seconds: 90. If your part is finished, tell the team with team_send and wait for what's next. If the whole goal is done and checked, send team_send with done: true, then stop."
-async function coordinating(s) {
+async function coordinating(s, quiet = QUIET_MS) {
   const c = s?.cwd && await team.coordination(s.cwd).catch(() => null)
-  if (!c?.on || Date.now() - Math.max(c.last?.at || 0, s.turnAt || 0) > QUIET_MS) return false
+  if (!c?.on || Date.now() - Math.max(c.last?.at || 0, s.turnAt || 0) > quiet) return false
   return !(c.last?.done && c.last.at >= (s.turnAt || 0)) // a done that came after this agent's task began ends its round
 }
 
@@ -243,17 +246,45 @@ async function mailFor(s, agent, event, p) {
   if (stop && (s.state !== 'done' || !coord && (s.heldStop || p.stop_hook_active))) { s.heldStop = false; return '' } // it failed, or held once already
   const mail = await team.take(s.cwd, s.key, nameOf(s), { started: s.started, direct: stop && !coord }).catch(() => null)
   if (!mail) return '' // not in a git repo
-  let text = mail.length ? `New messages from other coding agents working in this repo:\n${mail.map(said).join('\n')}\nYou can answer with the team_send tool.` : ''
+  let text = mail.length ? news(mail) : ''
   if (turn) { // a new task: who else is here, whenever that changed
     const { list } = await rosterOf(s.cwd, s), names = list.map(a => a.human + '/' + a.name).join()
     if (names && names !== s.toldRoster) text = `Also working in this repo right now:\n${list.map(whoIs).join('\n')}\nThey can be reached with the team_send tool.${text ? '\n\n' + text : ''}`
     s.toldRoster = names
-    if (coord) text = `${RULES}${text ? '\n\n' + text : ''}`
+    if (coord) text = `${rules(agent)}${text ? '\n\n' + text : ''}`
   }
-  if (stop && coord) text = `${text ? text + '\n\n' : ''}${NUDGE}` // coordinating: keep going with the news, or wait for it
+  if (stop && coord && !wakes(agent)) text = `${text ? text + '\n\n' : ''}${NUDGE}` // coordinating: keep going with the news, or wait for it
   if (!text) return ''
   if (stop) { s.heldStop = true; set(s, 'working', Date.now()); s.action = mail.length ? 'Reading team messages' : 'Waiting for the team'; s.unread = false }
   return plugin ? text : JSON.stringify(wrap(agent, event, text))
+}
+
+// Claude Code stays on call between turns: its Stop also starts a background hook (setup.js, asyncRewake) that waits
+// here, and a team message for it ends the wait and wakes the agent up with it. While coordinating, any message does
+// until the team marks the work done; otherwise only one that names it, and only after a turn its human started (never
+// twice in a row). Only in repos where the team is in use, and at most 20 wakes an hour, so agents can't loop forever.
+const onCall = {} // session key -> the waiting hook's reply
+const release = key => { onCall[key]?.end(''); delete onCall[key] }
+async function wake(s, p, res) {
+  release(s.key)
+  const c = team.on && s.cwd && await team.coordination(s.cwd).catch(() => null), coord = await coordinating(s, Infinity)
+  s.woke = (s.woke || []).filter(t => Date.now() - t < 3600e3)
+  if (!(c?.on || c?.live || c?.last) || (!coord && p.stop_hook_active) || s.woke.length >= 20) return res.end('')
+  onCall[s.key] = res
+  res.on('close', () => { if (onCall[s.key] === res) delete onCall[s.key] }) // Claude Code ended it: session closed, or time's up
+  res.writeHead(200).flushHeaders() // tells hook.js the notch is up, so it waits as long as this takes
+  while (sessions[s.key] === s) {
+    await sleep(1500)
+    const coord = await coordinating(s, Infinity)
+    if (onCall[s.key] !== res || (!coord && p.stop_hook_active)) break
+    const mail = await team.take(s.cwd, s.key, nameOf(s), { started: s.started, direct: !coord }).catch(() => [])
+    if (!mail.length) continue
+    delete onCall[s.key]
+    s.woke.push(Date.now()); set(s, 'working', Date.now()); s.action = 'Reading team messages'; s.unread = false; push()
+    return res.end(news(mail))
+  }
+  if (onCall[s.key] === res) delete onCall[s.key]
+  res.end('') // let it go (nothing happens if it was answered or closed already)
 }
 
 // Calls from mcp.js. The MCP server is the agent's child like its hooks are, so the agent process tells which session
@@ -269,7 +300,7 @@ async function teamCall(tool, body, url, res) {
   const cwd = s?.cwd || a.cwd, name = s ? nameOf(s) : slug(agent)
   if (!team.on) return res.end('Team messages are off. They can be turned on in Agent Notch: Setup → Team messages.')
   if (!cwd || !(await team.repo(cwd))) return res.end("This folder isn't in a git repository, so there is no team to message from here.")
-  const { list, human, remote, error, live } = await rosterOf(cwd, s)
+  const { list, human, remote, error } = await rosterOf(cwd, s)
   const link = !remote ? 'This repo has no remote, so only agents on this computer get messages.' : error ? `The remote can't be reached right now (${error}); messages go out once it can.` : ''
   if (tool === 'team_send') {
     if (!String(a.text || '').trim()) return res.end('Not sent: the message is empty.')
@@ -281,6 +312,7 @@ async function teamCall(tool, body, url, res) {
     return res.end([`Sent to ${a.to || 'everyone in this repo'}${a.done === true ? ', marked done: agents in coordinate mode can stop now' : ''}.`, heard ? '' : `Nobody ${a.to ? 'by that name ' : ''}is working in this repo right now, so only agents that are will see it.`, link].filter(Boolean).join(' '))
   }
   if (tool !== 'team_check') return res.end('Unknown tool')
+  team.hurry(cwd) // checking the team opens its channel here, so teammates see this repo's agents
   let mail = []
   for (let t = 0, wait = Math.min(Math.max(+a.wait_seconds || 0, 0), 90); ; t++) { // waiting for a reply: check every second, fetch every 5
     mail = await team.take(cwd, s?.key || `${agent}:${pid}`, name, { started: s?.started })
@@ -291,9 +323,9 @@ async function teamCall(tool, body, url, res) {
   res.end([
     `You are ${human}/${name}.`,
     list.length ? `Also working in this repo:\n${list.map(whoIs).join('\n')}`
-      : `Nobody else is working in this repo right now${remote && !live ? " that you can see: teammates' agents show up once anyone has sent a team message in this repo" : ''}.`,
+      : `Nobody else is working in this repo right now.${remote ? " Teammates' agents show up here a minute or two after they start working in it, once Team messages are on in their Agent Notch." : ''}`,
     mail.length ? `New messages:\n${mail.map(said).join('\n')}` : 'No new messages.',
-    await coordinating(s) ? RULES : '',
+    await coordinating(s) ? rules(agent) : '',
     link,
   ].filter(Boolean).join('\n\n'))
 }
@@ -301,7 +333,9 @@ async function teamCall(tool, body, url, res) {
 async function handleEvent(agent, event, body, url, res) {
   let p = {}
   try { p = JSON.parse(body) } catch {}
+  if (event === 'Wake') { const s = sessions[`${agent}:${p.session_id}`]; return s ? wake(s, p, res) : res.end('') } // on call between turns
   const s = apply(sessions, agent, event, p)
+  if (s && event === 'UserPromptSubmit') release(s.key) // its human is back: hooks bring the news while it works
   // Locate the window on the first event, while the hook's process chain is still alive.
   if (s && !s.located) {
     s.located = true

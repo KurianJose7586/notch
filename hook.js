@@ -23,11 +23,16 @@ function launch() {
 }
 
 const quitByUser = fs.existsSync(path.join(__dirname, '.quit')) // you quit it: don't start it back up
-const done = out => { process.stdout.write(out || fallback); process.exit(0) }
+const done = out => {
+  // Claude Code's background wait for team messages between turns (asyncRewake): exit code 2 wakes it with stderr
+  if (event === 'Wake') { process.stderr.write(out || ''); process.exit(out ? 2 : 0) }
+  process.stdout.write(out || fallback); process.exit(0)
+}
 
 // ponytail: if the notch can't start at all, every hook call waits the full ~4s retry window
 function send(body, tries = 0) {
   const req = http.request({ host: '127.0.0.1', port: 47800, method: 'POST', path: `/${agent}/${event}?pid=${process.pid}`, timeout: gate ? 58000 : 5000 }, res => {
+    req.setTimeout(0) // the notch is up and answering; a reply it holds on purpose (a Wake) can take hours
     let out = ''; res.on('data', c => (out += c)).on('end', () => done(out))
   })
   req.on('timeout', () => { req.destroy(); done() })
